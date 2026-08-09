@@ -14,6 +14,7 @@ import {
   MAX_TRIES,
   opInsert,
   opSoftDelete,
+  opUpdate,
   pendingCount,
   pendingOps,
   pendingRecordIds,
@@ -43,6 +44,42 @@ describe('hàng đợi sống sót và giữ đúng thứ tự', () => {
       'payments',
       'drafts',
     ]);
+  });
+
+  it('bốn thao tác của MỘT lần bấm vẫn đúng thứ tự dù cùng một mili giây', async () => {
+    // "Trả đủ & xong" xếp cả bốn thao tác trong cùng một tích tắc. Nếu sắp theo
+    // mốc thời gian thì thứ tự rơi về khoá chính ngẫu nhiên, và lần trả tiền có
+    // thể lên trước phiếu → khoá ngoại lỗi, tiền rơi mất.
+    await enqueue(opInsert('suppliers', 'sup-1', { id: 'sup-1' }));
+    await enqueue(opSoftDelete('drafts', 'draft-1'));
+    await enqueue(opInsert('transactions', 'tx-1', { id: 'tx-1' }));
+    await enqueue(opInsert('payments', 'pay-1', { id: 'pay-1' }));
+
+    expect((await pendingOps()).map((op) => op.table)).toEqual([
+      'suppliers',
+      'drafts',
+      'transactions',
+      'payments',
+    ]);
+  });
+
+  it('sửa cùng một bản ghi nhiều lần chỉ còn MỘT thao tác — người dùng đang dùng 3G', async () => {
+    await enqueue(opInsert('drafts', 'draft-1', { id: 'draft-1', supplier_name: '' }));
+    await enqueue(opUpdate('drafts', 'draft-1', { id: 'draft-1', supplier_name: 'Cô' }));
+    await enqueue(opUpdate('drafts', 'draft-1', { id: 'draft-1', supplier_name: 'Cô Mai' }));
+    await enqueue(opUpdate('drafts', 'draft-1', { id: 'draft-1', supplier_name: 'Cô Lê Thị Mai' }));
+
+    const ops = await pendingOps();
+    expect(ops.map((op) => op.kind)).toEqual(['insert', 'update']);
+    expect(ops[1]?.payload).toMatchObject({ supplier_name: 'Cô Lê Thị Mai' });
+  });
+
+  it('gộp thao tác sửa KHÔNG đụng tới bản ghi khác', async () => {
+    await enqueue(opUpdate('drafts', 'draft-1', { id: 'draft-1' }));
+    await enqueue(opUpdate('drafts', 'draft-2', { id: 'draft-2' }));
+    await enqueue(opUpdate('drafts', 'draft-1', { id: 'draft-1' }));
+
+    expect((await pendingOps()).map((op) => op.recordId)).toEqual(['draft-2', 'draft-1']);
   });
 
   it('đẩy xong thì rời hàng đợi', async () => {

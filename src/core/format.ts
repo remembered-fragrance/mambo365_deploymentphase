@@ -15,6 +15,19 @@ export const formatQuantity = (value: number, unit = 'kg'): string =>
 
 export const formatWeight = (kg: number): string => formatQuantity(kg, 'kg');
 
+/**
+ * Thêm dấu ngăn nghìn vào chuỗi người dùng ĐANG GÕ: `74000000` → `74.000.000`.
+ * Giữ nguyên phần thập phân đang gõ dở (`1,` vẫn là `1,`), nếu không thì dấu
+ * phẩy biến mất ngay khi vừa gõ xong.
+ */
+export const groupThousands = (raw: string): string => {
+  if (!raw) return '';
+  const [whole = '', fraction] = raw.split(',');
+  const digits = whole.replace(/\D/g, '');
+  const head = digits ? vnd.format(Number(digits)) : '';
+  return fraction === undefined ? head : `${head},${fraction}`;
+};
+
 export const formatDate = (iso: string): string =>
   new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 

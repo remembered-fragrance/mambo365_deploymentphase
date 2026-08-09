@@ -36,7 +36,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['tests/core/**/*.test.ts', 'tests/data/**/*.test.ts'],
+    include: ['tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/core/**'],

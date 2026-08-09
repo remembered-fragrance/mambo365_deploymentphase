@@ -9,7 +9,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { TableName } from './rows';
 
 const DB_NAME = 'thumua365';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export type OpKind = 'insert' | 'update' | 'softDelete';
 
@@ -23,6 +23,15 @@ export interface QueuedOp {
   readonly payload: Record<string, unknown>;
   /** Bản ghi nghiệp vụ bị chạm — dùng để gắn cờ "đang chờ gửi" lên phiếu. */
   readonly recordId: string;
+  /**
+   * Số thứ tự tăng dần — khoá sắp xếp của hàng đợi.
+   *
+   * 🔴 KHÔNG dùng `createdAt` để sắp: một lần bấm "Trả đủ & xong" xếp bốn thao
+   * tác trong cùng một mili giây, và khi mốc thời gian bằng nhau thì IndexedDB
+   * trả về theo khoá chính (uuid ngẫu nhiên). Lần trả tiền có thể lên trước
+   * phiếu → khoá ngoại lỗi và khoản tiền rơi mất.
+   */
+  readonly seq: number;
   readonly createdAt: string;
   readonly tries: number;
   readonly nextAttemptAt: string;
@@ -32,7 +41,7 @@ export interface QueuedOp {
 interface LocalDbSchema extends DBSchema {
   /** Sổ của từng tài khoản. Khoá = userId. */
   books: { key: string; value: unknown };
-  queue: { key: string; value: QueuedOp; indexes: { createdAt: string } };
+  queue: { key: string; value: QueuedOp; indexes: { seq: number } };
   /** Ảnh chứng từ. Khoá = attachmentId. */
   attachments: { key: string; value: Blob };
   /** Mốc đồng bộ gần nhất theo tài khoản. Khoá = userId. */
@@ -44,11 +53,26 @@ let dbPromise: Promise<IDBPDatabase<LocalDbSchema>> | null = null;
 export const openLocalDb = (): Promise<IDBPDatabase<LocalDbSchema>> => {
   dbPromise ??= openDB<LocalDbSchema>(DB_NAME, DB_VERSION, {
     upgrade(db) {
-      db.createObjectStore('books');
-      db.createObjectStore('queue', { keyPath: 'id' }).createIndex('createdAt', 'createdAt');
-      db.createObjectStore('attachments');
-      db.createObjectStore('syncMarks');
+      if (!db.objectStoreNames.contains('books')) db.createObjectStore('books');
+      if (!db.objectStoreNames.contains('attachments')) db.createObjectStore('attachments');
+      if (!db.objectStoreNames.contains('syncMarks')) db.createObjectStore('syncMarks');
+
+      // v1 sắp hàng đợi theo createdAt — không đủ chính xác, dựng lại theo seq.
+      if (db.objectStoreNames.contains('queue')) db.deleteObjectStore('queue');
+      db.createObjectStore('queue', { keyPath: 'id' }).createIndex('seq', 'seq');
     },
   });
   return dbPromise;
+};
+
+let lastSeq = 0;
+
+/**
+ * Số thứ tự tăng dần, không bao giờ lặp trong một phiên và vẫn tăng qua các
+ * lần mở app (phần nguyên là mốc thời gian).
+ */
+export const nextSeq = (): number => {
+  const now = Date.now() * 1_000;
+  lastSeq = now > lastSeq ? now : lastSeq + 1;
+  return lastSeq;
 };

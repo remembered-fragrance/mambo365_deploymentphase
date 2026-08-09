@@ -6,6 +6,7 @@ import {
   formatVnd,
   formatVndShort,
   formatWeight,
+  groupThousands,
 } from '@/core/format';
 import { fromKg, toKg, weightUnitLabel } from '@/core/weight';
 
@@ -31,6 +32,26 @@ describe('formatVndShort — hiển thị gọn trên thẻ tổng quan', () => 
 
   it('số âm vẫn rút gọn được', () => {
     expect(formatVndShort(-1_438_000)).toBe('-1,4tr');
+  });
+});
+
+describe('groupThousands — ngăn nghìn ngay khi đang gõ', () => {
+  it('gõ 74000000 thì thấy 74.000.000, không phải một dãy số liền', () => {
+    expect(groupThousands('74000000')).toBe('74.000.000');
+  });
+
+  it('đang gõ dấu phẩy thì dấu phẩy KHÔNG biến mất', () => {
+    expect(groupThousands('1')).toBe('1');
+    expect(groupThousands('1,')).toBe('1,');
+    expect(groupThousands('1,5')).toBe('1,5');
+  });
+
+  it('ô trống thì để trống, không hiện số 0', () => {
+    expect(groupThousands('')).toBe('');
+  });
+
+  it('phần nguyên dài vẫn ngăn đúng, phần lẻ giữ nguyên', () => {
+    expect(groupThousands('1234567,89')).toBe('1.234.567,89');
   });
 });
 

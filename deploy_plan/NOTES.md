@@ -33,15 +33,19 @@ sinh, đa thiết bị, đổi tài khoản). Logic của cả bảy đều đã
 
 ## Cho giai đoạn D — App lõi
 
-- [ ] (từ GĐ C) Nối `onExportBackup` thật vào `<ErrorBoundary>` — giờ đã có store để lấy dữ liệu ra file.
-- [ ] (từ GĐ C) Màn hình phải vẽ được `status.pendingCount` và `syncState: 'conflict'`. Thao tác kẹt sau 5 lần thử vẫn nằm trong hàng đợi và **phải hiện cho người dùng**, không im lặng.
-- [ ] (từ GĐ A) Viết `features/shared/useMoneyField.ts`: gộp `parseNumber` + `formatVnd` + `moneyToVietnameseWords` thành `{ value, display, hint, onValueChange }` để đưa thẳng vào `<NumInput>` / `<Numpad>`. Hai component này cố tình **không** biết parse số (luật ranh giới components → core là ❌).
-- [ ] (từ GĐ A) Ánh xạ `settings.displayMode` (`normal`/`outdoor`) sang `data-theme` (`day`/`sun`). Theme `night` đã có token trong `index.css` nhưng **chưa có chỗ chọn** — chỉ bật khi có màn hình Cài đặt.
-- [ ] (từ GĐ A) `CropMeta` không còn field `badge` (class Tailwind lẫn trong `core/`). Màu theo loại cây phải do `components/` quyết định từ token.
+*(đã xong)*
 
 ## Cho giai đoạn E — Phần còn lại
 
+- [ ] 🔴 (từ GĐ D) **Màn đăng nhập / đăng ký.** Tầng dữ liệu đã có `signIn` · `signUp` · `signOut` trong `useStore`, chỉ thiếu màn hình. Chưa có màn thì app dùng "tài khoản của máy này" (`data/deviceAccount.ts`) — sổ vẫn ghi và vẫn còn sau khi tắt app, nhưng không đồng bộ đi đâu. Làm màn đăng nhập xong phải có đường **nhập sổ của máy vào tài khoản** để người dùng thử trước không mất dữ liệu.
+- [ ] 🔴 (từ GĐ D) Hai ô trên thanh dưới đang để **mờ**: `Công nợ` và `Thêm`. Vị trí đã giữ chỗ (`bar: 3` và `bar: 4` trong `features/shared/navItems.ts`), chỉ việc bỏ `disabled` khi màn hình có thật.
+- [ ] (từ GĐ D) Nối `onExportBackup` thật vào `<ErrorBoundary>` — cần `useStore` ở ngoài `<StoreProvider>` nên phải làm bằng một hàm đăng ký, không phải hook.
+- [ ] (từ GĐ D) Vẽ `status.pendingCount` và `syncState: 'conflict'` lên danh sách phiếu. Thao tác kẹt sau 5 lần thử vẫn nằm trong hàng đợi và **phải hiện cho người dùng**; hiện mới chỉ có `<SyncBadge>` ở header.
+- [ ] (từ GĐ D) `AttachmentPicker` — `data/attachments.ts` và `useAttachmentUrl` đã xong ở giai đoạn C nhưng **chưa có màn nào gọi**. Phiếu chưa đính ảnh được.
+- [ ] (từ GĐ D) Hẹn ngày trả (`creditTerms`) chưa có ô nhập; kiểu và mapper đã có sẵn.
+- [ ] (từ GĐ D) `MasterDetail` đã dựng nhưng danh sách Phiếu còn điều hướng sang trang riêng ở mọi bề rộng. Bật pane chi tiết ở ≥1440px khi làm màn Công nợ (cùng một khuôn).
 - [ ] (từ GĐ A) Dựng lại `seed.ts` cho **chế độ trình diễn**: nút "Dùng thử với dữ liệu mẫu" + banner "Đang xem dữ liệu mẫu — [Xoá hết và bắt đầu thật]". Giai đoạn A đã bỏ hẳn seed tự động (L1); không được nhét lại vào đường đọc dữ liệu.
+- [ ] (từ GĐ D) Bộ ký hiệu bốn nông sản của Tuyến — `CropIcon` trong `components/ui/icons.tsx` đang là hình tạm nét đơn, cùng lưới 24px nên thay được mà không đổi bố cục.
 
 ## Cho giai đoạn F — Kinh doanh
 

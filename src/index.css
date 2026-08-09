@@ -117,9 +117,30 @@ body {
   min-height: 3rem;
 }
 
+/* ─── In ─────────────────────────────────────────────────────────────────────
+   Biên nhận in ra phải giống hệt khổ giấy nhiệt 80mm: một cột, đen trên trắng.
+   Ẩn hết khung app, không nền màu, không đổ bóng.
+   ────────────────────────────────────────────────────────────────────────── */
 @media print {
   .no-print {
     display: none !important;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .receipt-voucher {
+    max-width: none;
+    background: #ffffff;
+    color: #000000;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .receipt-voucher tr {
+    break-inside: avoid;
   }
 }
 

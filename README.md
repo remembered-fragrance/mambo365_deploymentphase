@@ -49,9 +49,22 @@ Luật được ép bằng máy trong [`.dependency-cruiser.cjs`](.dependency-cr
 
 ## Bốn số phải giữ trong tầm
 
-| Chỉ số | Ngưỡng | Hiện tại |
+| Chỉ số | Ngưỡng | Hiện tại (hết giai đoạn D) |
 |---|---|---|
-| JS khởi tạo | ≤ 250KB gzip | 76KB |
-| File dài nhất trong `src/` | ≤ 300 dòng | 271 |
+| JS khởi tạo | ≤ 250KB gzip | 88KB |
+| File dài nhất trong `src/` | ≤ 300 dòng | 276 |
 | Phủ test `core/` | ≥ 80% dòng | 97% |
 | Lighthouse mobile | Perf ≥85 · A11y ≥95 | đo cuối mỗi giai đoạn |
+
+## Chạy tới đâu rồi
+
+| Giai đoạn | Trạng thái |
+|---|---|
+| A — Nền móng | ✅ |
+| B — Backend | ✅ trong repo; phần cần tài khoản Supabase xem [supabase/VAN_HANH.md](supabase/VAN_HANH.md) |
+| C — Tầng dữ liệu | ✅ trong repo; bảy kịch bản đồng bộ cần thiết bị thật |
+| D — App lõi | ✅ Tổng quan · Phiếu · Tạo phiếu · Chi tiết phiếu |
+| E → H | chưa làm |
+
+Chưa cấu hình `VITE_SUPABASE_*` thì app chạy hoàn toàn cục bộ bằng "tài khoản
+của máy này": sổ vẫn ghi được và vẫn còn sau khi tắt app, chỉ chưa đồng bộ.

@@ -10,7 +10,7 @@
  */
 
 import { newId } from '@/core/id';
-import { openLocalDb, type QueuedOp } from './localDb';
+import { nextSeq, openLocalDb, type QueuedOp } from './localDb';
 import type { TableName } from './rows';
 
 export type { OpKind, QueuedOp } from './localDb';
@@ -42,8 +42,27 @@ export const MAX_TRIES = RETRY_DELAYS_MS.length + 1;
 
 export const enqueue = async (op: NewOp): Promise<QueuedOp> => {
   const now = new Date().toISOString();
-  const queued: QueuedOp = { ...op, id: newId(), createdAt: now, tries: 0, nextAttemptAt: now };
+  const queued: QueuedOp = {
+    ...op,
+    id: newId(),
+    seq: nextSeq(),
+    createdAt: now,
+    tries: 0,
+    nextAttemptAt: now,
+  };
   const db = await openLocalDb();
+
+  // Gõ mười lần vào một ô nháp thì chỉ cần đẩy lên bản cuối. Gộp các lần sửa
+  // chưa gửi của CÙNG một bản ghi lại — người dùng dùng 3G, mỗi lượt gửi thừa
+  // là một lần chờ.
+  if (op.kind === 'update') {
+    for (const existing of await db.getAll('queue')) {
+      if (existing.kind === 'update' && existing.table === op.table && existing.recordId === op.recordId) {
+        await db.delete('queue', existing.id);
+      }
+    }
+  }
+
   await db.put('queue', queued);
   return queued;
 };
@@ -55,7 +74,7 @@ export const enqueue = async (op: NewOp): Promise<QueuedOp> => {
  */
 export const pendingOps = async (): Promise<QueuedOp[]> => {
   const db = await openLocalDb();
-  return db.getAllFromIndex('queue', 'createdAt');
+  return db.getAllFromIndex('queue', 'seq');
 };
 
 export const pendingCount = async (): Promise<number> => {

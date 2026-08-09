@@ -235,8 +235,13 @@ export interface Note {
 
 export interface AppSettings {
   readonly defaultWeightUnit: WeightUnit;
-  /** 'outdoor' tăng cỡ chữ và độ tương phản cho môi trường ngoài trời/nắng */
-  readonly displayMode: 'normal' | 'outdoor';
+  /**
+   * Chế độ xem:
+   *  'normal'  — trong nhà
+   *  'outdoor' — ngoài nắng: chữ to hơn, tương phản cao hơn, vùng chạm lớn hơn
+   *  'night'   — buổi tối, nền tối
+   */
+  readonly displayMode: 'normal' | 'outdoor' | 'night';
 }
 
 // ─── AppData ─────────────────────────────────────────────────────────────────
