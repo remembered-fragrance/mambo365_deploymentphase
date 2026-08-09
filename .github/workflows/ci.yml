@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Kiểm kiểu
+        run: npm run typecheck
+
+      - name: Luật dự án (README §3)
+        run: npm run rules
+
+      - name: Ranh giới tầng (README §3.1)
+        run: npm run boundaries
+
+      - name: Test core/ (phủ ≥80%)
+        run: npm run test
+
+      - name: Build
+        run: npm run build

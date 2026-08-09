@@ -1,0 +1,158 @@
+@import 'tailwindcss';
+
+/* ─── Token "Sổ Vựa" ─────────────────────────────────────────────────────────
+   Bảng màu giấy — không dùng trắng tinh, vì màn hình đọc ngoài nắng.
+   Không rải giá trị màu trong component: chỉ dùng tên token ở đây.
+   ────────────────────────────────────────────────────────────────────────── */
+@theme {
+  --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+
+  --color-paper: #edeae3;
+  --color-card: #fbf9f5;
+  --color-ink: #1a1714;
+  --color-ink-2: #554e44;
+  --color-ink-3: #8b8175;
+  --color-rule: #d6d0c4;
+  --color-brand: #14663c;
+  --color-in: #14663c;
+  --color-out: #7c3aed;
+  --color-receivable: #0e6e7a;
+  --color-payable: #9a3412;
+  --color-alert: #a81e2e;
+
+  --density-row-h: 3.25rem;
+  --density-gap: 1rem;
+}
+
+/* ─── Ba chế độ xem ──────────────────────────────────────────────────────────
+   day   — mặc định, trong nhà
+   sun   — ngoài nắng: chữ to hơn, tương phản cao hơn, vùng chạm lớn hơn
+   night — buổi tối, nền tối
+   ────────────────────────────────────────────────────────────────────────── */
+:root[data-theme='sun'] {
+  --color-paper: #fffdf7;
+  --color-card: #ffffff;
+  --color-ink: #000000;
+  --color-ink-2: #2a2520;
+  --color-ink-3: #55504a;
+  --color-rule: #a9a396;
+  --color-brand: #0d4f2c;
+  --color-in: #0d4f2c;
+  --color-out: #5b21b6;
+  --color-receivable: #0a5560;
+  --color-payable: #7c2d12;
+  --color-alert: #8a0f1e;
+
+  --density-row-h: 3.75rem;
+  --density-gap: 1.25rem;
+
+  font-size: 112.5%;
+}
+
+:root[data-theme='night'] {
+  --color-paper: #14120f;
+  --color-card: #1f1c18;
+  --color-ink: #f2efe8;
+  --color-ink-2: #cdc6b9;
+  --color-ink-3: #9a9184;
+  --color-rule: #3a352e;
+  --color-brand: #4bb37d;
+  --color-in: #4bb37d;
+  --color-out: #b794f6;
+  --color-receivable: #4fc0cd;
+  --color-payable: #e08d5c;
+  --color-alert: #f0788a;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── Utility dùng chung ─────────────────────────────────────────────────── */
+@utility num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+@utility card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-rule);
+  border-radius: 0.875rem;
+}
+
+@utility input-base {
+  width: 100%;
+  min-height: var(--density-row-h);
+  padding: 0.625rem 0.875rem;
+  background-color: var(--color-card);
+  color: var(--color-ink);
+  border: 1px solid var(--color-rule);
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  outline: none;
+
+  &:focus-visible {
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-brand) 25%, transparent);
+  }
+
+  &::placeholder {
+    color: var(--color-ink-3);
+  }
+}
+
+/* Vùng chạm tối thiểu — tay đeo găng, ngón cái, đi lại ngoài sân */
+:root[data-theme='sun'] button,
+:root[data-theme='sun'] a[role='button'],
+:root[data-theme='sun'] [data-interactive] {
+  min-height: 3rem;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* ─── Bảng trượt từ dưới lên ─────────────────────────────────────────────── */
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.sheet-backdrop {
+  animation: sheet-fade 0.18s ease-out;
+}
+
+.sheet-panel {
+  animation: sheet-up 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-backdrop,
+  .sheet-panel {
+    animation: none;
+  }
+}
