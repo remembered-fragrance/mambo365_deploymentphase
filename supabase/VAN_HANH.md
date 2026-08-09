@@ -84,7 +84,23 @@ curl "https://<ref>.supabase.co/rest/v1/transactions?user_id=eq.<id-cua-B>" \
 # Phải trả về []  — KHÔNG phải 500, KHÔNG phải dữ liệu của B
 ```
 
-## 6. Đặt lại mật khẩu thủ công
+## 6. Kịch bản đồng bộ — chạy tay trên thiết bị thật
+
+Logic của cả bảy kịch bản đều đã có test tự động (`tests/data/queue.test.ts`,
+`tests/data/mergeChanges.test.ts`), nhưng test không thay được một lần chạy thật
+trên điện thoại có sóng chập chờn. Ghi lại kết quả từng dòng.
+
+| # | Kịch bản | Phải ra |
+|---|---|---|
+| 1 | Tắt mạng, tạo 3 phiếu, bật mạng | Lên đủ 3, không trùng, không mất |
+| 2 | Tắt mạng, tạo 2 phiếu, **đóng hẳn app**, mở lại, bật mạng | Cả 2 vẫn lên |
+| 3 | Bấm "Hoàn thành" hai lần liên tiếp khi mạng chậm | **Chỉ một** phiếu |
+| 4 | Máy A offline ghi trả 3tr · máy B online ghi trả 5tr · A online lại | Cả hai khoản còn, tổng đúng 8tr |
+| 5 | Máy A xoá phiếu · máy B offline sửa đúng phiếu đó rồi online | Phiếu **vẫn xoá** |
+| 6 | Tạo phiếu trên điện thoại | Thấy trên máy tính trong vòng 5 giây |
+| 7 | Đăng xuất, đăng nhập tài khoản khác | **Không** thấy dữ liệu tài khoản trước |
+
+## 7. Đặt lại mật khẩu thủ công
 
 Chỉ dành cho người dùng **không khai email**. Đọc quy tắc xác minh danh tính
 ghi ngay trong `../scripts/admin-reset-password.ts` trước khi chạy — làm đủ,

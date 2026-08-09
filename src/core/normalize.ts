@@ -47,7 +47,7 @@ export const normalizeProducts = (raw: unknown): Product[] => {
   const incoming = asRecords(raw).map((p): Product => {
     const crop = cropFrom(p.crop);
     return {
-      id: String(p.id || newId('prod')),
+      id: String(p.id || newId()),
       name: String(p.name || productNameFromCrop(crop)).trim(),
       unit: String(p.unit || 'kg'),
       formulaType: formulaFrom(p.formulaType),
@@ -73,9 +73,9 @@ export const normalizeProducts = (raw: unknown): Product[] => {
 
 // ─── Đối tác ─────────────────────────────────────────────────────────────────
 
-const normalizeParty = <T extends Supplier | Buyer>(raw: Record<string, unknown>, prefix: string): T =>
+const normalizeParty = <T extends Supplier | Buyer>(raw: Record<string, unknown>): T =>
   ({
-    id: String(raw.id || newId(prefix)),
+    id: String(raw.id || newId()),
     name: String(raw.name || '').trim(),
     phone: text(raw.phone),
     location: text(raw.location),
@@ -87,7 +87,7 @@ const normalizeParty = <T extends Supplier | Buyer>(raw: Record<string, unknown>
 const normalizeDraft = (raw: Record<string, unknown>): DraftReceipt => {
   const now = new Date().toISOString();
   return {
-    id: String(raw.id || newId('draft')),
+    id: String(raw.id || newId()),
     status: raw.status === 'waiting' ? 'waiting' : 'draft',
     kind: raw.kind === 'sale' ? 'sale' : raw.kind === 'purchase' ? 'purchase' : undefined,
     counterpartyId: text(raw.counterpartyId),
@@ -107,7 +107,7 @@ const normalizeDraft = (raw: Record<string, unknown>): DraftReceipt => {
 const normalizeNote = (raw: Record<string, unknown>): Note => {
   const now = new Date().toISOString();
   return {
-    id: String(raw.id || newId('note')),
+    id: String(raw.id || newId()),
     body: String(raw.body || ''),
     pinned: Boolean(raw.pinned),
     done: Boolean(raw.done),
@@ -122,8 +122,8 @@ export const normalize = (raw: unknown): AppData => {
   if (!raw || typeof raw !== 'object') return emptyData();
   const d = raw as Record<string, unknown>;
   return {
-    suppliers: asRecords(d.suppliers).map((s) => normalizeParty<Supplier>(s, 'sup')),
-    buyers: asRecords(d.buyers).map((b) => normalizeParty<Buyer>(b, 'buy')),
+    suppliers: asRecords(d.suppliers).map((s) => normalizeParty<Supplier>(s)),
+    buyers: asRecords(d.buyers).map((b) => normalizeParty<Buyer>(b)),
     products: normalizeProducts(d.products),
     transactions: asRecords(d.transactions).map(normalizeTransaction),
     drafts: asRecords(d.drafts).map(normalizeDraft),

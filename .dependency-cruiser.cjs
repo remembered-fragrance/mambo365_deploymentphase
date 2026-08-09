@@ -38,10 +38,12 @@ module.exports = {
     },
     {
       name: 'features-khong-cham-data-truc-tiep',
-      comment: 'features/ chạm tầng dữ liệu qua đúng một cửa: useStore.',
+      comment:
+        'features/ chạm tầng dữ liệu qua useStore và các hook trong data/hooks/. ' +
+        'Không import client, cache, queue hay sync trực tiếp.',
       severity: 'error',
       from: { path: '^src/features/' },
-      to: { path: '^src/data/', pathNot: '^src/data/useStore\\.ts$' },
+      to: { path: '^src/data/', pathNot: '^src/data/(useStore\\.ts|hooks/)' },
     },
     {
       name: 'features-nap-export-dong',

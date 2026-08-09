@@ -56,7 +56,7 @@ export const normalizeLine = (raw: Record<string, unknown>, freeze = true): Tran
   const productName = String(raw.productName || productNameFromCrop(crop)).trim() || 'Mặt hàng';
   const price = num(raw.pricePerUnit ?? raw.pricePerKg);
   const line: TransactionLine = {
-    id: String(raw.id || newId('line')),
+    id: String(raw.id || newId()),
     crop,
     productId: raw.productId ? String(raw.productId) : undefined,
     productName,
@@ -76,7 +76,7 @@ export const normalizeLine = (raw: Record<string, unknown>, freeze = true): Tran
 };
 
 export const normalizePayment = (raw: Record<string, unknown>): Payment => ({
-  id: String(raw.id || newId('pay')),
+  id: String(raw.id || newId()),
   date: String(raw.date || new Date().toISOString()),
   amount: num(raw.amount),
   note: raw.note ? String(raw.note) : undefined,
@@ -88,7 +88,7 @@ const normalizeCreditTerm = (raw: Record<string, unknown>): CreditTerm => ({
 });
 
 const normalizeAdjustment = (raw: Record<string, unknown>): PriceAdjustment => ({
-  id: String(raw.id || newId('adj')),
+  id: String(raw.id || newId()),
   kind: ADJUSTMENT_KINDS.includes(raw.kind as PriceAdjustment['kind'])
     ? (raw.kind as PriceAdjustment['kind'])
     : 'manual',
@@ -108,11 +108,11 @@ export const normalizeTransaction = (raw: Record<string, unknown>): Transaction 
   const payments: Payment[] = rawPayments
     ? rawPayments.map((p) => normalizePayment(p as Record<string, unknown>))
     : legacyAmountPaid > 0
-      ? [{ id: newId('pay'), date, amount: legacyAmountPaid }]
+      ? [{ id: newId(), date, amount: legacyAmountPaid }]
       : [];
 
   const common = {
-    id: String(raw.id || newId('tx')),
+    id: String(raw.id || newId()),
     date,
     supplierId,
     supplierName,

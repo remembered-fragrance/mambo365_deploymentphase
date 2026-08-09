@@ -23,15 +23,18 @@ không bịa. `counterparty_id uuid` mới là nguồn sự thật về đối t
 
 ## Cho giai đoạn C — Tầng dữ liệu
 
-- [ ] (từ GĐ A) `data/useStore.ts` là **cửa duy nhất** features chạm tầng dữ liệu — tên file này đã được ghi cứng vào `.dependency-cruiser.cjs`, đổi tên thì phải sửa cả luật.
-- [ ] (từ GĐ A) Nối `onExportBackup` thật vào `<ErrorBoundary>` (hiện là prop tuỳ chọn, chưa có gì để cứu vì chưa có store).
-- [ ] (từ GĐ A) `core/normalize.ts` đã sẵn sàng: tầng dữ liệu chỉ việc `normalize(JSON.parse(...))`, không tự viết lại migration.
-- [ ] 🔴 (từ GĐ B) **`core/id.ts` phải sinh UUID thuần.** Hiện `newId('tx')` ra `tx-<uuid>` — không lọt được vào cột `uuid` của schema. Sửa khi viết mapper, kèm test.
-- [ ] 🔴 (từ GĐ B) Khách lẻ: `transactions.counterparty_id` là NULL khi không có hồ sơ đối tác. Mapper phải đổi sentinel `guest` / `guest-buyer` của `core/` thành NULL khi ghi, và ngược lại khi đọc. Đừng để sentinel lọt xuống database.
-- [ ] (từ GĐ B) `transactions` **không có** cột `amount_paid`. Mapper đọc phải `select *, payments(*)` rồi tự tính `amountPaid = sum(payments)`.
+*(đã xong — mọi mục đều đã làm)*
+
+Còn treo vì cần tài khoản Supabase và hai thiết bị thật, ghi ở
+`supabase/VAN_HANH.md` và mục "Kịch bản đồng bộ" của nó: bảy kịch bản nghiệm thu
+§5 (offline, tắt app giữa chừng, chống trùng, hai máy trả nợ, xoá không hồi
+sinh, đa thiết bị, đổi tài khoản). Logic của cả bảy đều đã có test tự động ở
+`tests/data/`, nhưng test không thay được một lần chạy thật.
 
 ## Cho giai đoạn D — App lõi
 
+- [ ] (từ GĐ C) Nối `onExportBackup` thật vào `<ErrorBoundary>` — giờ đã có store để lấy dữ liệu ra file.
+- [ ] (từ GĐ C) Màn hình phải vẽ được `status.pendingCount` và `syncState: 'conflict'`. Thao tác kẹt sau 5 lần thử vẫn nằm trong hàng đợi và **phải hiện cho người dùng**, không im lặng.
 - [ ] (từ GĐ A) Viết `features/shared/useMoneyField.ts`: gộp `parseNumber` + `formatVnd` + `moneyToVietnameseWords` thành `{ value, display, hint, onValueChange }` để đưa thẳng vào `<NumInput>` / `<Numpad>`. Hai component này cố tình **không** biết parse số (luật ranh giới components → core là ❌).
 - [ ] (từ GĐ A) Ánh xạ `settings.displayMode` (`normal`/`outdoor`) sang `data-theme` (`day`/`sun`). Theme `night` đã có token trong `index.css` nhưng **chưa có chỗ chọn** — chỉ bật khi có màn hình Cài đặt.
 - [ ] (từ GĐ A) `CropMeta` không còn field `badge` (class Tailwind lẫn trong `core/`). Màu theo loại cây phải do `components/` quyết định từ token.

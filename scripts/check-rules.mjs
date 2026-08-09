@@ -94,9 +94,20 @@ const main = async () => {
     /\b(localStorage|sessionStorage)\b/.test(line),
   );
 
+  // C §4.3 — supabase chỉ tồn tại trong src/data/
+  scan(
+    all.filter((p) => !p.startsWith('src/data/')),
+    'supabase ngoài src/data/ — tầng khác không được biết dữ liệu đến từ đâu',
+    (line) => /supabase/i.test(line),
+    { skipComments: true },
+  );
+
   // §3.7 — cấm any
-  scan(all, 'kiểu any — dùng kiểu thật hoặc unknown rồi thu hẹp', (line) =>
-    /:\s*any\b|<any>|as any\b/.test(line),
+  scan(
+    all,
+    'kiểu any — dùng kiểu thật hoặc unknown rồi thu hẹp',
+    (line) => /:\s*any\b|<any>|as any\b/.test(line),
+    { skipComments: true },
   );
 
   // §3.3 — kích thước và tên file
