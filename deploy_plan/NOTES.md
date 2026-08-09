@@ -15,13 +15,20 @@ Mẫu: `- [ ] (từ GĐ A) Mô tả việc — lý do — file liên quan`
 
 ## Cho giai đoạn B — Backend
 
-- [ ] (từ GĐ A) Quyết dứt điểm `Transaction.supplierId`: giữ bắt buộc và thêm cột `supplier_id text`, hay đổi thành optional trong `core/types.ts`. Không để mapper bịa giá trị.
+*(trống — mọi việc trong repo đã xong; phần cần tài khoản Supabase ghi ở `supabase/VAN_HANH.md`)*
+
+**Đã quyết ở GĐ B:** giữ `Transaction.supplierId` bắt buộc trong `core/types.ts`
+và thêm cột `transactions.supplier_id text` (nullable). Mapper ghi thẳng giá trị,
+không bịa. `counterparty_id uuid` mới là nguồn sự thật về đối tác.
 
 ## Cho giai đoạn C — Tầng dữ liệu
 
 - [ ] (từ GĐ A) `data/useStore.ts` là **cửa duy nhất** features chạm tầng dữ liệu — tên file này đã được ghi cứng vào `.dependency-cruiser.cjs`, đổi tên thì phải sửa cả luật.
 - [ ] (từ GĐ A) Nối `onExportBackup` thật vào `<ErrorBoundary>` (hiện là prop tuỳ chọn, chưa có gì để cứu vì chưa có store).
 - [ ] (từ GĐ A) `core/normalize.ts` đã sẵn sàng: tầng dữ liệu chỉ việc `normalize(JSON.parse(...))`, không tự viết lại migration.
+- [ ] 🔴 (từ GĐ B) **`core/id.ts` phải sinh UUID thuần.** Hiện `newId('tx')` ra `tx-<uuid>` — không lọt được vào cột `uuid` của schema. Sửa khi viết mapper, kèm test.
+- [ ] 🔴 (từ GĐ B) Khách lẻ: `transactions.counterparty_id` là NULL khi không có hồ sơ đối tác. Mapper phải đổi sentinel `guest` / `guest-buyer` của `core/` thành NULL khi ghi, và ngược lại khi đọc. Đừng để sentinel lọt xuống database.
+- [ ] (từ GĐ B) `transactions` **không có** cột `amount_paid`. Mapper đọc phải `select *, payments(*)` rồi tự tính `amountPaid = sum(payments)`.
 
 ## Cho giai đoạn D — App lõi
 
