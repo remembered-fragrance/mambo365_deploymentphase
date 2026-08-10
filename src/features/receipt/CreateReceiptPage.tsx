@@ -10,6 +10,8 @@ import { newId } from '@/core/id';
 import type { TransactionKind } from '@/core/types';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { HelpButton } from '../help/HelpButton';
+import { FirstReceiptCoach } from '../onboarding/FirstReceiptCoach';
 import { ROUTES } from '../shared/navItems';
 import { CounterpartyPicker } from './CounterpartyPicker';
 import { LineEditor } from './LineEditor';
@@ -62,8 +64,8 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
     setParams(next);
   };
 
-  const finish = (amountPaid: number) => {
-    const tx = receipt.finish(amountPaid);
+  const finish = (amountPaid: number, dueDate?: string) => {
+    const tx = receipt.finish(amountPaid, dueDate);
     if (!tx) return;
     setPayPartOpen(false);
     toast({ message: `${L.total}: ${formatVnd(amountPaid)} · ${tx.supplierName}` });
@@ -77,9 +79,15 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
       <PageHeader
         title={kind === 'sale' ? L.createSale : L.createPurchase}
         actions={
-          <Button onClick={() => navigate(ROUTES.receipts)}>{L.navReceipts}</Button>
+          <>
+            <HelpButton topic="create" />
+            <Button onClick={() => navigate(ROUTES.receipts)}>{L.navReceipts}</Button>
+          </>
         }
       />
+
+      {/* Hướng dẫn bốn bước — chỉ hiện một lần, ngay trên màn hình nó nói về. */}
+      <FirstReceiptCoach />
 
       <div className="mb-3 lg:hidden">
         <SessionRail
@@ -131,8 +139,10 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
           <MoreInfoPanel
             adjustments={receipt.adjustments}
             note={receipt.note}
+            attachmentIds={receipt.attachmentIds}
             onAdjustmentsChange={receipt.setAdjustments}
             onNoteChange={receipt.setNote}
+            onAttachmentsChange={receipt.setAttachmentIds}
           />
         </div>
 

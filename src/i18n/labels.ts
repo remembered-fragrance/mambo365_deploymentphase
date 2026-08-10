@@ -2,14 +2,20 @@
  * MỘT chỗ duy nhất chứa mọi chuỗi hiển thị.
  *
  * Giọng văn: nói như ngoài chợ, không nói như phần mềm.
- * - Không viết tắt kép ("KL/SL cân" → "Cân được").
+ * - Không viết tắt kép: viết "Cân được", không viết tắt hai chữ dính nhau.
  * - Nếu buộc phải dùng thuật ngữ kế toán (Tồn kho, Công nợ, Báo cáo thuế) thì
  *   phải có dòng phụ đề giải thích bằng lời thường — xem `SUB`.
  *
  * Luật: không viết chuỗi tiếng Việt thẳng vào JSX. Mọi chữ đi qua đây.
+ *
+ * `L` gộp từ ba mảnh — một file duy nhất sẽ vượt 300 dòng, mà đó cũng là luật
+ * của dự án. Nơi dùng vẫn chỉ có một: `import { L } from '@/i18n/labels'`.
  */
 
-export const L = {
+import { ONBOARDING_LABELS } from './onboardingLabels';
+import { SCREEN_LABELS } from './screenLabels';
+
+const BASE = {
   // ─── Nhận dạng ─────────────────────────────────────────────────────────────
   appName: 'THUMUA365',
   purchaseReceipt: 'Phiếu thu mua',
@@ -102,8 +108,13 @@ export const L = {
   del: 'Xoá',
   retry: 'Thử lại',
   reload: 'Tải lại',
-  exportBackup: 'Lưu ra file',
-  importBackup: 'Lấy lại từ file',
+  exportToFile: 'Lưu ra file',
+  importFromFile: 'Lấy lại từ file',
+  add: 'Thêm',
+  dueDate: 'Hẹn ngày trả',
+  addPhoto: 'Thêm ảnh',
+  photoFull: 'Đủ số ảnh cho một phiếu rồi',
+  removePhoto: 'Bỏ ảnh này',
   sendZalo: 'Gửi Zalo',
   print: 'In',
   callPhone: 'Gọi điện',
@@ -146,6 +157,8 @@ export const L = {
   syncOfflineBanner: 'Đang làm việc không có mạng',
   syncOfflineDetail: 'Phiếu vẫn ghi bình thường, có mạng lại sẽ tự gửi đi.',
   syncStuck: 'Có phiếu chưa gửi được',
+  rowPending: 'Chưa gửi',
+  rowConflict: 'Cần xem lại',
 
   // ─── Tổng quan ────────────────────────────────────────────────────────────
   spentToday: 'Đã chi mua hôm nay',
@@ -215,6 +228,8 @@ export const L = {
   notFoundTitle: 'Không có trang này',
   emptyTitle: 'Chưa có gì ở đây',
 } as const;
+
+export const L = { ...BASE, ...SCREEN_LABELS, ...ONBOARDING_LABELS } as const;
 
 /** Phụ đề giải thích cho các thuật ngữ buộc phải giữ. */
 export const SUB = {

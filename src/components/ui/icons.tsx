@@ -85,6 +85,31 @@ export const PencilIcon = (p: IconProps) => (
   <Icon {...p} d="M4 20h4L20 8l-4-4L4 16z|M14 6l4 4" />
 );
 
+export const BoxIcon = (p: IconProps) => (
+  <Icon {...p} d="M4 8l8-4 8 4v8l-8 4-8-4z|M4 8l8 4 8-4|M12 12v8" />
+);
+export const TagIcon = (p: IconProps) => (
+  <Icon {...p} d="M4 12V4h8l8 8-8 8z|M8 8h.01" />
+);
+export const PercentIcon = (p: IconProps) => (
+  <Icon {...p} d="M6 18L18 6|M7.5 6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z|M16.5 15a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z" />
+);
+export const ChartIcon = (p: IconProps) => (
+  <Icon {...p} d="M4 20h16|M7 20V10|M12 20V4|M17 20v-7" />
+);
+export const ToolIcon = (p: IconProps) => (
+  <Icon {...p} d="M6 3h12v18H6z|M9 7h6|M9 11h.01M12 11h.01M15 11h.01M9 15h.01M12 15h.01M15 15h3" />
+);
+export const UserIcon = (p: IconProps) => (
+  <Icon {...p} d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8z|M4 21a8 8 0 0 1 16 0" />
+);
+export const PeopleIcon = (p: IconProps) => (
+  <Icon {...p} d="M9 4a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z|M2 20a7 7 0 0 1 14 0|M16 5a3.5 3.5 0 0 1 0 7|M18 20h4a6 6 0 0 0-4-5.7" />
+);
+export const HelpIcon = (p: IconProps) => (
+  <Icon {...p} d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z|M9.5 9.5a2.5 2.5 0 1 1 3 2.4V14|M12 17.5v.01" />
+);
+
 /** Hình tạm cho bốn nông sản. Thay bằng bộ ký hiệu chính thức khi có. */
 export const CropIcon = ({ crop, className }: IconProps & { readonly crop?: string }) => {
   const paths: Record<string, string> = {

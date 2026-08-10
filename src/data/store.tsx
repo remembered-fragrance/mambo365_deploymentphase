@@ -145,6 +145,19 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         show(emptyData());
       },
 
+      updateProfile: async (patch) => {
+        const supabase = getSupabase();
+        if (!supabase || !userId) throw new Error('Chưa cấu hình máy chủ');
+        await auth.updateProfile(supabase, userId, patch);
+        setUser((current) => (current ? { ...current, ...patch } : current));
+      },
+
+      changePassword: async (password) => {
+        const supabase = getSupabase();
+        if (!supabase) throw new Error('Chưa cấu hình máy chủ');
+        await auth.changePassword(supabase, password);
+      },
+
       syncNow: kickSync,
     }),
     [data, status, user, userId, commit, kickSync, show],

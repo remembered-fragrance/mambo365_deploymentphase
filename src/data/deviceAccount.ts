@@ -11,6 +11,23 @@ import type { UserProfile } from '@/core/types';
 
 const DEVICE_KEY = 'thumua365:device-account';
 
+/**
+ * Đọc tài khoản của máy mà KHÔNG tạo mới.
+ *
+ * Dùng khi chỉ muốn biết "máy này từng ghi sổ khi chưa đăng nhập chưa" — hỏi
+ * bằng `deviceAccount()` sẽ tự sinh ra một tài khoản máy rỗng và câu trả lời
+ * luôn là "rồi".
+ */
+export const peekDeviceAccount = (): UserProfile | null => {
+  const saved = localStorage.getItem(DEVICE_KEY);
+  if (!saved) return null;
+  try {
+    return JSON.parse(saved) as UserProfile;
+  } catch {
+    return null;
+  }
+};
+
 export const deviceAccount = (): UserProfile => {
   const saved = localStorage.getItem(DEVICE_KEY);
   if (saved) {

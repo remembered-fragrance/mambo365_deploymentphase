@@ -231,16 +231,83 @@ chỉ đẩy lên một lượt. Người dùng đang dùng 3G, mỗi lượt g�
 
 ---
 
+## Giai đoạn E — Phần còn lại & onboarding · 10/08/2026
+
+**Kết quả:** đủ tính năng. Mười một màn hình mới, ma trận parity 18/18.
+
+### Làm gì
+
+- **Công nợ** (`/cong-no`): máy tính hai cột song song, điện thoại một cột có
+  tab. Lọc "Quá hạn" và thứ tự **quá hạn trước, rồi tiền nhiều trước**.
+- **Tồn kho** (`/ton-kho`): `DataView` thay bảng cuộn ngang; thêm giá vốn bình
+  quân và giá trị tồn.
+- **Đối tác**: một `PartnerListPage` nhận `role`, hai route. Sửa/xoá được từ
+  danh sách, số điện thoại là liên kết `tel:`.
+- **Mặt hàng** + **Quy tắc giá** (`/quy-tac-gia`): một `PricingRuleEditor` duy
+  nhất cho cả hai lối vào, có dòng xem trước trên đơn mẫu 1 tấn × 20.000đ.
+- **Báo cáo · Tiện ích · Tài khoản · Thêm · Đăng nhập** và phần **đón người
+  dùng mới**: màn hình chào ba thẻ, hướng dẫn bốn bước, nút "?" mọi trang,
+  chế độ trình diễn.
+- **Tìm nhanh** `Ctrl/⌘ K` — dòng #15 của ma trận, chức năng duy nhất hoàn toàn
+  mới. Gõ không dấu vẫn ra tên có dấu.
+
+### Ba quyết định đáng ghi
+
+1. **Thêm đúng ba action vào `StoreValue`**: `updateSupplier` · `deleteSupplier`
+   (KH Frontend §7.7 cho phép sẵn) và **`removePayment`**. Cái thứ ba không nằm
+   trong kế hoạch nhưng E §3.1 bắt buộc "Trả đủ" phải hoàn tác được trong 8
+   giây, mà `payments` là bảng chỉ ghi thêm. Chọn **xoá mềm khoản trả** thay vì
+   ghi một khoản âm: sổ nợ của chủ vựa không có khái niệm "trả âm", và một dòng
+   −5.000.000₫ trong lịch sử là thứ không giải thích được khi đối chiếu.
+2. **Bỏ hẳn lớp phủ mờ khi quy tắc giá tắt.** Kế hoạch bảo thêm
+   `pointer-events-none` cho lớp phủ; thay vào đó trạng thái bật/tắt là một cái
+   nút thật. Không còn lớp phủ thì không còn lỗi tắt-xong-không-bật-lại-được.
+3. **Ô hẹn ngày trả nằm trong hộp thoại "Ghi nợ & xong"**, không nằm trong form
+   phiếu. Hẹn ngày chỉ có nghĩa khi phiếu còn nợ, và `DraftReceipt` không có
+   trường `creditTerms` — để ở form thì gõ xong chuyển khách là mất.
+
+### Chuyện nhỏ mà phải sửa
+
+- `labels.ts` chạm trần 300 dòng ⇒ tách `screenLabels.ts` +
+  `onboardingLabels.ts`, `L` gộp ba mảnh. Nơi dùng vẫn chỉ có một.
+- Đổi tên `exportBackup`/`onExportBackup` → `exportToFile`/`onExportFile`.
+  Tiêu chí E §5 yêu cầu `grep "Backup" src/` rỗng, mà chữ đó có từ giai đoạn A.
+- `DataView` học thêm **sắp xếp theo cột** (`sortValue` + `SortState`) — dùng ở
+  Đối tác, Mặt hàng, Quy tắc giá.
+
+### Chạy thật đã kiểm
+
+| Việc | Kết quả |
+|---|---|
+| Sổ rỗng | Ra **màn hình chào**, không phải trang trắng |
+| Bật dữ liệu mẫu | Banner đỏ + cờ `thumua365:demo`; "Xoá hết" → sổ rỗng sạch |
+| Công nợ | Quá hạn xếp trước dù nợ ít hơn (3,6tr trước 1,7tr) |
+| "Trả đủ" rồi "Hoàn tác" | 4.152.000 → 2.464.000 → **4.152.000** |
+| Tắt quy tắc giá rồi bật lại | Bật lại được |
+| Sửa tên nông hộ từ danh sách | Tên mới hiện ngay trên bảng |
+| `tel:` | `tel:0912345678` thật, không phải chữ |
+| Tìm nhanh "co mai" | Ra "Cô Mai" trước, rồi tới phiếu của cô |
+| 375px và 320px, 12 route | **Không route nào cuộn ngang** |
+| ≥1440px, danh sách Phiếu | Pane chi tiết mở bên phải, URL mang `?xem=` |
+
+### 🔴 Chưa kiểm được
+
+Đăng nhập/đăng ký, đổi mật khẩu, sửa hồ sơ và "đưa sổ của máy vào tài khoản"
+**chưa chạy lần nào** — cả bốn cần tài khoản Supabase thật. Logic đã viết,
+đường đi đã nối, nhưng chưa có gì chứng minh. Bảng kiểm ở `supabase/VAN_HANH.md`.
+
+---
+
 ## Bốn số phải giữ trong tầm
 
-Đo lúc kết thúc giai đoạn D.
+Đo lúc kết thúc giai đoạn E.
 
-| Chỉ số | Ngưỡng | Hiện tại |
-|---|---|---|
-| JS khởi tạo | ≤ 250KB gzip | **88KB** |
-| File dài nhất trong `src/` | ≤ 300 dòng | **276** |
-| Phủ test `core/` | ≥ 80% dòng | **97%** (262 test) |
-| Lighthouse mobile | Perf ≥85 · A11y ≥95 | **chưa đo** |
+| Chỉ số | Ngưỡng | Cuối D | Cuối E |
+|---|---|---|---|
+| JS khởi tạo | ≤ 250KB gzip | 88KB | **89KB** |
+| File dài nhất trong `src/` | ≤ 300 dòng | 276 | **276** |
+| Phủ test `core/` | ≥ 80% dòng | 97% (262 test) | **97%** (310 test) |
+| Lighthouse mobile | Perf ≥85 · A11y ≥95 | chưa đo | **chưa đo** |
 
 `npm run verify` chạy đủ 5 bước: lint → typecheck → luật dự án → ranh giới tầng
 → test. Tất cả xanh.

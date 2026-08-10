@@ -51,6 +51,24 @@ export const addBuyer = (
   return { data: { ...data, buyers: [...data.buyers, buyer] }, buyer };
 };
 
+/**
+ * Sửa hồ sơ người bán. Phiếu cũ KHÔNG đổi theo: `supplierName` trên phiếu là
+ * tên tại thời điểm lập, và phiếu đã in ra giấy rồi.
+ */
+export const updateSupplier = (data: AppData, id: string, patch: Partial<Supplier>): AppData => ({
+  ...data,
+  suppliers: data.suppliers.map((s) => (s.id === id ? { ...s, ...patch, id: s.id } : s)),
+});
+
+/**
+ * Xoá hồ sơ người bán. Phiếu của họ ở lại — xoá hồ sơ là dọn danh bạ, không
+ * phải xoá lịch sử mua bán.
+ */
+export const deleteSupplier = (data: AppData, supplierId: string): AppData => ({
+  ...data,
+  suppliers: data.suppliers.filter((s) => s.id !== supplierId),
+});
+
 export const updateBuyer = (data: AppData, id: string, patch: Partial<Buyer>): AppData => ({
   ...data,
   buyers: data.buyers.map((b) => (b.id === id ? { ...b, ...patch, id: b.id } : b)),

@@ -37,19 +37,26 @@ sinh, đa thiết bị, đổi tài khoản). Logic của cả bảy đều đã
 
 ## Cho giai đoạn E — Phần còn lại
 
-- [ ] 🔴 (từ GĐ D) **Màn đăng nhập / đăng ký.** Tầng dữ liệu đã có `signIn` · `signUp` · `signOut` trong `useStore`, chỉ thiếu màn hình. Chưa có màn thì app dùng "tài khoản của máy này" (`data/deviceAccount.ts`) — sổ vẫn ghi và vẫn còn sau khi tắt app, nhưng không đồng bộ đi đâu. Làm màn đăng nhập xong phải có đường **nhập sổ của máy vào tài khoản** để người dùng thử trước không mất dữ liệu.
-- [ ] 🔴 (từ GĐ D) Hai ô trên thanh dưới đang để **mờ**: `Công nợ` và `Thêm`. Vị trí đã giữ chỗ (`bar: 3` và `bar: 4` trong `features/shared/navItems.ts`), chỉ việc bỏ `disabled` khi màn hình có thật.
-- [ ] (từ GĐ D) Nối `onExportBackup` thật vào `<ErrorBoundary>` — cần `useStore` ở ngoài `<StoreProvider>` nên phải làm bằng một hàm đăng ký, không phải hook.
-- [ ] (từ GĐ D) Vẽ `status.pendingCount` và `syncState: 'conflict'` lên danh sách phiếu. Thao tác kẹt sau 5 lần thử vẫn nằm trong hàng đợi và **phải hiện cho người dùng**; hiện mới chỉ có `<SyncBadge>` ở header.
-- [ ] (từ GĐ D) `AttachmentPicker` — `data/attachments.ts` và `useAttachmentUrl` đã xong ở giai đoạn C nhưng **chưa có màn nào gọi**. Phiếu chưa đính ảnh được.
-- [ ] (từ GĐ D) Hẹn ngày trả (`creditTerms`) chưa có ô nhập; kiểu và mapper đã có sẵn.
-- [ ] (từ GĐ D) `MasterDetail` đã dựng nhưng danh sách Phiếu còn điều hướng sang trang riêng ở mọi bề rộng. Bật pane chi tiết ở ≥1440px khi làm màn Công nợ (cùng một khuôn).
-- [ ] (từ GĐ A) Dựng lại `seed.ts` cho **chế độ trình diễn**: nút "Dùng thử với dữ liệu mẫu" + banner "Đang xem dữ liệu mẫu — [Xoá hết và bắt đầu thật]". Giai đoạn A đã bỏ hẳn seed tự động (L1); không được nhét lại vào đường đọc dữ liệu.
-- [ ] (từ GĐ D) Bộ ký hiệu bốn nông sản của Tuyến — `CropIcon` trong `components/ui/icons.tsx` đang là hình tạm nét đơn, cùng lưới 24px nên thay được mà không đổi bố cục.
+*(đã xong — mọi mục đều đã làm)*
+
+Còn treo vì cần thứ ngoài repo:
+
+- [ ] Bộ ký hiệu bốn nông sản của Tuyến — `CropIcon` trong `components/ui/icons.tsx`
+  vẫn là hình tạm nét đơn, cùng lưới 24px nên thay được mà không đổi bố cục.
+  Các biểu tượng thêm ở giai đoạn E (hộp, nhãn, phần trăm, biểu đồ, người…) cũng
+  cùng bộ tạm đó.
+- [ ] Đăng nhập · đăng ký · đổi mật khẩu · sửa hồ sơ · "đưa sổ của máy vào tài
+  khoản": đã viết đủ nhưng **chưa chạy lần nào**, cần tài khoản Supabase thật.
 
 ## Cho giai đoạn F — Kinh doanh
 
 - [ ] (từ GĐ B) Gắn `has_active_sync()` vào policy ghi của các bảng nghiệp vụ — hàm viết ở B nhưng **chưa gắn**, vì gắn sớm thì giai đoạn C không ghi được gì.
+- [ ] (từ GĐ E) Bảng `payments` cần policy cho **xoá mềm**: nút "Hoàn tác" của
+  màn Công nợ đẩy lên một thao tác `soft-delete` trên `payments`, mà migration
+  `0005_rls` cố tình không có policy DELETE. Kiểm lại xem thao tác này đi qua
+  đường `update deleted_at` có được RLS cho phép không.
+- [ ] (từ GĐ E) Giới hạn 30 phiếu/tháng của gói Free chưa có chỗ nào chặn —
+  `FREE_RECEIPTS_PER_MONTH` trong `config.ts` mới chỉ là con số.
 
 ## Cho giai đoạn G — Site & pháp lý
 
@@ -79,3 +86,5 @@ sinh, đa thiết bị, đổi tài khoản). Logic của cả bảy đều đã
 | Chưa có Realtime | Kéo theo `updated_at` đủ cho pilot | Khi người dùng phàn nàn về độ trễ đa thiết bị |
 | `roundToThousand(-1500) = -1000` — số âm làm tròn về phía số lớn hơn | Hành vi có từ bản demo, nay đã có test khoá lại. Chỉ ảnh hưởng khoản **trừ bớt** lẻ dưới 1.000đ | Khi nhóm kinh doanh chốt quy ước làm tròn cho khoản trừ — quyết định nghiệp vụ, không phải lỗi kỹ thuật |
 | `supplierId` vẫn nằm trong `Transaction` dù đã dùng `counterpartyId` | Cần để đọc dữ liệu v1/v2 | Khi không còn tài khoản nào mang dữ liệu trước v3 |
+| Hướng dẫn bốn bước là bảng trượt, không phải mũi tên chỉ vào từng ô | Mũi tên phải bám vị trí thật của phần tử, mà bố cục đổi theo bề rộng và theo chế độ Ngoài nắng — sai một lần là hướng dẫn thành thứ gây rối | Khi có người thật thử mà không tự tạo được phiếu đầu tiên trong 3 phút |
+| Ảnh minh hoạ trong sheet "?" là biểu tượng phóng to, chưa phải ảnh chụp màn hình | Ảnh thật phải chụp lại mỗi lần đổi giao diện, mà giao diện còn đổi tới lúc phát hành | Sau khi khoá giao diện ở giai đoạn H |

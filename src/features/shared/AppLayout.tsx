@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppShell, AppTopbar } from '@/components/layout/AppShell';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -7,9 +7,13 @@ import { SidebarNav } from '@/components/layout/SidebarNav';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
 import { OfflineBanner, SyncBadge, type SyncTone } from '@/components/feedback/SyncBadge';
-import { MoonIcon, SunIcon } from '@/components/ui/icons';
+import { MoonIcon, SearchIcon, SunIcon } from '@/components/ui/icons';
+import { overdueCount } from '@/core/debtSelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { DemoBanner } from '../onboarding/DemoBanner';
+import { CommandPalette } from '../search/CommandPalette';
+import { useBookRescue } from './bookFile';
 import { navGroups, navItems, ROUTES } from './navItems';
 import { useTheme } from './useTheme';
 
@@ -30,6 +34,16 @@ const PAGE_TITLE: Record<string, string> = {
   [ROUTES.dashboard]: L.navDashboard,
   [ROUTES.receipts]: L.navReceipts,
   [ROUTES.create]: L.createReceipt,
+  [ROUTES.debts]: L.navDebts,
+  [ROUTES.inventory]: L.navInventory,
+  [ROUTES.suppliers]: L.navSuppliers,
+  [ROUTES.buyers]: L.navBuyers,
+  [ROUTES.products]: L.navProducts,
+  [ROUTES.pricing]: L.navPricing,
+  [ROUTES.reports]: L.taxReport,
+  [ROUTES.utilities]: L.navUtilities,
+  [ROUTES.profile]: L.navProfile,
+  [ROUTES.more]: L.navMore,
 };
 
 export function AppLayout({ children }: { readonly children: ReactNode }) {
@@ -38,10 +52,27 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const drafts = data.drafts.filter((d) => d.status === 'draft');
-  const items = navItems(drafts.length);
+  const counts = { drafts: drafts.length, overdue: overdueCount(data) };
+  const items = navItems(counts);
   const tone = syncTone(status.pendingCount, status.error);
+
+  useBookRescue(data);
+
+  // Ctrl/⌘ K — phím tắt duy nhất của app. Người dùng máy tính mong có nó,
+  // người dùng điện thoại có nút kính lúp ngay trên header.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const startReceipt = useCallback(
     (kind: 'purchase' | 'sale') => {
@@ -62,6 +93,17 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
     </button>
   );
 
+  const searchButton = (
+    <button
+      type="button"
+      onClick={() => setSearchOpen(true)}
+      aria-label={`${L.searchTitle} (${L.searchShortcut})`}
+      className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-ink-2"
+    >
+      <SearchIcon />
+    </button>
+  );
+
   const badge = <SyncBadge tone={tone} label={SYNC_LABEL[tone]} />;
 
   return (
@@ -70,7 +112,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
         sidebar={
           <SidebarNav
             appName={L.appName}
-            groups={navGroups(drafts.length)}
+            groups={navGroups(counts)}
             primaryActions={
               <>
                 <Button tone="primary" block onClick={() => startReceipt('purchase')}>
@@ -84,18 +126,32 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
             footer={badge}
           />
         }
-        topbar={<AppTopbar actions={themeToggle} syncBadge={badge} />}
+        topbar={
+          <AppTopbar
+            actions={
+              <>
+                {searchButton}
+                {themeToggle}
+              </>
+            }
+            syncBadge={badge}
+          />
+        }
         mobileHeader={
           <MobileHeader
             title={PAGE_TITLE[pathname] ?? L.appName}
             themeToggle={themeToggle}
+            actions={searchButton}
             syncBadge={badge}
           />
         }
         banner={
-          status.error ? (
-            <OfflineBanner message={L.syncOfflineBanner} detail={L.syncOfflineDetail} />
-          ) : undefined
+          <>
+            <DemoBanner />
+            {status.error && (
+              <OfflineBanner message={L.syncOfflineBanner} detail={L.syncOfflineDetail} />
+            )}
+          </>
         }
         bottomNav={
           <BottomNav
@@ -130,6 +186,8 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
           </Button>
         </div>
       </BottomSheet>
+
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { Input } from '@/components/ui/Input';
 import { formatVnd } from '@/core/format';
 import { parseNumber } from '@/core/parseNumber';
 import { L } from '@/i18n/labels';
@@ -9,13 +10,19 @@ import { NumberField } from '../shared/NumberField';
 interface PayPartDialogProps {
   readonly open: boolean;
   readonly total: number;
-  readonly onConfirm: (amountPaid: number) => void;
+  readonly onConfirm: (amountPaid: number, dueDate?: string) => void;
   readonly onCancel: () => void;
 }
 
-/** "Ghi nợ & xong" — mở đúng một ô, mặc định để trống nghĩa là chưa trả đồng nào. */
+/**
+ * "Ghi nợ & xong" — mở đúng một ô tiền, để trống nghĩa là chưa trả đồng nào.
+ *
+ * Ô hẹn ngày trả nằm ở ĐÂY chứ không nằm trong form phiếu: hẹn ngày chỉ có
+ * nghĩa khi phiếu còn nợ, và đây đúng là giây phút khoản nợ hình thành.
+ */
 export function PayPartDialog({ open, total, onConfirm, onCancel }: PayPartDialogProps) {
   const [amount, setAmount] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const paid = Math.min(parseNumber(amount), total);
 
   return (
@@ -31,7 +38,21 @@ export function PayPartDialog({ open, total, onConfirm, onCancel }: PayPartDialo
           {L.remainingDebt}: <span className="font-bold text-payable">{formatVnd(total - paid)}</span>
         </p>
 
-        <Button tone="primary" size="lg" block onClick={() => onConfirm(paid)}>
+        {paid < total && (
+          <Input
+            label={L.dueDate}
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
+        )}
+
+        <Button
+          tone="primary"
+          size="lg"
+          block
+          onClick={() => onConfirm(paid, dueDate || undefined)}
+        >
           {L.confirm}
         </Button>
       </div>

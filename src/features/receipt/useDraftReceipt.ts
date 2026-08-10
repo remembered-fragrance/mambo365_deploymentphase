@@ -37,7 +37,8 @@ export interface DraftReceiptState {
   setAdjustments: (next: readonly PriceAdjustment[]) => void;
   setNote: (note: string) => void;
   setAttachmentIds: (ids: readonly string[]) => void;
-  finish: (amountPaid: number) => Transaction | null;
+  /** `dueDate` chỉ có nghĩa khi phiếu còn nợ — xem `PayPartDialog`. */
+  finish: (amountPaid: number, dueDate?: string) => Transaction | null;
   discard: () => void;
 }
 
@@ -109,13 +110,14 @@ export function useDraftReceipt(
   }, []);
 
   const finish = useCallback(
-    (amountPaid: number): Transaction | null => {
+    (amountPaid: number, dueDate?: string): Transaction | null => {
       const usable = lines.filter(isUsable).map(toLine);
       if (usable.length === 0) return null;
 
       finished.current = true;
       if (timer.current) clearTimeout(timer.current);
 
+      const debt = linesTotal + adjustmentTotal - amountPaid;
       const tx = addTransaction({
         date: new Date().toISOString(),
         kind,
@@ -126,6 +128,10 @@ export function useDraftReceipt(
         amountPaid,
         payments: [],
         adjustments: adjustments.length > 0 ? adjustments : undefined,
+        creditTerms:
+          dueDate && debt > 0
+            ? [{ dueDate: new Date(dueDate).toISOString(), amount: debt }]
+            : undefined,
         note: note || undefined,
         attachmentIds: attachmentIds.length > 0 ? [...attachmentIds] : undefined,
       });
@@ -133,7 +139,20 @@ export function useDraftReceipt(
       if (id) deleteDraft(id);
       return tx;
     },
-    [lines, addTransaction, kind, counterpartyId, partyName, adjustments, note, attachmentIds, id, deleteDraft],
+    [
+      lines,
+      addTransaction,
+      kind,
+      counterpartyId,
+      partyName,
+      adjustments,
+      adjustmentTotal,
+      linesTotal,
+      note,
+      attachmentIds,
+      id,
+      deleteDraft,
+    ],
   );
 
   return {

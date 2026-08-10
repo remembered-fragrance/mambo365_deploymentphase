@@ -9,7 +9,7 @@ interface ErrorBoundaryProps {
    * Lối thoát quan trọng nhất: cứu dữ liệu ra file trước khi làm gì khác.
    * Tuỳ chọn vì tầng dữ liệu chỉ có từ giai đoạn C — trước đó chưa có gì để cứu.
    */
-  readonly onExportBackup?: () => void;
+  readonly onExportFile?: () => void;
 }
 
 interface ErrorBoundaryState {
@@ -46,8 +46,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <Button tone="primary" onClick={() => window.location.reload()}>
                 {L.reload}
               </Button>
-              {this.props.onExportBackup && (
-                <Button onClick={this.props.onExportBackup}>{L.exportBackup}</Button>
+              {this.props.onExportFile && (
+                <Button onClick={this.props.onExportFile}>{L.exportToFile}</Button>
               )}
             </>
           }

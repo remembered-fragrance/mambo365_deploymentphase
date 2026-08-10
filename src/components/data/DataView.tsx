@@ -4,7 +4,9 @@ import {
   HIDE_BELOW,
   pickColumn,
   pickColumns,
+  sortRows,
   type Column,
+  type SortState,
 } from './dataViewModel';
 
 interface DataViewProps<TRow> {
@@ -15,7 +17,13 @@ interface DataViewProps<TRow> {
   readonly onRowClick?: (row: TRow) => void;
   readonly selectedKey?: string;
   readonly empty?: ReactNode;
+  /** Có cả `sort` lẫn `onSortChange` thì tiêu đề cột bấm được để đổi thứ tự. */
+  readonly sort?: SortState;
+  readonly onSortChange?: (sort: SortState) => void;
 }
+
+const ARIA_SORT = (active: boolean, desc: boolean): 'ascending' | 'descending' | 'none' =>
+  active ? (desc ? 'descending' : 'ascending') : 'none';
 
 /**
  * Khai báo cột MỘT lần, hai hình thái: bảng ở ≥md, thẻ ở <md.
@@ -32,8 +40,12 @@ export function DataView<TRow>({
   onRowClick,
   selectedKey,
   empty,
+  sort,
+  onSortChange,
 }: DataViewProps<TRow>) {
   if (rows.length === 0 && empty) return <>{empty}</>;
+
+  const ordered = sortRows(rows, columns, sort);
 
   return (
     <>
@@ -41,21 +53,37 @@ export function DataView<TRow>({
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr className="border-b border-rule text-left text-xs uppercase tracking-wide text-ink-3">
-            {columns.map((col) => (
-              <th
-                key={col.id}
-                scope="col"
-                className={`px-3 py-2 font-bold ${col.align === 'right' ? 'text-right' : ''} ${
-                  col.hideBelow ? HIDE_BELOW[col.hideBelow] : ''
-                }`}
-              >
-                {col.header}
-              </th>
-            ))}
+            {columns.map((col) => {
+              const sortable = col.sortValue !== undefined && onSortChange !== undefined;
+              const active = sort?.columnId === col.id;
+              return (
+                <th
+                  key={col.id}
+                  scope="col"
+                  aria-sort={sortable ? ARIA_SORT(active, sort?.desc ?? false) : undefined}
+                  className={`px-3 py-2 font-bold ${col.align === 'right' ? 'text-right' : ''} ${
+                    col.hideBelow ? HIDE_BELOW[col.hideBelow] : ''
+                  }`}
+                >
+                  {sortable ? (
+                    <button
+                      type="button"
+                      onClick={() => onSortChange({ columnId: col.id, desc: active ? !sort?.desc : true })}
+                      className={`min-h-8 uppercase ${active ? 'text-brand' : ''}`}
+                    >
+                      {col.header}
+                      <span aria-hidden="true">{active ? (sort?.desc ? ' ↓' : ' ↑') : ''}</span>
+                    </button>
+                  ) : (
+                    col.header
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
+          {ordered.map((row) => {
             const key = getKey(row);
             return (
               <tr
@@ -83,7 +111,7 @@ export function DataView<TRow>({
       </table>
 
       <ul className="flex flex-col gap-2 md:hidden">
-        {rows.map((row) => (
+        {ordered.map((row) => (
           <li key={getKey(row)}>
             <RowCard row={row} columns={columns} caption={caption} onRowClick={onRowClick} />
           </li>

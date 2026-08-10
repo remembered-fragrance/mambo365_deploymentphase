@@ -23,3 +23,12 @@ export const UNDO_MS = 8_000;
 
 /** Mật khẩu tối thiểu — cho phép toàn số, vì tệp người dùng gõ trên bàn phím số. */
 export const MIN_PASSWORD_LENGTH = 6;
+
+/** Số phiên bản hiện lên màn Tài khoản — hỏi qua điện thoại là biết ngay bản nào. */
+export const APP_VERSION = '1.0.0';
+
+/** Kênh liên lạc mà tệp người dùng này thật sự dùng. */
+export const SUPPORT_ZALO = '0912345678';
+
+/** Cách bao nhiêu ngày thì nhắc lại việc bổ sung email lấy lại mật khẩu. */
+export const EMAIL_REMINDER_DAYS = 7;

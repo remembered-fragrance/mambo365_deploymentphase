@@ -3,6 +3,7 @@ import {
   addTransaction,
   deleteTransaction,
   recordPayment,
+  removePayment,
   updateTransactionAttachments,
 } from '@/core/receiptActions';
 import { transactionTotals } from '@/core/calc';
@@ -120,6 +121,40 @@ describe('recordPayment — ghi trả nợ', () => {
     expect(recordPayment(book, transaction.id, 0).payment).toBeNull();
     expect(recordPayment(book, transaction.id, -5_000).payment).toBeNull();
     expect(recordPayment(book, 'khong-co-phieu-nay', 100_000).payment).toBeNull();
+  });
+});
+
+describe('hoàn tác một lần trả tiền', () => {
+  const withDebt = () => addTransaction(data(), input({ amountPaid: 400_000 }));
+
+  it('bỏ đúng khoản vừa ghi, nợ quay về như cũ', () => {
+    const { data: book, transaction } = withDebt();
+    const debtBefore = transactionTotals(transaction).debt;
+
+    const paid = recordPayment(book, transaction.id, 600_000);
+    expect(paid.payment).not.toBeNull();
+
+    const undone = removePayment(paid.data, transaction.id, paid.payment?.id ?? '');
+    const after = undone.transactions.find((t) => t.id === transaction.id);
+
+    expect(after?.amountPaid).toBe(400_000);
+    expect(transactionTotals(after ?? transaction).debt).toBe(debtBefore);
+  });
+
+  it('không ghi khoản âm — lịch sử trả tiền chỉ có số dương', () => {
+    const { data: book, transaction } = withDebt();
+    const paid = recordPayment(book, transaction.id, 600_000);
+    const undone = removePayment(paid.data, transaction.id, paid.payment?.id ?? '');
+    const after = undone.transactions.find((t) => t.id === transaction.id);
+
+    expect(after?.payments.every((p) => p.amount > 0)).toBe(true);
+    expect(after?.payments).toHaveLength(1);
+  });
+
+  it('id không tồn tại thì sổ không đổi số', () => {
+    const { data: book, transaction } = withDebt();
+    const after = removePayment(book, transaction.id, 'khong-co-khoan-nay');
+    expect(after.transactions.find((t) => t.id === transaction.id)?.amountPaid).toBe(400_000);
   });
 });
 

@@ -19,7 +19,15 @@ const toTheme = (displayMode: string): ThemeName =>
 const toDisplayMode = (theme: ThemeName): 'normal' | 'outdoor' | 'night' =>
   theme === 'sun' ? 'outdoor' : theme === 'night' ? 'night' : 'normal';
 
-export function useTheme(): { theme: ThemeName; cycleTheme: () => void } {
+export interface Theme {
+  readonly theme: ThemeName;
+  /** Nút ☀ ở header: bấm là sang chế độ kế tiếp, không cần mở cài đặt. */
+  readonly cycleTheme: () => void;
+  /** Màn Tài khoản chọn thẳng một chế độ. */
+  readonly setTheme: (theme: ThemeName) => void;
+}
+
+export function useTheme(): Theme {
   const { data, updateSettings } = useStore();
   const theme = toTheme(data.settings.displayMode);
 
@@ -27,10 +35,15 @@ export function useTheme(): { theme: ThemeName; cycleTheme: () => void } {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  const setTheme = useCallback(
+    (next: ThemeName) => updateSettings({ displayMode: toDisplayMode(next) }),
+    [updateSettings],
+  );
+
   const cycleTheme = useCallback(() => {
     const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length] ?? 'day';
-    updateSettings({ displayMode: toDisplayMode(next) });
-  }, [theme, updateSettings]);
+    setTheme(next);
+  }, [theme, setTheme]);
 
-  return { theme, cycleTheme };
+  return { theme, cycleTheme, setTheme };
 }

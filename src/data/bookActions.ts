@@ -32,12 +32,15 @@ export type BookActions = Pick<
   StoreValue,
   | 'addTransaction'
   | 'addSupplier'
+  | 'updateSupplier'
+  | 'deleteSupplier'
   | 'addProduct'
   | 'updateProduct'
   | 'upsertDraft'
   | 'deleteDraft'
   | 'completeDraft'
   | 'recordPayment'
+  | 'removePayment'
   | 'updateTransactionAttachments'
   | 'deleteTransaction'
   | 'addNote'
@@ -79,6 +82,16 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
     const result = parties.addSupplier(before, input);
     commit(result.data, derivedOps(before, result.data, uid));
     return result.supplier;
+  },
+
+  updateSupplier: (id, patch) => {
+    const next = parties.updateSupplier(book(), id, patch);
+    const supplier = next.suppliers.find((s) => s.id === id);
+    commit(next, supplier ? [opUpdate('suppliers', id, partyToRow(supplier, uid))] : []);
+  },
+
+  deleteSupplier: (supplierId) => {
+    commit(parties.deleteSupplier(book(), supplierId), [opSoftDelete('suppliers', supplierId)]);
   },
 
   addBuyer: (input) => {
@@ -143,9 +156,18 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
 
   recordPayment: (txId, amount) => {
     const result = receipts.recordPayment(book(), txId, amount);
-    if (!result.payment) return;
+    if (!result.payment) return null;
     commit(result.data, [
       opInsert('payments', result.payment.id, paymentToRow(result.payment, txId, uid)),
+    ]);
+    // Trả về lần trả vừa ghi để màn Công nợ hoàn tác đúng khoản đó, không phải
+    // "khoản cuối cùng" — hai máy cùng ghi thì khoản cuối chưa chắc là của mình.
+    return result.payment;
+  },
+
+  removePayment: (txId, paymentId) => {
+    commit(receipts.removePayment(book(), txId, paymentId), [
+      opSoftDelete('payments', paymentId),
     ]);
   },
 

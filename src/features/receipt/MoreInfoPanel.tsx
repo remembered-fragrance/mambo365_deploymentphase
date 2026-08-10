@@ -6,13 +6,16 @@ import { formatVnd } from '@/core/format';
 import type { PriceAdjustment } from '@/core/types';
 import { L } from '@/i18n/labels';
 import { NumberField } from '../shared/NumberField';
+import { AttachmentPicker } from './AttachmentPicker';
 import { parseNumber } from '@/core/parseNumber';
 
 interface MoreInfoPanelProps {
   readonly adjustments: readonly PriceAdjustment[];
   readonly note: string;
+  readonly attachmentIds: readonly string[];
   readonly onAdjustmentsChange: (next: readonly PriceAdjustment[]) => void;
   readonly onNoteChange: (note: string) => void;
+  readonly onAttachmentsChange: (ids: readonly string[]) => void;
 }
 
 /**
@@ -25,8 +28,10 @@ interface MoreInfoPanelProps {
 export function MoreInfoPanel({
   adjustments,
   note,
+  attachmentIds,
   onAdjustmentsChange,
   onNoteChange,
+  onAttachmentsChange,
 }: MoreInfoPanelProps) {
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState('');
@@ -91,6 +96,8 @@ export function MoreInfoPanel({
       </div>
 
       <Input label={L.note} value={note} onChange={(e) => onNoteChange(e.target.value)} />
+
+      <AttachmentPicker ids={attachmentIds} onChange={onAttachmentsChange} />
     </div>
   );
 }

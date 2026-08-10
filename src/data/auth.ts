@@ -92,6 +92,41 @@ export const signOut = async (supabase: SupabaseClient): Promise<void> => {
   await supabase.auth.signOut();
 };
 
+export interface ProfilePatch {
+  readonly name?: string;
+  readonly businessName?: string;
+  readonly email?: string;
+}
+
+/**
+ * Sửa hồ sơ vựa. KHÔNG đụng tới số điện thoại: nó là khoá đăng nhập, đổi số
+ * là việc phải xác minh chứ không phải sửa một ô trong form.
+ */
+export const updateProfile = async (
+  supabase: SupabaseClient,
+  userId: string,
+  patch: ProfilePatch,
+): Promise<void> => {
+  const row: Record<string, string | null> = {};
+  if (patch.name !== undefined) row.name = patch.name.trim();
+  if (patch.businessName !== undefined) row.business_name = patch.businessName.trim() || null;
+  if (patch.email !== undefined) {
+    const email = patch.email.trim().toLowerCase();
+    row.recovery_email = email && detectIdentifierKind(email) === 'email' ? email : null;
+  }
+
+  const { error } = await supabase.from('profiles').update(row).eq('id', userId);
+  if (error) throw new Error(`Không lưu được hồ sơ: ${error.message}`);
+};
+
+export const changePassword = async (
+  supabase: SupabaseClient,
+  password: string,
+): Promise<void> => {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw new Error(`Không đổi được mật khẩu: ${error.message}`);
+};
+
 export const loadProfile = async (
   supabase: SupabaseClient,
   user: User,

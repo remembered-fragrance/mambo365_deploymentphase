@@ -10,11 +10,16 @@ import { inventoryByProduct } from '@/core/inventory';
 import { dailySpend, debtsBySupplier, salesSummaryFor, summaryFor } from '@/core/selectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { HelpButton } from '../help/HelpButton';
+import { WelcomeScreen } from '../onboarding/WelcomeScreen';
 import { ROUTES } from '../shared/navItems';
 import { TodayTasks } from './TodayTasks';
 
 export function DashboardPage() {
   const { data } = useStore();
+
+  // Sổ rỗng thì không vẽ một trang toàn số 0 — người mới cần biết bấm gì tiếp.
+  const empty = data.transactions.length === 0 && data.drafts.length === 0;
 
   const today = useMemo(() => summaryFor(data, 'today'), [data]);
   const week = useMemo(() => summaryFor(data, 'week'), [data]);
@@ -42,21 +47,23 @@ export function DashboardPage() {
         id: 'debts',
         count: debtsBySupplier(data).length,
         label: L.todoDebts,
-        to: `${ROUTES.receipts}?payment=unpaid`,
+        to: ROUTES.debts,
       },
       {
         id: 'stock',
         count: inventoryByProduct(data).filter((r) => r.stockKg < 0).length,
         label: L.todoNegativeStock,
-        to: ROUTES.receipts,
+        to: ROUTES.inventory,
       },
     ],
     [data],
   );
 
+  if (empty) return <WelcomeScreen />;
+
   return (
     <PageContainer width="wide">
-      <PageHeader title={L.navDashboard} />
+      <PageHeader title={L.navDashboard} actions={<HelpButton topic="dashboard" />} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         {/* Khối Hero duy nhất của trang — con số chủ vựa mở app ra để xem. */}

@@ -99,6 +99,23 @@ export const recordPayment = (
   };
 };
 
+/**
+ * Bỏ một lần trả tiền — dùng cho nút "Hoàn tác" sau khi bấm nhầm "Trả đủ".
+ *
+ * Bỏ hẳn khỏi danh sách chứ KHÔNG ghi thêm một khoản âm: sổ nợ của chủ vựa
+ * không có khái niệm "trả âm", và một dòng −5.000.000₫ trong lịch sử trả tiền
+ * là thứ không ai giải thích được khi đối chiếu với nông hộ. Phía máy chủ đây
+ * là xoá mềm, nên bản ghi vẫn còn để truy vết.
+ */
+export const removePayment = (data: AppData, txId: string, paymentId: string): AppData => ({
+  ...data,
+  transactions: data.transactions.map((t) => {
+    if (t.id !== txId) return t;
+    const payments = t.payments.filter((p) => p.id !== paymentId);
+    return { ...t, payments, amountPaid: sumPayments(payments) };
+  }),
+});
+
 export const updateTransactionAttachments = (
   data: AppData,
   txId: string,

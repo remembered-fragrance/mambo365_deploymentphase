@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { DataView } from '@/components/data/DataView';
+import { MasterDetail } from '@/components/data/MasterDetail';
 import type { Column } from '@/components/data/dataViewModel';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
@@ -16,7 +17,10 @@ import type { Transaction } from '@/core/types';
 import { useStore } from '@/data/useStore';
 import { useTransactionList } from '@/data/hooks/useTransactionList';
 import { L } from '@/i18n/labels';
+import { HelpButton } from '../help/HelpButton';
 import { ROUTES } from '../shared/navItems';
+import { useWideScreen } from '../shared/useWideScreen';
+import { ReceiptVoucher } from '../receiptDetail/ReceiptVoucher';
 import { DraftList } from './DraftList';
 import { ReceiptFilterSheet } from './ReceiptFilterSheet';
 import { receiptColumns } from './receiptColumns';
@@ -71,13 +75,16 @@ const selectionColumn = (
 });
 
 export function ReceiptsPage() {
-  const { data } = useStore();
+  const { data, user } = useStore();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selected, setSelected] = useState<readonly string[]>([]);
+  const wide = useWideScreen();
 
   const tab = (params.get('tab') as Tab | null) ?? 'done';
+  const previewId = params.get('xem');
+  const preview = wide ? data.transactions.find((t) => t.id === previewId) : undefined;
 
   const filters = useMemo<HistoryFilters>(
     () => ({
@@ -109,7 +116,7 @@ export function ReceiptsPage() {
     [rows],
   );
 
-  const patch = (next: Partial<HistoryFilters & { tab: Tab }>) => {
+  const patch = (next: Partial<HistoryFilters & { tab: Tab; xem: string }>) => {
     const merged = new URLSearchParams(params);
     for (const [key, value] of Object.entries(next)) {
       if (value === undefined) merged.delete(key);
@@ -130,6 +137,7 @@ export function ReceiptsPage() {
         title={L.navReceipts}
         actions={
           <>
+            <HelpButton topic="receipts" />
             <Button className="lg:hidden" onClick={() => setFilterOpen(true)}>
               <FilterIcon className="h-4 w-4" />
               {L.filterButton}
@@ -171,28 +179,49 @@ export function ReceiptsPage() {
       {tab === 'waiting' && <DraftList drafts={waiting} emptyTitle={L.noReceipts} />}
 
       {tab === 'done' && (
-        <>
-          {/* Dòng đối soát — dính khi cuộn, vì đây là con số người dùng cộng lại
-              để so với sổ giấy. */}
-          <p className="num sticky top-14 z-10 mb-2 rounded-lg border border-rule bg-card px-3 py-2 text-sm font-semibold text-ink-2 lg:top-16">
-            {total} {L.receiptsCount} · {formatWeight(totals.weight)} · {formatVnd(totals.money)}
-          </p>
+        <MasterDetail
+          list={
+            <>
+              {/* Dòng đối soát — dính khi cuộn, vì đây là con số người dùng cộng
+                  lại để so với sổ giấy. */}
+              <p className="num sticky top-14 z-10 mb-2 rounded-lg border border-rule bg-card px-3 py-2 text-sm font-semibold text-ink-2 lg:top-16">
+                {total} {L.receiptsCount} · {formatWeight(totals.weight)} ·{' '}
+                {formatVnd(totals.money)}
+              </p>
 
-          <DataView
-            rows={rows}
-            columns={[selectionColumn(selected, toggleSelected), ...columns]}
-            getKey={(tx) => tx.id}
-            caption={L.history}
-            onRowClick={(tx) => navigate(ROUTES.receiptDetail(tx.id))}
-            empty={<EmptyState title={L.noReceipts} description={L.noReceiptsHint} icon="🧾" />}
-          />
+              <DataView
+                rows={rows}
+                columns={[selectionColumn(selected, toggleSelected), ...columns]}
+                getKey={(tx) => tx.id}
+                caption={L.history}
+                selectedKey={preview?.id}
+                // Màn rộng: xem ngay ở pane bên phải. Màn hẹp: mở trang riêng.
+                onRowClick={(tx) =>
+                  wide ? patch({ xem: tx.id }) : navigate(ROUTES.receiptDetail(tx.id))
+                }
+                empty={<EmptyState title={L.noReceipts} description={L.noReceiptsHint} icon="🧾" />}
+              />
 
-          {hasMore && (
-            <div className="mt-3 flex justify-center">
-              <Button onClick={loadMore}>{L.loadMore}</Button>
-            </div>
-          )}
-        </>
+              {hasMore && (
+                <div className="mt-3 flex justify-center">
+                  <Button onClick={loadMore}>{L.loadMore}</Button>
+                </div>
+              )}
+            </>
+          }
+          detail={
+            preview && (
+              <div className="flex flex-col gap-3">
+                <ReceiptVoucher tx={preview} businessName={user?.businessName || L.businessNameFallback} />
+                <Button onClick={() => navigate(ROUTES.receiptDetail(preview.id))}>
+                  {L.receiptNumber}
+                </Button>
+              </div>
+            )
+          }
+          detailTitle={preview?.supplierName ?? ''}
+          onCloseDetail={() => patch({ xem: undefined })}
+        />
       )}
 
       <ReceiptFilterSheet

@@ -13,6 +13,19 @@ export const kindBadge = (tx: Transaction) =>
     <Badge tone="in" mark="↓" label={L.purchase} />
   );
 
+/**
+ * Phiếu chưa gửi lên được thì PHẢI hiện ra.
+ *
+ * Thanh trạng thái ở header chỉ nói "có mấy phiếu đang chờ"; nó không nói
+ * phiếu nào. Thao tác kẹt sau 5 lần thử vẫn nằm trong hàng đợi, và người dùng
+ * có quyền biết đó là phiếu của ai.
+ */
+const syncBadge = (tx: Transaction) => {
+  if (tx.syncState === 'conflict') return <Badge tone="alert" mark="!" label={L.rowConflict} />;
+  if (tx.syncState === 'pending') return <Badge tone="neutral" mark="↻" label={L.rowPending} />;
+  return null;
+};
+
 export const receiptColumns = (): Column<Transaction>[] => [
   {
     id: 'date',
@@ -62,5 +75,12 @@ export const receiptColumns = (): Column<Transaction>[] => [
     align: 'right',
     mobile: 'badge',
     hideBelow: 'lg',
+  },
+  {
+    id: 'sync',
+    header: L.syncPending,
+    cell: syncBadge,
+    align: 'right',
+    mobile: 'badge',
   },
 ];
