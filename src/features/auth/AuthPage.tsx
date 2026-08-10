@@ -24,6 +24,7 @@ export function AuthPage() {
   const [mode, setMode] = useState<Mode>('signIn');
   const [identifier, setIdentifier] = useState('');
   const [name, setName] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
@@ -33,7 +34,7 @@ export function AuthPage() {
     setError(undefined);
     try {
       if (mode === 'signIn') await signIn(identifier, password);
-      else await signUp({ name, phone: identifier, password });
+      else await signUp({ name, phone: identifier, password, referralCode });
     } catch (e) {
       setError(e instanceof Error ? e.message : L.authFailed);
     } finally {
@@ -82,6 +83,18 @@ export function AuthPage() {
                 if (e.key === 'Enter') void submit();
               }}
             />
+
+            {/* Mã mời để CUỐI và không bắt buộc: người đăng ký không có mã
+                không được phải nghĩ xem mình thiếu cái gì. */}
+            {mode === 'signUp' && (
+              <Input
+                label={L.referralAtSignUp}
+                value={referralCode}
+                hint={L.referralAtSignUpHint}
+                autoCapitalize="characters"
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+              />
+            )}
 
             <Button tone="primary" size="lg" block disabled={busy} onClick={submit}>
               {busy ? L.authWorking : mode === 'signIn' ? L.authSignIn : L.authSignUp}

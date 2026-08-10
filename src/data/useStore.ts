@@ -3,7 +3,8 @@
  *
  * 🔴 Chữ ký 22 action của bản demo KHÔNG ĐỔI. Giai đoạn E thêm ba action và
  * chỉ ba: updateSupplier · deleteSupplier (KH Frontend §7.7) và removePayment
- * (E §3.1 bắt buộc hoàn tác được). Mỗi lần thêm phải viết được lý do vào đây.
+ * (E §3.1 bắt buộc hoàn tác được). Giai đoạn F thêm hai: importSuppliers ·
+ * importReceipts. Mỗi lần thêm phải viết được lý do vào đây.
  *
  * 🔴 Không action nào trả Promise. Ghi vào máy là đồng bộ và trả kết quả ngay;
  * việc đẩy lên máy chủ chạy nền. Đổi sang async là buộc mọi chỗ gọi phải sửa.
@@ -27,6 +28,7 @@ import type {
 import type { DraftInput } from '@/core/draftActions';
 import type { NewProduct } from '@/core/productActions';
 import type { NewTransaction } from '@/core/receiptActions';
+import type { ReceiptImport, SupplierImport } from '@/core/sheetImport';
 import type { ProfilePatch, SignUpInput } from './auth';
 
 export interface StoreValue {
@@ -72,6 +74,20 @@ export interface StoreValue {
   deletePricingRule: (ruleId: string) => void;
   /** Nhập lại sổ từ file đã lưu. Giao diện KHÔNG được tự đụng vào lưu trữ. */
   importData: (payload: unknown) => void;
+
+  /**
+   * Hai action thêm ở giai đoạn F, cho việc nhập file Excel (dịch vụ chuyển
+   * dữ liệu có thu phí, CP4 §11.1). Lý do phải là action riêng chứ không gọi
+   * `addSupplier` / `addTransaction` trong vòng lặp: mỗi lần gọi là một lần
+   * ghi CẢ QUYỂN SỔ xuống IndexedDB, nên nhập 500 dòng thành 500 lần ghi và
+   * thời gian tăng theo bình phương số dòng. Gộp lại còn một lần ghi và một
+   * lượt hàng đợi — cũng chính là điều làm cho "không nhập nửa vời" thành thật:
+   * một `commit` thì hoặc vào hết, hoặc không có gì.
+   *
+   * Trả về số bản ghi ĐÃ THÊM (tên trùng thì dùng lại hồ sơ cũ, không tính).
+   */
+  importSuppliers: (rows: readonly SupplierImport[]) => number;
+  importReceipts: (rows: readonly ReceiptImport[]) => number;
 
   // ─── Tài khoản ────────────────────────────────────────────────────────────
   signIn: (identifier: string, password: string) => Promise<void>;

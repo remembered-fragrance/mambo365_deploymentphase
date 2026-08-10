@@ -18,6 +18,7 @@ import { clearUserCache, readBook, writeBook } from './cache';
 import { getSupabase } from './client';
 import { deviceAccount } from './deviceAccount';
 import { clearQueue, enqueue, type NewOp } from './queue';
+import { forgetSubscription } from './subscriptionStore';
 import { looksOnline, syncOnce } from './sync';
 import { StoreContext, type StoreValue } from './useStore';
 
@@ -139,7 +140,12 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       signOut: async () => {
         const supabase = getSupabase();
         if (supabase) await auth.signOut(supabase);
-        if (userId) await clearUserCache(userId);
+        if (userId) {
+          await clearUserCache(userId);
+          // Bản nhớ gói của người cũ không được sống sang phiên người mới —
+          // cùng lý do với việc xoá sổ và xoá hàng đợi ở hai dòng bên cạnh.
+          forgetSubscription(userId);
+        }
         await clearQueue();
         setUser(null);
         show(emptyData());

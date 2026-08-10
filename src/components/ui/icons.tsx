@@ -106,6 +106,15 @@ export const UserIcon = (p: IconProps) => (
 export const PeopleIcon = (p: IconProps) => (
   <Icon {...p} d="M9 4a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z|M2 20a7 7 0 0 1 14 0|M16 5a3.5 3.5 0 0 1 0 7|M18 20h4a6 6 0 0 0-4-5.7" />
 );
+export const CardIcon = (p: IconProps) => (
+  <Icon {...p} d="M3 7h18v11H3z|M3 11h18|M6 15h4" />
+);
+export const UploadIcon = (p: IconProps) => (
+  <Icon {...p} d="M12 16V4|M8 8l4-4 4 4|M4 18v2h16v-2" />
+);
+export const GiftIcon = (p: IconProps) => (
+  <Icon {...p} d="M4 10h16v10H4z|M4 7h16v3H4z|M12 7v13|M12 7c-3 0-4-3-2-3s2 3 2 3zm0 0c3 0 4-3 2-3s-2 3-2 3z" />
+);
 export const HelpIcon = (p: IconProps) => (
   <Icon {...p} d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z|M9.5 9.5a2.5 2.5 0 1 1 3 2.4V14|M12 17.5v.01" />
 );

@@ -201,6 +201,12 @@ export interface SyncStatus {
   readonly error?: string;
   readonly lastSyncedAt?: string;
   readonly pendingCount: number;
+  /**
+   * Máy chủ TỪ CHỐI ghi vì gói đã hết hạn — không phải lỗi mạng.
+   * Phân biệt hai thứ này là bắt buộc: lỗi mạng thì thử lại, còn cái này thử
+   * lại bao nhiêu lần cũng vậy, và câu phải nói với người dùng là khác hẳn.
+   */
+  readonly blocked?: boolean;
 }
 
 // ─── DraftReceipt ────────────────────────────────────────────────────────────
@@ -273,4 +279,6 @@ export interface UserProfile {
   readonly email?: string;
   readonly phone?: string;
   readonly businessName?: string;
+  /** Mã mời của chính người này, để đưa cho người khác. Database sinh ra. */
+  readonly referralCode?: string;
 }

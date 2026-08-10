@@ -6,11 +6,46 @@
 /** Số phiếu miễn phí mỗi tháng khi hết hạn dùng thử. */
 export const FREE_RECEIPTS_PER_MONTH = 30;
 
-/** Giá thuê bao tháng (đồng). */
+/**
+ * Giá thuê bao tháng (đồng).
+ * 🔴 Mô hình tài chính CP4 §11.1 xây trên đúng con số này. Đổi giá phải qua
+ * Linh (finance), không phải một lần sửa file.
+ */
 export const PRICE_MONTHLY = 149_000;
+
+/** Giá thuê bao năm — tặng 2 tháng. Nông nghiệp theo mùa vụ, chủ vựa có tiền
+ * vào mùa và quen trả một lần, nên đây là gói cần đẩy. */
+export const PRICE_YEARLY = 1_490_000;
+
+/** Số tháng gia hạn cho mỗi mức giá. Webhook suy ra kỳ hạn từ số tiền nhận được. */
+export const MONTHS_PER_PRICE: Readonly<Record<number, number>> = {
+  [PRICE_MONTHLY]: 1,
+  [PRICE_YEARLY]: 12,
+};
 
 /** Số ngày dùng thử đầy đủ tính từ lúc đăng ký. */
 export const TRIAL_DAYS = 30;
+
+/**
+ * Hết kỳ rồi vẫn đồng bộ thêm bấy nhiêu ngày, kèm banner nhắc.
+ * 🔴 Trùng với `sync_grace_days()` trong migration 0008 — đổi phải đổi cả hai.
+ */
+export const GRACE_DAYS = 7;
+
+/** Cửa sổ hoàn tiền, nói rõ trong Điều khoản. */
+export const REFUND_DAYS = 7;
+
+/**
+ * Tài khoản nhận chuyển khoản.
+ *
+ * Chưa có pháp nhân nên pilot dùng tài khoản cá nhân + đối soát tay/Casso.
+ * `BANK_BIN` là mã ngân hàng theo chuẩn VietQR (danh sách ở vietqr.io).
+ * 🔴 Ba giá trị dưới đây là chỗ điền — thay bằng số thật trước khi mở bán.
+ */
+export const BANK_BIN = '970422';
+export const BANK_ACCOUNT_NUMBER = '0000000000';
+export const BANK_ACCOUNT_NAME = 'NGUYEN THE TAI';
+export const BANK_NAME = 'MB Bank';
 
 /** Chờ bao lâu sau lần gõ cuối thì tự lưu nháp (ms). */
 export const AUTOSAVE_MS = 700;

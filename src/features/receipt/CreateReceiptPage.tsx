@@ -8,8 +8,10 @@ import { PlusIcon } from '@/components/ui/icons';
 import { formatVnd } from '@/core/format';
 import { newId } from '@/core/id';
 import type { TransactionKind } from '@/core/types';
+import { useSubscription } from '@/data/hooks/useSubscription';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { QuotaWall } from '../billing/QuotaWall';
 import { HelpButton } from '../help/HelpButton';
 import { FirstReceiptCoach } from '../onboarding/FirstReceiptCoach';
 import { ROUTES } from '../shared/navItems';
@@ -49,6 +51,7 @@ interface WorkspaceProps {
 
 function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   const { data } = useStore();
+  const { quota } = useSubscription();
   const navigate = useNavigate();
   const toast = useToast();
   const receipt = useDraftReceipt(draftId, kind);
@@ -73,6 +76,13 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
     const remaining = sessions.filter((d) => d.id !== receipt.draftId);
     goToDraft(remaining[0]?.id);
   };
+
+  /**
+   * Chạm trần thì thay cả màn tạo phiếu, không phải chặn lúc bấm "xong": người
+   * dùng cân xong cả chuyến hàng rồi mới bị từ chối là cách tệ nhất để nói
+   * chuyện tiền nong. Nháp đang cân dở vẫn nằm nguyên trong sổ.
+   */
+  if (quota.blocked) return <QuotaWall used={quota.used} limit={quota.limit} />;
 
   return (
     <PageContainer width="wide">

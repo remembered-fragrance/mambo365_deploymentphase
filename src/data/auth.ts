@@ -11,6 +11,7 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { detectIdentifierKind, normalizePhone } from '@/core/identifier';
 import type { UserProfile } from '@/core/types';
+import { claimReferral } from './billing';
 import type { ProfileRow } from './rows';
 
 /** Tên miền ta sở hữu, không gửi thư tới. Dùng cho người chỉ có số điện thoại. */
@@ -25,6 +26,8 @@ export interface SignUpInput {
   readonly username?: string;
   readonly email?: string;
   readonly businessName?: string;
+  /** Mã của người đã mời. Sai mã thì bỏ qua, không chặn việc đăng ký. */
+  readonly referralCode?: string;
 }
 
 const internalEmail = (phoneE164: string): string =>
@@ -38,6 +41,7 @@ export const profileFromRow = (row: ProfileRow, loginEmail: string): UserProfile
   email: row.recovery_email ?? undefined,
   phone: row.phone ?? undefined,
   businessName: row.business_name ?? undefined,
+  referralCode: row.referral_code ?? undefined,
 });
 
 export const signIn = async (
@@ -84,6 +88,10 @@ export const signUp = async (supabase: SupabaseClient, input: SignUpInput): Prom
   };
   const { error: profileError } = await supabase.from('profiles').insert(profile);
   if (profileError) throw new Error(`Không lưu được hồ sơ: ${profileError.message}`);
+
+  // Ghi nhận lời mời SAU khi hồ sơ đã có. Mã sai không được làm hỏng việc đăng
+  // ký: người dùng gõ nhầm mã của bạn mình thì vẫn phải vào được app.
+  if (input.referralCode) await claimReferral(supabase, input.referralCode);
 
   return data.user;
 };

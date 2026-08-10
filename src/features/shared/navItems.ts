@@ -12,6 +12,7 @@
 import { L } from '@/i18n/labels';
 import {
   BoxIcon,
+  CardIcon,
   ChartIcon,
   DebtIcon,
   HomeIcon,
@@ -22,6 +23,7 @@ import {
   ReceiptIcon,
   TagIcon,
   ToolIcon,
+  UploadIcon,
   UserIcon,
 } from '@/components/ui/icons';
 import type { NavGroup, NavItem } from '@/components/layout/navModel';
@@ -40,6 +42,8 @@ export const ROUTES = {
   reports: '/bao-cao',
   utilities: '/tien-ich',
   profile: '/tai-khoan',
+  plans: '/goi-dich-vu',
+  importData: '/nhap-du-lieu',
   more: '/them',
   auth: '/dang-nhap',
 } as const;
@@ -74,6 +78,8 @@ export const secondaryItems = (): NavItem[] => [
   { id: 'reports', label: L.navReports, to: ROUTES.reports, Icon: ChartIcon },
   { id: 'utilities', label: L.navUtilities, to: ROUTES.utilities, Icon: ToolIcon },
   { id: 'profile', label: L.navProfile, to: ROUTES.profile, Icon: UserIcon },
+  { id: 'plans', label: L.planTitle, to: ROUTES.plans, Icon: CardIcon },
+  { id: 'importData', label: L.importTitle, to: ROUTES.importData, Icon: UploadIcon },
 ];
 
 const pick = (items: readonly NavItem[], ids: readonly string[]): NavItem[] =>
@@ -88,6 +94,10 @@ export const navGroups = (counts: NavCounts): NavGroup[] => {
     { id: 'partners', label: L.groupPartners, items: pick(rest, ['suppliers', 'buyers']) },
     { id: 'goods', label: L.groupGoods, items: pick(rest, ['products', 'inventory', 'pricing']) },
     { id: 'reports', label: L.groupReports, items: pick(rest, ['reports', 'utilities']) },
-    { id: 'account', label: L.groupAccount, items: pick(rest, ['profile']) },
+    {
+      id: 'account',
+      label: L.groupAccount,
+      items: pick(rest, ['profile', 'plans', 'importData']),
+    },
   ];
 };

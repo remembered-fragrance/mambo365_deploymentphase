@@ -1,6 +1,8 @@
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { L } from '@/i18n/labels';
+import { PlanCard } from '../billing/PlanCard';
+import { ReferralCard } from '../billing/ReferralCard';
 import { HelpButton } from '../help/HelpButton';
 import { AccountCard } from './AccountCard';
 import { DataCard } from './DataCard';
@@ -21,9 +23,11 @@ export function ProfilePage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <AccountCard />
+        <PlanCard />
         <PreferencesCard />
         <PasswordCard />
         <DataCard />
+        <ReferralCard />
         <SupportCard />
       </div>
     </PageContainer>

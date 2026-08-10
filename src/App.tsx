@@ -54,6 +54,12 @@ const ProfilePage = lazy(() =>
 const MorePage = lazy(() =>
   import('@/features/more/MorePage').then((m) => ({ default: m.MorePage })),
 );
+const PlansPage = lazy(() =>
+  import('@/features/billing/PlansPage').then((m) => ({ default: m.PlansPage })),
+);
+const ImportDataPage = lazy(() =>
+  import('@/features/importData/ImportDataPage').then((m) => ({ default: m.ImportDataPage })),
+);
 
 export function App() {
   return (
@@ -87,6 +93,8 @@ export function App() {
                     <Route path={ROUTES.reports} element={<ReportsPage />} />
                     <Route path={ROUTES.utilities} element={<UtilitiesPage />} />
                     <Route path={ROUTES.profile} element={<ProfilePage />} />
+                    <Route path={ROUTES.plans} element={<PlansPage />} />
+                    <Route path={ROUTES.importData} element={<ImportDataPage />} />
                     <Route path={ROUTES.more} element={<MorePage />} />
                     <Route path="*" element={<NotFoundPage />} />
                   </Routes>

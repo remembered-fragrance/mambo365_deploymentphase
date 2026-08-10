@@ -8,6 +8,7 @@
 
 import { transactionTotals } from './calc';
 import type { AppData, Transaction } from './types';
+import { fold } from './vietnameseFold';
 
 export type SearchHitKind = 'transaction' | 'supplier' | 'buyer' | 'product';
 
@@ -22,17 +23,9 @@ export interface SearchHit {
 }
 
 /**
- * Bỏ dấu tiếng Việt để gõ "co mai" vẫn ra "Cô Mai" — người dùng gõ trên bàn
- * phím điện thoại giữa trời nắng, không ai bật bộ gõ dấu để tìm một cái tên.
+ * Bỏ dấu để gõ "co mai" vẫn ra "Cô Mai" — người dùng gõ trên bàn phím điện
+ * thoại giữa trời nắng, không ai bật bộ gõ dấu để tìm một cái tên.
  */
-const fold = (s: string): string =>
-  s
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLowerCase();
-
 const matches = (haystack: string, needle: string): boolean => fold(haystack).includes(needle);
 
 const txHit = (tx: Transaction): SearchHit => ({

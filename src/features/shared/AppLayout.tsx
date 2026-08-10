@@ -11,6 +11,7 @@ import { MoonIcon, SearchIcon, SunIcon } from '@/components/ui/icons';
 import { overdueCount } from '@/core/debtSelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { PlanBanner } from '../billing/PlanBanner';
 import { DemoBanner } from '../onboarding/DemoBanner';
 import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
@@ -148,9 +149,15 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
         banner={
           <>
             <DemoBanner />
-            {status.error && (
-              <OfflineBanner message={L.syncOfflineBanner} detail={L.syncOfflineDetail} />
-            )}
+            <PlanBanner />
+            {status.error &&
+              (status.blocked ? (
+                // Hết gói không phải mất mạng. Nói nhầm thì người dùng đi tìm
+                // sóng trong khi thứ cần làm là mở lại gói.
+                <OfflineBanner message={L.syncBlocked} detail={L.syncBlockedDetail} />
+              ) : (
+                <OfflineBanner message={L.syncOfflineBanner} detail={L.syncOfflineDetail} />
+              ))}
           </>
         }
         bottomNav={

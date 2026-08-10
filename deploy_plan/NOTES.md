@@ -50,17 +50,26 @@ Còn treo vì cần thứ ngoài repo:
 
 ## Cho giai đoạn F — Kinh doanh
 
-- [ ] (từ GĐ B) Gắn `has_active_sync()` vào policy ghi của các bảng nghiệp vụ — hàm viết ở B nhưng **chưa gắn**, vì gắn sớm thì giai đoạn C không ghi được gì.
-- [ ] (từ GĐ E) Bảng `payments` cần policy cho **xoá mềm**: nút "Hoàn tác" của
-  màn Công nợ đẩy lên một thao tác `soft-delete` trên `payments`, mà migration
-  `0005_rls` cố tình không có policy DELETE. Kiểm lại xem thao tác này đi qua
-  đường `update deleted_at` có được RLS cho phép không.
-- [ ] (từ GĐ E) Giới hạn 30 phiếu/tháng của gói Free chưa có chỗ nào chặn —
-  `FREE_RECEIPTS_PER_MONTH` trong `config.ts` mới chỉ là con số.
+*(đã xong — cả ba mục đều đã làm ở `0008_quyen_dong_bo.sql` và `src/core/receiptQuota.ts`)*
+
+Còn treo vì cần tài khoản Supabase và tiền thật:
+
+- [ ] Mười mục nghiệm thu luồng tiền ở `supabase/VAN_HANH.md` §7.3 — trong đó
+  hai mục **chỉ chứng minh được bằng tiền thật**: một lần chuyển khoản đi hết
+  luồng, và một lần hoàn tiền trong 7 ngày.
+- [ ] Điền số tài khoản thật vào `config.ts` (§7.1) — đang là chỗ điền.
+- [ ] Deploy `payment-webhook` và xác nhận Deno bundle được hai file nạp từ
+  `src/` (§7.2). Không bundle được thì phải chép sang `_shared/` và ghi lại đây.
 
 ## Cho giai đoạn G — Site & pháp lý
 
-*(trống)*
+- [ ] (từ GĐ F) Trang giá trên site tĩnh phải ghi **149.000đ/tháng** và
+  **1.490.000đ/năm**, khớp `config.ts`. Tiêu chí F §5 đòi hai nơi nói cùng một số.
+- [ ] (từ GĐ F) Điều khoản phải nói rõ ba điều đã hứa trong app: **không tự động
+  gia hạn**, **hoàn tiền trong 7 ngày**, và **hết hạn thì ngừng đồng bộ chứ
+  không khoá dữ liệu**.
+- [ ] (từ GĐ F) Biên nhận trong app ghi "không phải hoá đơn đỏ" — trang pháp lý
+  phải nói cùng một điều, kèm ghi chú chưa có pháp nhân.
 
 ## Cho giai đoạn H — Kiểm & mở
 
@@ -88,3 +97,6 @@ Còn treo vì cần thứ ngoài repo:
 | `supplierId` vẫn nằm trong `Transaction` dù đã dùng `counterpartyId` | Cần để đọc dữ liệu v1/v2 | Khi không còn tài khoản nào mang dữ liệu trước v3 |
 | Hướng dẫn bốn bước là bảng trượt, không phải mũi tên chỉ vào từng ô | Mũi tên phải bám vị trí thật của phần tử, mà bố cục đổi theo bề rộng và theo chế độ Ngoài nắng — sai một lần là hướng dẫn thành thứ gây rối | Khi có người thật thử mà không tự tạo được phiếu đầu tiên trong 3 phút |
 | Ảnh minh hoạ trong sheet "?" là biểu tượng phóng to, chưa phải ảnh chụp màn hình | Ảnh thật phải chụp lại mỗi lần đổi giao diện, mà giao diện còn đổi tới lúc phát hành | Sau khi khoá giao diện ở giai đoạn H |
+| Số ngày ân hạn viết ở hai nơi: `GRACE_DAYS` trong `config.ts` và `sync_grace_days()` trong migration 0008 | Không có cách nào để một hằng số nằm chung giữa Postgres và trình duyệt. Đã ghi chú chéo ở cả hai file | Khi có lần thứ ba cần cùng con số — lúc đó mới đáng dựng một chỗ sinh mã dùng chung |
+| Bậc gói nhớ trong máy (`thumua365:plan:*`) nên người vừa hết hạn còn giữ hạn mức không giới hạn tới lần hỏi máy chủ kế tiếp | Chiều ngược lại tệ hơn nhiều: một lần mất sóng làm người đã trả tiền bị chặn ở phiếu thứ 31 giữa buổi cân. Phần thật sự đáng tiền là đồng bộ, và cái đó máy chủ chặn chứ không phải client | Khi có người dùng thật lợi dụng bằng cách tắt mạng cả tháng |
+| Màn chờ chuyển khoản hỏi lại máy chủ 5 giây/lần thay vì dùng Realtime | Chỉ một màn cần, mà bật Realtime là nuôi thêm một đường kết nối cho cả app | Cùng ngưỡng với mục "Chưa có Realtime" ở trên |

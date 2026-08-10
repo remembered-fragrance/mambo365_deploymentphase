@@ -298,16 +298,96 @@ chỉ đẩy lên một lượt. Người dùng đang dùng 3G, mỗi lượt g�
 
 ---
 
+## Giai đoạn F — Kinh doanh & thu tiền · 10/08/2026
+
+**Kết quả:** phân tầng Free/Premium, luồng chuyển khoản VietQR, nhập file Excel,
+mã giới thiệu.
+
+> ⚠️ **Cổng chặn 2 chưa có bằng chứng đã vượt.** `deploy_plan/README.md` §1 đòi
+> đưa bảng giá cho 10 người dùng thật và đếm ≥3 người nói "sẽ trả" trước khi
+> viết phần này. Code đã có, nhưng con số đó vẫn phải đi hỏi — và nếu dưới 3 thì
+> việc phải làm là xem lại mô hình giá, không phải sửa code.
+
+### Chặn ở đâu — hai loại, không nhầm lẫn
+
+| Loại | Chặn ở | Vì sao |
+|---|---|---|
+| Hạn mức 30 phiếu/tháng | **Client** (`core/receiptQuota.ts`) | Free chạy hoàn toàn trên máy người dùng. Ai vọc DevTools để ghi thêm phiếu trên máy của chính họ thì ta không mất gì |
+| Đồng bộ · công nợ đám mây · sao lưu | **Database** (`0008`, `has_active_sync()` trong policy ghi) | Có chạm máy chủ. Chặn bằng JavaScript ở đây là chặn giả |
+
+Policy **đọc** giữ nguyên mở. Hết hạn thì ngừng đẩy lên, không giữ dữ liệu làm
+con tin — ràng buộc F §4.2, và cũng là lý do banner nói "vẫn dùng được trên máy
+này" chứ không doạ mất sổ.
+
+### Bốn quyết định đáng ghi
+
+1. **Không có trạng thái `grace` / `expired` trong database.** Kế hoạch gọi tên
+   chúng, nhưng cột chữ chỉ đúng nếu có tiến trình chạy định kỳ đổi nó — mà dự
+   án không có cron. Cả `has_active_sync()` lẫn `core/subscription.ts` **suy ra
+   từ ngày tháng**, nên hai bên luôn nói cùng một điều và không bao giờ ôi thiu.
+2. **`src/billing/` đổi thành `features/billing/` + `core/subscription.ts`.**
+   Kế hoạch F §3.2 đặt tên thư mục mới ở gốc `src/`, nhưng thư mục đó không nằm
+   trong bảng ranh giới §3.1 và dependency-cruiser sẽ không có luật nào cho nó.
+   Tên thư mục không đáng đổi lấy một lỗ hổng trong hàng rào duy nhất ép được
+   bằng máy.
+3. **Bậc gói nhớ trong máy** (`data/subscriptionStore.ts`). Không có nó thì một
+   lần hỏi máy chủ hụt là người đã trả tiền bị hạ về bậc miễn phí và chặn ở
+   phiếu thứ 31 giữa buổi cân. Chiều ngược lại (người vừa hết hạn còn hạn mức
+   thêm một lúc) là cái giá cố ý — phần thật sự đáng tiền là đồng bộ, và cái đó
+   máy chủ chặn.
+4. **Thêm hai action `importSuppliers` · `importReceipts`** vào `StoreValue`.
+   Gọi `addTransaction` 500 lần là 500 lần ghi cả quyển sổ xuống IndexedDB —
+   thời gian tăng theo bình phương số dòng. Gộp lại còn một `commit`, và chính
+   điều đó làm "không nhập nửa vời" thành thật chứ không phải lời hứa.
+
+### Lỗi thật test bắt được
+
+**Mọi phiếu nhập từ Excel lùi một ngày.** Ô ngày `01/08/2026` được `xlsx` trả về
+là `2026-07-31T17:00:00.000Z` (nửa đêm giờ Việt Nam), và `.toISOString()` cắt ra
+`2026-07-31`. Sửa: đọc bằng thành phần **giờ máy** rồi chốt vào **giữa trưa** —
+lệch ±12 tiếng vẫn rơi đúng ngày. Đã kiểm tròn vòng với chính `xlsx` chứ không
+chỉ với ô giả trong test.
+
+### Chuyện nhỏ mà phải sửa
+
+- `core/search.ts` giữ riêng hàm bỏ dấu tiếng Việt; phần đọc tiêu đề cột Excel
+  cần đúng hàm đó ⇒ tách ra `core/vietnameseFold.ts`, dùng ở hai nơi.
+- `sync.ts` phân biệt **máy chủ từ chối vì hết gói** (`42501`) với **mất mạng**:
+  loại đầu KHÔNG đốt lượt thử lại và không đánh dấu phiếu "cần xem lại" — chúng
+  lành lặn, chỉ đang đợi. Trả tiền xong là cả hàng đợi tự đi tiếp.
+- `0009` thu hồi quyền ghi mức bảng trên `profiles` rồi cấp lại theo cột: quyền
+  mức bảng phủ mọi cột, nên không thu hồi trước thì `referral_code` và
+  `referred_by` vẫn nằm trong tay client.
+
+### Chạy thật đã kiểm
+
+| Việc | Kết quả |
+|---|---|
+| Hạ `FREE_RECEIPTS_PER_MONTH` xuống 0, mở `/tao-phieu` | Ra **màn chạm hạn mức** với số của chính sổ đó ("8 / 0"), không phải form |
+| Chế độ trình diễn đang bật | **Không** bị hạn mức — sổ mẫu có sẵn hơn 30 phiếu |
+| Excel tròn vòng: ghi file → đọc lại → dựng phiếu | `01/08/2026` ra đúng ngày 1/8, 12h; số `14.500` ra 14500 |
+| Tiêu đề cột gõ không dấu, viết hoa (`TEN NONG HO`) | Nhận đúng cột |
+| 15 route ở 375px | **Không route nào cuộn ngang**, không lỗi console |
+
+### 🔴 Chưa kiểm được
+
+Toàn bộ phần đụng vào tiền: webhook, chống trùng, chữ ký, kích hoạt tay, hoàn
+tiền. Cần Supabase thật + một lần chuyển khoản thật. Bảng kiểm 10 mục ở
+[`supabase/VAN_HANH.md`](supabase/VAN_HANH.md) §7.3. Số tài khoản trong
+`config.ts` vẫn là **chỗ điền**.
+
+---
+
 ## Bốn số phải giữ trong tầm
 
-Đo lúc kết thúc giai đoạn E.
+Đo lúc kết thúc mỗi giai đoạn.
 
-| Chỉ số | Ngưỡng | Cuối D | Cuối E |
-|---|---|---|---|
-| JS khởi tạo | ≤ 250KB gzip | 88KB | **89KB** |
-| File dài nhất trong `src/` | ≤ 300 dòng | 276 | **276** |
-| Phủ test `core/` | ≥ 80% dòng | 97% (262 test) | **97%** (310 test) |
-| Lighthouse mobile | Perf ≥85 · A11y ≥95 | chưa đo | **chưa đo** |
+| Chỉ số | Ngưỡng | Cuối D | Cuối E | Cuối F |
+|---|---|---|---|---|
+| JS khởi tạo | ≤ 250KB gzip | 88KB | 89KB | **91KB** |
+| File dài nhất trong `src/` | ≤ 300 dòng | 276 | 276 | **284** |
+| Phủ test `core/` | ≥ 80% dòng | 97% (262 test) | 97% (310 test) | **98%** (357 test) |
+| Lighthouse mobile | Perf ≥85 · A11y ≥95 | chưa đo | chưa đo | **chưa đo** |
 
 `npm run verify` chạy đủ 5 bước: lint → typecheck → luật dự án → ranh giới tầng
 → test. Tất cả xanh.
@@ -324,6 +404,10 @@ chỉ đẩy lên một lượt. Người dùng đang dùng 3G, mỗi lượt g�
 | Vercel Preview → staging, Production → prod | Tài khoản Vercel | `supabase/VAN_HANH.md` §1 |
 | Lighthouse mobile | Chạy trên bản deploy | — |
 | Bộ ký hiệu 4 nông sản | Tuyến | `deploy_plan/NOTES.md` mục E |
+| Mười mục nghiệm thu luồng tiền | Supabase thật + một lần chuyển khoản thật | `supabase/VAN_HANH.md` §7.3 |
+| Số tài khoản nhận tiền | Quyết định của nhóm | `src/config.ts`, `VAN_HANH.md` §7.1 |
+| Casso hoặc SePay (50–100k/tháng) | Đăng ký dịch vụ | `VAN_HANH.md` §7.2 — được phép hoãn, 10 khách đầu kích hoạt tay |
+| **Cổng chặn 2**: 10 người dùng thật xem bảng giá, đếm số người nói "sẽ trả" | Nguyên (BD) | `deploy_plan/README.md` §1 |
 
 ---
 

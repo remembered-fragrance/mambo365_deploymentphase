@@ -105,6 +105,37 @@ export interface ProfileRow {
   readonly phone: string | null;
   readonly recovery_email: string | null;
   readonly business_name: string | null;
+  /** Mã mời của chính người này. Do trigger sinh, client không ghi được. */
+  readonly referral_code: string | null;
+  /** Ai đã mời người này. Chỉ đặt được một lần, qua RPC `claim_referral`. */
+  readonly referred_by: string | null;
+  readonly created_at: string;
+  readonly updated_at: string;
+  readonly deleted_at: string | null;
+}
+
+// ─── Gói dịch vụ ─────────────────────────────────────────────────────────────
+
+export interface SubscriptionRow {
+  readonly id: string;
+  readonly user_id: string;
+  readonly status: string;
+  readonly trial_ends_at: string | null;
+  readonly current_period_end: string | null;
+  readonly created_at: string;
+  readonly updated_at: string;
+  readonly deleted_at: string | null;
+}
+
+export interface PaymentIntentRow {
+  readonly id: string;
+  readonly user_id: string;
+  readonly subscription_id: string | null;
+  readonly amount: number;
+  readonly status: string;
+  readonly provider: string;
+  /** Mã 6 ký tự trong nội dung chuyển khoản. */
+  readonly provider_ref: string | null;
   readonly created_at: string;
   readonly updated_at: string;
   readonly deleted_at: string | null;

@@ -8,6 +8,7 @@
  */
 
 import * as drafts from '@/core/draftActions';
+import * as sheets from '@/core/importActions';
 import * as notes from '@/core/noteActions';
 import * as parties from '@/core/partyActions';
 import * as rules from '@/core/pricingRuleActions';
@@ -55,6 +56,8 @@ export type BookActions = Pick<
   | 'updatePricingRule'
   | 'deletePricingRule'
   | 'importData'
+  | 'importSuppliers'
+  | 'importReceipts'
 >;
 
 interface Deps {
@@ -221,4 +224,26 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
   reset: () => commit(emptyData(), []),
 
   importData: (payload) => commit(normalize(payload), []),
+
+  // Cả file vào bằng MỘT commit: một lần ghi sổ, một lượt hàng đợi. Xem lý do
+  // đầy đủ ở `useStore.ts`.
+  importSuppliers: (rows) => {
+    const before = book();
+    const result = sheets.importSuppliers(before, rows);
+    commit(result.data, derivedOps(before, result.data, uid));
+    return result.added.length;
+  },
+
+  importReceipts: (rows) => {
+    const before = book();
+    const result = sheets.importReceipts(before, rows);
+    commit(result.data, [
+      ...derivedOps(before, result.data, uid),
+      ...result.added.flatMap((tx) => [
+        opInsert('transactions', tx.id, transactionToRow(tx, uid)),
+        ...tx.payments.map((p) => opInsert('payments', p.id, paymentToRow(p, tx.id, uid))),
+      ]),
+    ]);
+    return result.added.length;
+  },
 });

@@ -8,10 +8,11 @@
  *
  * Luật: không viết chuỗi tiếng Việt thẳng vào JSX. Mọi chữ đi qua đây.
  *
- * `L` gộp từ ba mảnh — một file duy nhất sẽ vượt 300 dòng, mà đó cũng là luật
+ * `L` gộp từ bốn mảnh — một file duy nhất sẽ vượt 300 dòng, mà đó cũng là luật
  * của dự án. Nơi dùng vẫn chỉ có một: `import { L } from '@/i18n/labels'`.
  */
 
+import { BILLING_LABELS } from './billingLabels';
 import { ONBOARDING_LABELS } from './onboardingLabels';
 import { SCREEN_LABELS } from './screenLabels';
 
@@ -229,7 +230,7 @@ const BASE = {
   emptyTitle: 'Chưa có gì ở đây',
 } as const;
 
-export const L = { ...BASE, ...SCREEN_LABELS, ...ONBOARDING_LABELS } as const;
+export const L = { ...BASE, ...SCREEN_LABELS, ...ONBOARDING_LABELS, ...BILLING_LABELS } as const;
 
 /** Phụ đề giải thích cho các thuật ngữ buộc phải giữ. */
 export const SUB = {

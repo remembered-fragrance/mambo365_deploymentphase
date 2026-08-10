@@ -100,7 +100,76 @@ trên điện thoại có sóng chập chờn. Ghi lại kết quả từng dòn
 | 6 | Tạo phiếu trên điện thoại | Thấy trên máy tính trong vòng 5 giây |
 | 7 | Đăng xuất, đăng nhập tài khoản khác | **Không** thấy dữ liệu tài khoản trước |
 
-## 7. Đặt lại mật khẩu thủ công
+## 7. Thu tiền (giai đoạn F)
+
+### 7.1 Trước khi mở bán — điền số thật
+
+- [ ] `src/config.ts`: `BANK_BIN` · `BANK_ACCOUNT_NUMBER` · `BANK_ACCOUNT_NAME` ·
+      `BANK_NAME` đang là **chỗ điền**. Thay bằng tài khoản thật rồi tự quét thử
+      mã QR bằng chính app ngân hàng — không tin vào việc URL trông đúng.
+- [ ] `SUPPORT_ZALO` phải là số có người trực. Màn thanh toán chỉ nó ba lần.
+
+### 7.2 Triển khai Edge Function
+
+```bash
+supabase secrets set PAYMENT_WEBHOOK_SECRET=<chuỗi ngẫu nhiên dài>
+supabase functions deploy payment-webhook
+```
+
+Rồi khai URL đó ở Casso/SePay, kèm đúng bí mật vừa đặt.
+
+> ⚠️ Hàm này nạp `../../../src/core/transferCode.ts` và `../../../src/config.ts`
+> — cùng một bản với app, để mã sinh ra và mã đọc lại không bao giờ lệch. Cả
+> hai file đó **không import gì**, nên Deno chạy được. Lần deploy đầu tiên phải
+> xem log xác nhận nó bundle được; nếu không, chép hai file sang
+> `supabase/functions/_shared/` **và ghi ngay một dòng vào NOTES.md** rằng từ
+> đó có hai bản phải sửa cùng lúc.
+
+### 7.3 Nghiệm thu luồng tiền — làm đủ, đây là phần đụng vào tiền
+
+| # | Kiểm | Phải ra |
+|---|---|---|
+| 1 | Người lạ tự đi hết: thấy giá → nâng cấp → quét QR → chuyển khoản | Gói tự mở, không ai can thiệp |
+| 2 | Gọi webhook **3 lần** cùng một `bank_tx_id` | Chỉ gia hạn **một** lần |
+| 3 | Gọi webhook **không có chữ ký** hoặc sai | HTTP **401**, không đổi gì |
+| 4 | Chuyển **thiếu tiền** so với ý định thanh toán | Không mở gói, giao dịch nằm ở `skipped` |
+| 5 | Chuyển khoản **sai nội dung** rồi chạy `admin-activate.ts` | Mở được gói, và chạy lần hai báo "đã xử lý rồi" |
+| 6 | Hoàn tiền trong 7 ngày | Đã thử **một lần** thật |
+| 7 | Người dùng Free gọi thẳng REST API ghi vào `transactions` | Database **từ chối** (42501) |
+| 8 | Client ghi khống `status='active'` vào `subscriptions` bằng anon key | Database **từ chối** |
+| 9 | Hết hạn gói | Ngừng đẩy lên, nhưng **vẫn đọc, vẫn xuất file, vẫn dùng một máy** |
+| 10 | `checks/rls-coverage.sql` — hai truy vấn mới cuối file | Cả hai trả về **0 dòng** |
+
+Kiểm mục 2 và 3 bằng curl:
+
+```bash
+# Sai chữ ký → 401
+curl -X POST "https://<ref>.functions.supabase.co/payment-webhook" \
+  -H "content-type: application/json" \
+  -d '{"id":"TEST1","amount":149000,"description":"TM365 K7M2P9"}'
+
+# Đúng chữ ký, gọi ba lần → chỉ một lần gia hạn
+for i in 1 2 3; do
+  curl -X POST "https://<ref>.functions.supabase.co/payment-webhook" \
+    -H "content-type: application/json" -H "secure-token: <bí-mật>" \
+    -d '{"id":"TEST1","amount":149000,"description":"TM365 K7M2P9"}'
+done
+```
+
+### 7.4 Kích hoạt gói bằng tay
+
+Dùng khi tiền đã vào mà nội dung chuyển khoản gõ sai. Đọc quy tắc xác minh
+trong `../scripts/admin-activate.ts` trước khi chạy.
+
+```bash
+SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… \
+  npx tsx scripts/admin-activate.ts 0905112233 149000 <mã-giao-dịch-ngân-hàng>
+```
+
+Mã giao dịch ngân hàng là **bắt buộc**: nó vào `bank_transactions` làm khoá
+chống trùng, nên webhook về sau cũng không cộng thêm một kỳ nữa.
+
+## 8. Đặt lại mật khẩu thủ công
 
 Chỉ dành cho người dùng **không khai email**. Đọc quy tắc xác minh danh tính
 ghi ngay trong `../scripts/admin-reset-password.ts` trước khi chạy — làm đủ,
