@@ -63,17 +63,27 @@ Còn treo vì cần tài khoản Supabase và tiền thật:
 
 ## Cho giai đoạn G — Site & pháp lý
 
-- [ ] (từ GĐ F) Trang giá trên site tĩnh phải ghi **149.000đ/tháng** và
-  **1.490.000đ/năm**, khớp `config.ts`. Tiêu chí F §5 đòi hai nơi nói cùng một số.
-- [ ] (từ GĐ F) Điều khoản phải nói rõ ba điều đã hứa trong app: **không tự động
-  gia hạn**, **hoàn tiền trong 7 ngày**, và **hết hạn thì ngừng đồng bộ chứ
-  không khoá dữ liệu**.
-- [ ] (từ GĐ F) Biên nhận trong app ghi "không phải hoá đơn đỏ" — trang pháp lý
-  phải nói cùng một điều, kèm ghi chú chưa có pháp nhân.
+*(phần code đã xong — ba mục chuyển từ F đều đã vào site và có máy kiểm)*
+
+Còn treo vì **cần người, không phải cần code**. `npm run site:check` chặn deploy
+tới khi hết:
+
+- [ ] Họ tên / tên hộ kinh doanh chịu trách nhiệm + địa chỉ + email tiếp nhận
+  yêu cầu về dữ liệu — **Nguyên**. Đang là `ĐIỀN:` ở cả hai trang pháp lý.
+- [ ] Vùng máy chủ Supabase, ghi đúng vùng đã chọn lúc tạo project — **Tài**.
+- [ ] Ba ảnh chụp màn hình thật (Tổng quan · Tạo phiếu · Biên nhận) và ảnh từng
+  bước cài lên Android / iPhone — **Tài**, chụp trên máy thật, đặt vào `site/anh/`.
+- [ ] Video 60 giây tạo phiếu đầu tiên — **Nguyên**.
+- [ ] Lighthouse trang tĩnh ≥90 — đo trên bản deploy, chưa đo được tại chỗ.
+- [ ] Thử cài lên **iPhone thật** và **Android thật** theo đúng bốn bước đã viết.
+- [ ] Chạy thử nút "Xoá tài khoản" bằng một tài khoản thử trên staging, rồi kiểm
+  cả bảng lẫn Storage — logic đã viết nhưng chưa chạy lần nào.
 
 ## Cho giai đoạn H — Kiểm & mở
 
-*(trống)*
+- [ ] (từ GĐ G) Ảnh minh hoạ trong sheet "?" của app vẫn là biểu tượng phóng to.
+  Sau khi khoá giao diện ở H thì chụp ảnh thật một lượt cho **cả app lẫn site** —
+  hai chỗ dùng chung một bộ ảnh, chụp một lần.
 
 ---
 

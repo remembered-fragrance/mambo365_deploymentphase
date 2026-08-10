@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chính sách quyền riêng tư — THUMUA365</title>
+    <meta
+      name="description"
+      content="THUMUA365 thu thập gì, lưu ở đâu, ai đọc được, và làm sao để xoá hết."
+    />
+    <meta name="theme-color" content="#14663c" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/">THUMUA365</a>
+        <nav class="site-nav" aria-label="Trang chính">
+          <a href="index.html">Trang chính</a>
+          <a href="dieu-khoan.html">Điều khoản</a>
+          <a href="huong-dan.html">Hướng dẫn</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap prose">
+      <h1>Chính sách quyền riêng tư</h1>
+      <p class="updated">Áp dụng từ 11/08/2026 · Phiên bản 1.0</p>
+
+      <p class="lede">
+        Viết theo đúng những gì hệ thống thật sự làm. Chỗ nào app không làm được thì trang này
+        không hứa.
+      </p>
+
+      <h2>1. Ai chịu trách nhiệm</h2>
+      <p>
+        THUMUA365 do <span class="fill">ĐIỀN: họ tên / tên hộ kinh doanh</span> vận hành, liên
+        hệ <span class="fill">ĐIỀN: địa chỉ</span>, Zalo
+        <a href="tel:0912345678">0912345678</a>, email
+        <span class="fill">ĐIỀN: email tiếp nhận yêu cầu về dữ liệu</span>.
+      </p>
+
+      <h2>2. Thu thập những gì</h2>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Nhóm</th>
+              <th>Gồm những gì</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Của chính bác</th>
+              <td>
+                Tên chủ vựa, tên vựa, số điện thoại, email (chỉ khi bác tự khai để lấy lại mật
+                khẩu), tên đăng nhập nếu có.
+              </td>
+            </tr>
+            <tr>
+              <th>Của người thứ ba, do bác nhập</th>
+              <td>
+                Tên, số điện thoại, khu vực của nông hộ và người mua; nội dung phiếu mua bán và
+                công nợ gắn với họ.
+              </td>
+            </tr>
+            <tr>
+              <th>Ảnh chứng từ</th>
+              <td>Ảnh phiếu cân, hoá đơn — do bác tự chụp và tự chọn đính vào phiếu.</td>
+            </tr>
+            <tr>
+              <th>Thanh toán</th>
+              <td>
+                Số tiền, thời điểm, mã đối soát 6 ký tự và mã giao dịch của ngân hàng.
+                <strong>Không</strong> lưu số thẻ, không lưu tài khoản ngân hàng của bác.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        <strong>Không thu thập:</strong> vị trí GPS, danh bạ điện thoại, lịch sử duyệt web,
+        thông tin từ ứng dụng khác. App <strong>không có công cụ thống kê, không có mã quảng
+        cáo, không có cookie theo dõi</strong>. Phiên đăng nhập lưu trong bộ nhớ của trình duyệt
+        trên máy bác, không phải cookie gửi đi đâu cả.
+      </p>
+
+      <h2>3. Dùng để làm gì</h2>
+      <p>
+        Chỉ để chạy đúng những chức năng bác thấy trong app: ghi phiếu, tính tiền, theo dõi công
+        nợ, đồng bộ giữa các máy của bác, và mở gói dịch vụ khi bác chuyển khoản.
+        <strong>Không bán, không cho thuê, không chia sẻ cho bên thứ ba để quảng cáo.</strong>
+      </p>
+
+      <h2>4. Lưu ở đâu</h2>
+      <ul>
+        <li>
+          <strong>Trên máy của bác</strong> — sổ, hàng đợi chưa gửi và ảnh chứng từ nằm trong bộ
+          nhớ trình duyệt. Gói miễn phí thì dữ liệu <em>chỉ</em> nằm ở đây.
+        </li>
+        <li>
+          <strong>Trên máy chủ Supabase</strong> (vùng <span class="fill">ĐIỀN: vùng máy chủ</span>)
+          — chỉ khi gói của bác còn hạn đồng bộ.
+        </li>
+        <li><strong>Trang web</strong> chạy trên Vercel.</li>
+      </ul>
+
+      <h3>Bên thứ ba có thể thấy gì</h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Bên</th>
+              <th>Thấy gì</th>
+              <th>Khi nào</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Supabase</td>
+              <td>Toàn bộ dữ liệu đã đồng bộ (lưu hộ, có mã hoá khi truyền và khi lưu)</td>
+              <td>Khi gói còn hạn đồng bộ</td>
+            </tr>
+            <tr>
+              <td>Vercel</td>
+              <td>Nhật ký truy cập kỹ thuật của web (địa chỉ IP, thời điểm)</td>
+              <td>Mỗi lần mở app hoặc site</td>
+            </tr>
+            <tr>
+              <td>vietqr.io</td>
+              <td>
+                Số tiền và nội dung chuyển khoản — vì ảnh mã QR do bên này sinh ra.
+                <strong>Không</strong> kèm tên, số điện thoại hay dữ liệu phiếu.
+              </td>
+              <td>Chỉ khi bác mở màn chuyển khoản</td>
+            </tr>
+            <tr>
+              <td>Ngân hàng và dịch vụ đối soát</td>
+              <td>Thông tin của chính giao dịch chuyển khoản</td>
+              <td>Khi bác chuyển tiền</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>5. Ai đọc được dữ liệu của bác</h2>
+      <p>
+        <strong>Chỉ bác.</strong> Chặn ở tầng database bằng Row Level Security: mỗi truy vấn đều
+        kèm điều kiện "chỉ hàng của người đang đăng nhập", nên tài khoản khác gọi thẳng vào máy
+        chủ cũng chỉ nhận về danh sách rỗng. Đây là chặn ở máy chủ, không phải ẩn đi trên giao
+        diện.
+      </p>
+      <p>
+        Người vận hành chỉ chạm vào dữ liệu khi <strong>bác yêu cầu hỗ trợ</strong> — ví dụ đặt
+        lại mật khẩu hoặc mở gói khi chuyển khoản sai nội dung. Mỗi lần như vậy hệ thống
+        <strong>ghi lại một dòng nhật ký</strong>: làm việc gì, cho tài khoản nào, ai duyệt, lúc
+        nào. Bác hỏi thì được xem đúng phần nhật ký của mình.
+      </p>
+
+      <h2>6. Giữ bao lâu</h2>
+      <ul>
+        <li>Giữ đến khi bác xoá — không có hạn tự động xoá phiếu cũ.</li>
+        <li>
+          Bấm <strong>Xoá tài khoản</strong> trong app là xoá hẳn: ảnh chứng từ trên máy chủ bị
+          xoá trước, rồi tới tài khoản và toàn bộ phiếu, nông hộ, gói dịch vụ.
+          <strong>Không phải khoá lại chờ ngày nào đó.</strong>
+        </li>
+        <li>
+          Bản sao lưu của máy chủ có vòng đời riêng và tự hết trong vòng
+          <strong>30 ngày</strong>. Sau mốc đó dữ liệu đã xoá không còn ở đâu nữa.
+        </li>
+        <li>
+          Hai thứ ở lại sau khi xoá tài khoản, đều <strong>không kèm tên bác</strong>: dòng đối
+          soát của khoản tiền đã chuyển (để không cộng nhầm một giao dịch hai lần) và dòng nhật
+          ký hỗ trợ (để không ai xoá được dấu vết mình đã chạm vào dữ liệu).
+        </li>
+      </ul>
+
+      <h2>7. Quyền của bác</h2>
+      <ul>
+        <li><strong>Xem và sửa</strong> — mọi thứ trong app đều sửa được.</li>
+        <li>
+          <strong>Xuất ra file</strong> — nút "Lưu ra file" trong màn Tài khoản, ra một file
+          chứa toàn bộ sổ. Gói trả phí xuất thêm được Excel và PDF.
+        </li>
+        <li><strong>Xoá toàn bộ</strong> — nút "Xoá tài khoản và toàn bộ dữ liệu".</li>
+        <li>
+          <strong>Rút lại đồng ý</strong> — ngừng dùng và xoá tài khoản. Không cần giải thích lý
+          do, không cần gọi ai.
+        </li>
+      </ul>
+      <p>
+        Cần giúp thì nhắn Zalo <a href="tel:0912345678">0912345678</a>, trả lời trong ngày làm
+        việc.
+      </p>
+
+      <h2>8. Dữ liệu của nông hộ và người mua</h2>
+      <p class="note">
+        Đây là phần quan trọng nhất của trang này. App lưu tên, số điện thoại và khu vực của
+        <strong>người khác</strong> — do chính bác nhập vào.
+      </p>
+      <ul>
+        <li>
+          <strong>Bác</strong> là người quyết định nhập những thông tin đó và chịu trách nhiệm
+          về việc nhập, cũng như về việc dùng chúng đúng mục đích mua bán.
+        </li>
+        <li>
+          <strong>THUMUA365</strong> chỉ lưu và xử lý theo yêu cầu của bác, không tự dùng những
+          thông tin đó vào việc gì khác.
+        </li>
+        <li>
+          Nông hộ hoặc người mua yêu cầu xoá thông tin của họ thì bác xoá trong app; cần hỗ trợ
+          thì nhắn Zalo.
+        </li>
+      </ul>
+
+      <h2>9. Trẻ em</h2>
+      <p>App dành cho người kinh doanh, không hướng tới người dưới 16 tuổi.</p>
+
+      <h2>10. Khi chính sách thay đổi</h2>
+      <p>
+        Sửa gì thì đổi ngày ở đầu trang và báo trong app. Thay đổi làm giảm quyền của bác thì
+        báo trước ít nhất <strong>30 ngày</strong>.
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <ul>
+          <li><a href="index.html">Trang chính</a></li>
+          <li><a href="dieu-khoan.html">Điều khoản sử dụng</a></li>
+          <li><a href="huong-dan.html">Hướng dẫn dùng</a></li>
+          <li>Zalo hỗ trợ: <a href="tel:0912345678">0912345678</a></li>
+        </ul>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -378,16 +378,95 @@ tiền. Cần Supabase thật + một lần chuyển khoản thật. Bảng ki�
 
 ---
 
+## Giai đoạn G — Site & pháp lý · 11/08/2026
+
+**Kết quả:** bốn trang tĩnh, và ba thứ trong app mà hai trang pháp lý phải dựa
+vào mới nói thật được.
+
+### Nguyên tắc chi phối cả giai đoạn
+
+> Điều nguy hiểm không phải văn phong nghiệp dư, mà là **viết một đằng hệ thống
+> làm một nẻo**.
+
+Vì vậy thứ tự làm bị đảo so với kế hoạch: **viết code trước, viết trang sau**.
+Ba câu dưới đây lúc bắt đầu giai đoạn G đều còn là lời hứa suông, nay mới có
+thật:
+
+| Câu trên trang pháp lý | Thứ phải xây để câu đó thành thật |
+|---|---|
+| "Bấm Xoá tài khoản là xoá hẳn, kể cả ảnh chứng từ" | `delete_own_account()` + `data/account.ts` |
+| "Quản trị viên chỉ chạm dữ liệu khi bác yêu cầu, có ghi nhận" | Bảng `admin_access_log`, hai script quản trị bắt buộc khai tên người duyệt |
+| "Không có công cụ thống kê, không tải gì từ máy chủ ngoài" | `npm run site:check` chặn `<script>` và mọi tài nguyên ngoài |
+
+### Ba quyết định đáng ghi
+
+1. **`site:check` đứng NGOÀI `npm run verify`.** Site còn chỗ trống chờ nhóm
+   điền (tên chủ thể, địa chỉ, vùng máy chủ, ảnh chụp), mà `verify` phải xanh
+   suốt trong lúc làm. Cái này chặn **deploy**, không chặn commit — nên nó kiểm
+   được cả thứ mà lint không kiểm được: giá trên site khớp `config.ts`, số Zalo
+   khớp, không có `<script>`, không nạp gì từ máy chủ ngoài.
+2. **Chỗ trống hiện màu vàng chọc mắt** (`class="fill"`), không phải ghi chú lặng
+   lẽ trong comment. Một trang pháp lý phát hành kèm "ĐIỀN: …" là lỗi nghiêm
+   trọng hơn nhiều so với một trang chưa đẹp — nó phải khó bỏ qua.
+3. **Site dùng chữ có sẵn của máy, không tải Be Vietnam Pro từ máy chủ ngoài.**
+   Kế hoạch §4.4 chỉ đòi dùng chung **bảng màu**, và màu thì chép nguyên. Tải
+   font ngoài là gửi địa chỉ IP người đọc sang bên thứ ba, ngay trên trang vừa
+   hứa không có bên thứ ba nào theo dõi họ.
+
+### Xoá tài khoản — thứ tự không được đổi
+
+Ảnh trên Storage **xoá trước**, rồi mới xoá `auth.users`. Ảnh không đi theo
+`on delete cascade`, và ngay khi hàng người dùng mất thì không ai còn quyền xoá
+chúng nữa (policy Storage khớp `auth.uid()`). Làm ngược lại là để ảnh chứng từ
+của người ta nằm lại vĩnh viễn — đúng thứ trang Quyền riêng tư vừa hứa không xảy ra.
+
+Hai thứ **cố ý ở lại** sau khi xoá, đều không kèm tên: dòng đối soát tiền
+(`bank_transactions.user_id` là `on delete set null` — nếu xoá theo thì xoá tài
+khoản trở thành cách dùng lại một mã giao dịch ngân hàng) và dòng nhật ký hỗ trợ
+(`admin_access_log` không có khoá ngoại — nhật ký mà xoá được thì không còn là
+nhật ký). Cả hai đã nói rõ trên trang Quyền riêng tư §6.
+
+### Một điều phải khai mà suýt quên
+
+Màn chuyển khoản tải ảnh QR từ **vietqr.io**, tức là gửi số tiền và nội dung
+chuyển khoản sang một bên thứ ba. Đã liệt kê trong bảng "Bên thứ ba có thể thấy
+gì". Tìm ra bằng cách `grep https:// src/` chứ không bằng cách nhớ lại — nên
+mỗi lần thêm địa chỉ ngoài phải chạy lại phép grep đó và sửa trang.
+
+### Chạy thật đã kiểm
+
+| Việc | Kết quả |
+|---|---|
+| Ô đồng ý điều khoản | **Không tick sẵn**; không tick mà bấm đăng ký → hiện lỗi, không đăng ký |
+| Hai liên kết trong ô đồng ý | Đúng địa chỉ site, mở tab mới |
+| Nút xoá tài khoản: để trống · gõ sai tên vựa · gõ đúng | Mờ · mờ kèm "Chưa khớp tên vựa" · sáng lên |
+| Vị trí thẻ xoá tài khoản | Nằm **sau** thẻ "Dữ liệu của bác" — đường đi ngang qua nút "Lưu ra file" |
+| Bốn trang site ở 375px và 320px | Không trang nào cuộn ngang; bảng dài cuộn trong khung của nó |
+| Liên kết giữa bốn trang | Không liên kết nào gãy |
+| `site:check` | Chặn đúng 10 chỗ còn `ĐIỀN:`; giá, số Zalo, không-script đều qua |
+| `git grep demo@thumua365` | Không có — bản dựng lại chưa từng có tài khoản demo |
+
+### 🔴 Chưa kiểm được
+
+Nút xoá tài khoản **chưa chạy lần nào** — cần Supabase thật và một tài khoản
+thử, rồi kiểm cả bảng lẫn Storage. Lighthouse trang tĩnh và việc cài PWA lên
+iPhone / Android thật cũng phải đo trên bản deploy.
+
+---
+
 ## Bốn số phải giữ trong tầm
 
 Đo lúc kết thúc mỗi giai đoạn.
 
-| Chỉ số | Ngưỡng | Cuối D | Cuối E | Cuối F |
-|---|---|---|---|---|
-| JS khởi tạo | ≤ 250KB gzip | 88KB | 89KB | **91KB** |
-| File dài nhất trong `src/` | ≤ 300 dòng | 276 | 276 | **284** |
-| Phủ test `core/` | ≥ 80% dòng | 97% (262 test) | 97% (310 test) | **98%** (357 test) |
-| Lighthouse mobile | Perf ≥85 · A11y ≥95 | chưa đo | chưa đo | **chưa đo** |
+| Chỉ số | Ngưỡng | Cuối D | Cuối E | Cuối F | Cuối G |
+|---|---|---|---|---|---|
+| JS khởi tạo | ≤ 250KB gzip | 88KB | 89KB | 91KB | **91KB** |
+| File dài nhất trong `src/` | ≤ 300 dòng | 276 | 276 | 284 | **284** |
+| Phủ test `core/` | ≥ 80% dòng | 97% (262 test) | 97% (310 test) | 98% (357 test) | **98%** (358 test) |
+| Lighthouse mobile | Perf ≥85 · A11y ≥95 | chưa đo | chưa đo | chưa đo | **chưa đo** |
+
+`npm run site:check` là bước kiểm thứ sáu, chạy **trước khi xuất bản site**, cố
+ý không nằm trong `npm run verify`.
 
 `npm run verify` chạy đủ 5 bước: lint → typecheck → luật dự án → ranh giới tầng
 → test. Tất cả xanh.
