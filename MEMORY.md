@@ -16,7 +16,7 @@ Ghi thêm một mục mỗi khi kết thúc một giai đoạn. Không xoá mụ
 | | |
 |---|---|
 | Bắt đầu | 09/08/2026 |
-| Repo | `C:\Users\nino\Desktop\mambo365deployment` — nhánh `main`, chưa có remote |
+| Repo | `C:\Users\nino\Desktop\mambo365deployment` — nhánh `master`, chưa có remote |
 | Bản demo cũ | `C:\Users\nino\Desktop\mambo365-main` — **giữ nguyên**, vẫn deploy tới khi bản mới qua criteria |
 | Người làm | Tài (một mình, ghép cặp với AI) |
 
