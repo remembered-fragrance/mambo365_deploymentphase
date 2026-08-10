@@ -2,8 +2,12 @@
 
 Sổ thu mua nông sản cho chủ vựa / thương lái. Chạy được khi không có mạng.
 
-Tài liệu thi công nằm ở [`deploy_plan/`](deploy_plan/README.md) — **đọc `deploy_plan/README.md` trước**,
-mục §3 (ràng buộc chung) áp cho mọi giai đoạn.
+| Đọc gì | Khi nào |
+|---|---|
+| [`deploy_plan/README.md`](deploy_plan/README.md) | **Trước tiên.** Kế hoạch thi công; §3 (ràng buộc chung) áp cho mọi giai đoạn |
+| [`MEMORY.md`](MEMORY.md) | Nhật ký: đã làm gì, quyết gì, vì sao, còn treo gì |
+| [`deploy_plan/NOTES.md`](deploy_plan/NOTES.md) | Việc thấy nhưng chưa tới lượt |
+| [`supabase/VAN_HANH.md`](supabase/VAN_HANH.md) | Mọi việc cần tài khoản Supabase |
 
 ## Chạy
 
