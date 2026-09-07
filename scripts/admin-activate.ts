@@ -30,7 +30,7 @@ import { extendPeriod } from '../src/core/subscription';
 
 const url = process.env.SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const [identifier, amountRaw, bankTxId] = process.argv.slice(2);
+const [identifier, amountRaw, bankTxId, operator] = process.argv.slice(2);
 
 function fail(message: string): never {
   console.error(`✗ ${message}`);
@@ -40,8 +40,10 @@ function fail(message: string): never {
 if (!url || !serviceRoleKey) {
   fail('Thiếu SUPABASE_URL hoặc SUPABASE_SERVICE_ROLE_KEY trong biến môi trường.');
 }
-if (!identifier || !amountRaw || !bankTxId) {
-  fail('Dùng: admin-activate.ts <sđt|tên tài khoản|email> <số tiền> <mã giao dịch ngân hàng>');
+if (!identifier || !amountRaw || !bankTxId || !operator) {
+  fail(
+    'Dùng: admin-activate.ts <sđt|tên tài khoản|email> <số tiền> <mã giao dịch ngân hàng> <tên người duyệt>',
+  );
 }
 
 const amount = Number.parseInt(amountRaw, 10);
@@ -105,8 +107,17 @@ const main = async (): Promise<void> => {
       });
   if (subError) fail(`Không cập nhật được gói: ${subError.message}`);
 
-  console.error(`✓ Đã mở gói cho ${email} tới ${periodEnd} (+${months} tháng, mã ${bankTxId}).`);
-  console.error('  Nhớ ghi vào sổ hỗ trợ: ngày giờ, mã giao dịch, ai duyệt.');
+  const { error: logError } = await admin.from('admin_access_log').insert({
+    user_id: user.id,
+    action: 'activate-plan',
+    operator,
+    reason: `chuyển khoản ${amount} · mã ${bankTxId}`,
+  });
+  if (logError) console.error(`⚠ Không ghi được nhật ký: ${logError.message}`);
+
+  console.error(
+    `✓ Đã mở gói cho ${email} tới ${periodEnd} (+${months} tháng, mã ${bankTxId}), người duyệt: ${operator}.`,
+  );
 };
 
 main().catch((err: unknown) => {

@@ -65,5 +65,17 @@ export const APP_VERSION = '1.0.0';
 /** Kênh liên lạc mà tệp người dùng này thật sự dùng. */
 export const SUPPORT_ZALO = '0912345678';
 
+/**
+ * Site giới thiệu và pháp lý — deploy riêng từ thư mục `site/`, không phải một
+ * route của app. App ở `app.thumua365.vn`, site ở đây.
+ */
+export const SITE_URL = 'https://thumua365.vn';
+
+export const LEGAL_LINKS = {
+  terms: `${SITE_URL}/dieu-khoan.html`,
+  privacy: `${SITE_URL}/quyen-rieng-tu.html`,
+  guide: `${SITE_URL}/huong-dan.html`,
+} as const;
+
 /** Cách bao nhiêu ngày thì nhắc lại việc bổ sung email lấy lại mật khẩu. */
 export const EMAIL_REMINDER_DAYS = 7;

@@ -96,6 +96,12 @@ export interface StoreValue {
   /** Sửa hồ sơ vựa (tên, tên vựa, email lấy lại mật khẩu). */
   updateProfile: (patch: ProfilePatch) => Promise<void>;
   changePassword: (password: string) => Promise<void>;
+  /**
+   * Xoá tài khoản và toàn bộ dữ liệu — thật, không phải vô hiệu hoá (G §3.5).
+   * Đứng ở đây chứ không ở `signOut` vì hai việc khác hẳn nhau: đăng xuất là
+   * dọn máy này, còn cái này là dọn cả máy chủ và không quay lại được.
+   */
+  deleteAccount: () => Promise<void>;
   /** Đẩy hàng đợi và kéo thay đổi ngay, không đợi hẹn giờ. */
   syncNow: () => void;
 }
