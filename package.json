@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "boundaries": "depcruise src --config .dependency-cruiser.cjs",
     "rules": "node scripts/check-rules.mjs",
+    "site:check": "node scripts/check-site.mjs",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/data/database.types.ts",
     "verify": "npm run lint && npm run typecheck && npm run rules && npm run boundaries && npm run test"

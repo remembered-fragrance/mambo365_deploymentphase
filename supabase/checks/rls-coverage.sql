@@ -10,10 +10,12 @@ where schemaname = 'public'
 -- `bank_transactions` cố tình đứng ngoài: nó là sổ đối soát chỉ ghi thêm, một
 -- dòng ở đó nghĩa là "tiền này đã vào rồi". Cho phép xoá mềm nó là mở đúng cái
 -- cửa mà bảng này sinh ra để đóng — cộng tiền hai lần cho một lần chuyển khoản.
+-- `admin_access_log` cũng đứng ngoài, cùng một lý do: nhật ký mà xoá được —
+-- kể cả xoá mềm — thì không còn là nhật ký.
 select t.tablename
 from pg_tables t
 where t.schemaname = 'public'
-  and t.tablename <> 'bank_transactions'
+  and t.tablename not in ('bank_transactions', 'admin_access_log')
   and not exists (
     select 1 from information_schema.columns c
     where c.table_schema = 'public'
