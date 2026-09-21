@@ -18,7 +18,7 @@ import { createBookActions } from './bookActions';
 import { clearUserCache, readBook, writeBook } from './cache';
 import { getSupabase } from './client';
 import { deviceAccount } from './deviceAccount';
-import { clearQueue, enqueue, type NewOp } from './queue';
+import { enqueue, type NewOp } from './queue';
 import { forgetSubscription } from './subscriptionStore';
 import { looksOnline, syncOnce } from './sync';
 import { StoreContext, type StoreValue } from './useStore';
@@ -37,6 +37,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const syncing = useRef(false);
 
   const userId = user?.id ?? null;
+  const activeUser = useRef(userId);
+  activeUser.current = userId;
 
   const show = useCallback((next: AppData) => {
     latest.current = next;
@@ -50,6 +52,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     syncing.current = true;
     void syncOnce(supabase, userId, latest.current)
       .then((outcome) => {
+        if(activeUser.current !== userId)return;
         show(outcome.data);
         setStatus(outcome.status);
       })
@@ -71,7 +74,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       show(next);
       if (!userId) return;
       void writeBook(userId, next);
-      void Promise.all(ops.map(enqueue)).then(kickSync);
+      void Promise.all(ops.map(op => enqueue(op,userId))).then(kickSync);
     },
     [userId, kickSync, show],
   );
@@ -99,6 +102,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       return;
     }
     void readBook(userId).then((cached) => {
+      if (activeUser.current !== userId) return;
       show(cached ?? emptyData());
       kickSync();
     });
@@ -127,7 +131,6 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         const supabase = getSupabase();
         if (!supabase) throw new Error('Chưa cấu hình máy chủ');
         const account = await auth.signIn(supabase, identifier, password);
-        await clearQueue();
         setUser(await auth.loadProfile(supabase, account));
       },
 
@@ -147,7 +150,6 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
           // cùng lý do với việc xoá sổ và xoá hàng đợi ở hai dòng bên cạnh.
           forgetSubscription(userId);
         }
-        await clearQueue();
         setUser(null);
         show(emptyData());
       },

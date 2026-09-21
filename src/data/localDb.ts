@@ -15,6 +15,8 @@ export type OpKind = 'insert' | 'update' | 'softDelete';
 
 /** Một thao tác ghi đang chờ đẩy lên máy chủ. */
 export interface QueuedOp {
+  /** Owner captured at enqueue time; never inferred from the next login session. */
+  readonly userId?: string;
   /** Khoá chống trùng: bấm hai lần vì mạng chậm không thành hai phiếu. */
   readonly id: string;
   readonly kind: OpKind;
@@ -36,6 +38,7 @@ export interface QueuedOp {
   readonly tries: number;
   readonly nextAttemptAt: string;
   readonly lastError?: string;
+  readonly attemptedAt?: string;
 }
 
 interface LocalDbSchema extends DBSchema {
@@ -52,14 +55,29 @@ let dbPromise: Promise<IDBPDatabase<LocalDbSchema>> | null = null;
 
 export const openLocalDb = (): Promise<IDBPDatabase<LocalDbSchema>> => {
   dbPromise ??= openDB<LocalDbSchema>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
+    upgrade(db, _oldVersion, _newVersion, transaction) {
       if (!db.objectStoreNames.contains('books')) db.createObjectStore('books');
       if (!db.objectStoreNames.contains('attachments')) db.createObjectStore('attachments');
       if (!db.objectStoreNames.contains('syncMarks')) db.createObjectStore('syncMarks');
 
-      // v1 sắp hàng đợi theo createdAt — không đủ chính xác, dựng lại theo seq.
-      if (db.objectStoreNames.contains('queue')) db.deleteObjectStore('queue');
-      db.createObjectStore('queue', { keyPath: 'id' }).createIndex('seq', 'seq');
+      if (!db.objectStoreNames.contains('queue')) {
+        db.createObjectStore('queue', { keyPath: 'id' }).createIndex('seq', 'seq');
+      } else {
+        const queue = transaction.objectStore('queue');
+        if (!queue.indexNames.contains('seq')) queue.createIndex('seq', 'seq');
+        // Preserve unsent v1 operations. Unknown owners remain quarantined.
+        void (async () => {
+          let cursor = await queue.openCursor();
+          let sequence = 0;
+          while (cursor) {
+            const row = cursor.value;
+            const created = Date.parse(row.createdAt);
+            sequence = Math.max(sequence + 1, Number.isFinite(created) ? created * 1000 : 1);
+            await cursor.update({ ...row, seq: row.seq ?? sequence });
+            cursor = await cursor.continue();
+          }
+        })();
+      }
     },
   });
   return dbPromise;

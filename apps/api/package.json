@@ -1,0 +1,41 @@
+{
+  "name": "@thumua365/api",
+  "private": true,
+  "version": "0.1.0",
+  "description": "THUMUA365 NestJS API (P0). Schema source: supabase/migrations/",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main.js",
+    "start:worker": "node dist/worker/main.js",
+    "test": "vitest run --configLoader native",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "test:integration": "node --test --test-isolation=none test/integration.test.cjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.6",
+    "@nestjs/platform-express": "^11.1.6",
+    "@nestjs/swagger": "^11.2.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "decimal.js": "^10.6.0",
+    "jose": "^6.1.0",
+    "postgres": "^3.4.7",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "dotenv": "^16.6.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.10",
+    "@nestjs/testing": "^11.1.6",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.13.2",
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.10"
+  }
+}

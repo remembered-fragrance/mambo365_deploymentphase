@@ -23,7 +23,9 @@ export const writeBook = async (userId: string, data: AppData): Promise<void> =>
 /** Đăng xuất hoặc đổi tài khoản: xoá sạch dấu vết của tài khoản cũ. */
 export const clearUserCache = async (userId: string): Promise<void> => {
   const db = await openLocalDb();
-  await Promise.all([db.delete('books', userId), db.delete('syncMarks', userId)]);
+  const tx = db.transaction(['books', 'syncMarks'], 'readwrite');
+  await Promise.all([tx.objectStore('books').delete(userId), tx.objectStore('syncMarks').delete(userId), tx.objectStore('syncMarks').delete(`api:${userId}`)]);
+  await tx.done;
 };
 
 export const readSyncMark = async (userId: string): Promise<string | null> => {

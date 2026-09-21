@@ -8,12 +8,14 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AppData, SyncStatus } from '@/core/types';
+import { apiRequest, ApiError } from './api';
 import { readSyncMark, writeBook, writeSyncMark } from './cache';
-import { fetchChanges, mergeChanges } from './pullChanges';
+import { mergeChanges, type RemoteChanges } from './pullChanges';
 import {
   isDue,
   isExhausted,
   markFailed,
+  markAttempted,
   pendingOps,
   pendingRecordIds,
   removeOp,
@@ -40,30 +42,6 @@ const message = (err: unknown): string =>
  */
 export const PLAN_BLOCKED = 'Gói đã hết hạn, chưa gửi lên mạng được';
 
-class PolicyRefusal extends Error {
-  constructor() {
-    super(PLAN_BLOCKED);
-    this.name = 'PolicyRefusal';
-  }
-}
-
-/**
- * `42501` là mã Postgres cho vi phạm row-level security.
- *
- * Sau migration 0008, policy ghi của bảng nghiệp vụ chỉ có hai điều kiện:
- * đúng chủ sở hữu và còn gói. Vế đầu không thể sai ở đây — `clearQueue()` chạy
- * cả lúc đăng nhập lẫn lúc đăng xuất nên hàng đợi không mang thao tác của tài
- * khoản khác. Vì vậy 42501 trên đường ghi nghĩa là hết gói. Thêm điều kiện mới
- * vào policy thì phải xem lại chỗ này.
- */
-const isPolicyRefusal = (error: { code?: string; message: string }): boolean =>
-  error.code === '42501' || /row-level security/i.test(error.message);
-
-const raise = (error: { code?: string; message: string }): never => {
-  if (isPolicyRefusal(error)) throw new PolicyRefusal();
-  throw new Error(error.message);
-};
-
 /**
  * Gắn cờ đồng bộ lên từng phiếu để giao diện vẽ được "đang chờ gửi" / "kẹt".
  * Hết lần thử là `conflict` — phải hiện cho người dùng, không im lặng.
@@ -82,28 +60,8 @@ export const markSyncStates = (
 
 // ─── Đẩy lên ─────────────────────────────────────────────────────────────────
 
-const applyOp = async (supabase: SupabaseClient, op: QueuedOp): Promise<void> => {
-  if (op.kind === 'insert') {
-    // Bấm hai lần vì mạng chậm không được thành hai phiếu: id đã có thì bỏ qua.
-    const { error } = await supabase
-      .from(op.table)
-      .upsert(op.payload, { onConflict: 'id', ignoreDuplicates: true });
-    if (error) raise(error);
-    return;
-  }
-
-  if (op.kind === 'update') {
-    const { error } = await supabase.from(op.table).update(op.payload).eq('id', op.recordId);
-    if (error) raise(error);
-    return;
-  }
-
-  // Xoá là xoá mềm. Xoá cứng làm bản ghi sống dậy khi máy khác đồng bộ lại.
-  const { error } = await supabase
-    .from(op.table)
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', op.recordId);
-  if (error) raise(error);
+const applyOp = async (supabase: SupabaseClient, op: QueuedOp, userId: string): Promise<void> => {
+  await apiRequest(supabase, '/legacy/commands', {method:'POST', userId, operationId:op.id, body:{operationId:op.id,kind:op.kind,table:op.table,recordId:op.recordId,payload:op.payload}});
 };
 
 /**
@@ -112,26 +70,31 @@ const applyOp = async (supabase: SupabaseClient, op: QueuedOp): Promise<void> =>
  */
 export const flushQueue = async (
   supabase: SupabaseClient,
+  userId?: string,
 ): Promise<{ pushed: number; conflicts: string[]; error?: string; blocked?: boolean }> => {
-  const ops = await pendingOps();
+  const owner = userId ?? (await supabase.auth.getSession()).data.session?.user.id;
+  if (!owner) return {pushed:0,conflicts:[],error:'Cần đăng nhập.'};
+  const ops = await pendingOps(owner);
   const conflicts: string[] = [];
   let pushed = 0;
 
   for (const op of ops) {
     if (isExhausted(op)) {
       conflicts.push(op.recordId);
-      continue;
+      return { pushed, conflicts, error: 'Có thao tác chưa đồng bộ cần xử lý trước khi gửi tiếp.' };
     }
     if (!isDue(op)) break;
 
     try {
-      await applyOp(supabase, op);
+      const frozen = await markAttempted(op.id);
+      if (!frozen) continue;
+      await applyOp(supabase, frozen, owner);
       await removeOp(op.id);
       pushed++;
     } catch (err) {
       // Hết gói: giữ nguyên hàng đợi, KHÔNG tính là một lần thử hỏng. Trả tiền
       // xong là cả hàng đợi tự đi tiếp, không mất phiếu nào.
-      if (err instanceof PolicyRefusal) {
+      if (err instanceof ApiError && err.code === 'PLAN_LIMIT_REACHED') {
         return { pushed, conflicts, error: PLAN_BLOCKED, blocked: true };
       }
       const failed = await markFailed(op, message(err));
@@ -140,7 +103,8 @@ export const flushQueue = async (
     }
   }
 
-  return { pushed, conflicts };
+  const unowned = (await pendingOps()).some(op => !op.userId && typeof op.payload.user_id !== 'string');
+  return { pushed, conflicts, ...(unowned ? {error:'Còn dữ liệu chờ từ phiên bản cũ chưa xác định tài khoản. Dữ liệu vẫn được giữ trên thiết bị; cần đối chiếu trước khi gửi.'} : {}) };
 };
 
 // ─── Một lượt đồng bộ đầy đủ ────────────────────────────────────────────────
@@ -152,8 +116,10 @@ export const syncOnce = async (
 ): Promise<SyncOutcome> => {
   const startedAt = new Date().toISOString();
 
-  const flush = await flushQueue(supabase);
-  const pendingIds = await pendingRecordIds();
+  try { await apiRequest(supabase, '/legacy/claim', {method:'POST',userId,operationId:'legacy-claim:'+userId}); }
+  catch(err) { return {data:local,status:{loading:false,error:message(err),pendingCount:(await pendingOps(userId)).length},conflicts:[]}; }
+  const flush = await flushQueue(supabase,userId);
+  const pendingIds = await pendingRecordIds(userId);
 
   if (flush.error) {
     return {
@@ -170,13 +136,21 @@ export const syncOnce = async (
   }
 
   try {
-    const since = await readSyncMark(userId);
-    const merged = mergeChanges(local, await fetchChanges(supabase, since), pendingIds);
-
-    await writeBook(userId, merged);
+    const saved = await readSyncMark('api:'+userId);
+    let cursor = saved ?? '0';
+    let merged = local;
+    for (let page=0;page<50;page++) {
+      const result=await apiRequest<{changes:RemoteChanges;nextCursor:string;hasMore:boolean}>(supabase,'/legacy/changes?cursor='+encodeURIComponent(cursor),{userId});
+      merged=mergeChanges(merged,result.changes,pendingIds);
+      cursor=result.nextCursor;
+      // Persist data before its cursor. If interrupted, the same page can replay safely.
+      await writeBook(userId,merged);
+      await writeSyncMark('api:'+userId,cursor);
+      if(!result.hasMore)break;
+    }
     await writeSyncMark(userId, startedAt);
 
-    const stillPending = await pendingRecordIds();
+    const stillPending = await pendingRecordIds(userId);
     return {
       data: markSyncStates(merged, stillPending, flush.conflicts),
       status: {

@@ -1,0 +1,108 @@
+# OpenAPI 3.0.3 — một luồng chấp nhận báo giá. CHƯA CHẠY. Khớp @nestjs/swagger.
+openapi: 3.0.3
+info:
+  title: THUMUA365 API
+  version: 1.0.0
+servers:
+  - url: https://api.example.invalid/api/v1
+paths:
+  /quotations/{id}/accept:
+    post:
+      operationId: acceptQuotation
+      tags: [quotations]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: header
+          name: X-Workspace-Id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, format: uuid }
+        - in: header
+          name: If-Match
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revisionId, expectedVersion]
+              properties:
+                revisionId: { type: string, format: uuid }
+                expectedVersion: { type: integer, minimum: 0 }
+            example:
+              revisionId: 8b1c4f7a-5555-4555-8555-aaaaaaaaaaa5
+              expectedVersion: 3
+      responses:
+        '200':
+          description: Đơn confirmed + reservation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId: { type: string, format: uuid }
+                  status: { type: string, enum: [confirmed] }
+                  version: { type: integer }
+                  reservation:
+                    type: object
+                    properties:
+                      qty: { type: string, example: '1200.000' }
+                      expiresAt: { type: string, format: date-time }
+        '409':
+          description: QUOTE_EXPIRED | VERSION_CONFLICT | IDEMPOTENCY_KEY_REUSED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+              examples:
+                expired:
+                  value:
+                    requestId: '01J9QEXP'
+                    code: QUOTE_EXPIRED
+                    message: Báo giá đã hết hạn.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorBody:
+      type: object
+      required: [requestId, code, message]
+      properties:
+        requestId: { type: string }
+        code:
+          type: string
+          enum:
+            - UNAUTHENTICATED
+            - PERMISSION_DENIED
+            - WORKSPACE_ACCESS_REVOKED
+            - VALIDATION_FAILED
+            - VERSION_CONFLICT
+            - INVALID_STATE_TRANSITION
+            - QUOTE_EXPIRED
+            - INSUFFICIENT_STOCK
+            - IDEMPOTENCY_KEY_REUSED
+            - PLAN_LIMIT_REACHED
+            - RATE_LIMITED
+            - SYNC_CURSOR_EXPIRED
+        message: { type: string }
+        fieldErrors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              code: { type: string }
+              message: { type: string }

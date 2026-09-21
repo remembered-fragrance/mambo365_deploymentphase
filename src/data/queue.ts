@@ -40,10 +40,11 @@ export const opSoftDelete = (table: TableName, recordId: string): NewOp => ({
 export const RETRY_DELAYS_MS = [1_000, 5_000, 30_000, 300_000] as const;
 export const MAX_TRIES = RETRY_DELAYS_MS.length + 1;
 
-export const enqueue = async (op: NewOp): Promise<QueuedOp> => {
+export const enqueue = async (op: NewOp, ownerId?: string): Promise<QueuedOp> => {
   const now = new Date().toISOString();
   const queued: QueuedOp = {
     ...op,
+    userId: ownerId ?? (typeof op.payload.user_id === 'string' ? op.payload.user_id : undefined),
     id: newId(),
     seq: nextSeq(),
     createdAt: now,
@@ -51,20 +52,32 @@ export const enqueue = async (op: NewOp): Promise<QueuedOp> => {
     nextAttemptAt: now,
   };
   const db = await openLocalDb();
-
-  // Gõ mười lần vào một ô nháp thì chỉ cần đẩy lên bản cuối. Gộp các lần sửa
-  // chưa gửi của CÙNG một bản ghi lại — người dùng dùng 3G, mỗi lượt gửi thừa
-  // là một lần chờ.
+  const tx = db.transaction('queue', 'readwrite');
+  let payload = {};
   if (op.kind === 'update') {
-    for (const existing of await db.getAll('queue')) {
-      if (existing.kind === 'update' && existing.table === op.table && existing.recordId === op.recordId) {
-        await db.delete('queue', existing.id);
+    for (const existing of await tx.store.index('seq').getAll()) {
+      if (existing.kind === 'update' && !existing.attemptedAt && existing.tries === 0 && existing.userId === queued.userId && existing.table === op.table && existing.recordId === op.recordId) {
+        payload = { ...payload, ...existing.payload };
+        await tx.store.delete(existing.id);
       }
     }
   }
+  const merged = { ...queued, payload: { ...payload, ...queued.payload } };
+  await tx.store.put(merged);
+  await tx.done;
+  return merged;
+};
 
-  await db.put('queue', queued);
-  return queued;
+/** Freeze payload before network I/O so edits cannot remove an in-flight command. */
+export const markAttempted = async (id: string): Promise<QueuedOp | undefined> => {
+  const db = await openLocalDb();
+  const tx = db.transaction('queue', 'readwrite');
+  const op = await tx.store.get(id);
+  if (!op) { await tx.done; return undefined; }
+  const next = { ...op, attemptedAt: op.attemptedAt ?? new Date().toISOString() };
+  await tx.store.put(next);
+  await tx.done;
+  return next;
 };
 
 /**
@@ -72,9 +85,10 @@ export const enqueue = async (op: NewOp): Promise<QueuedOp> => {
  * Thứ tự là bắt buộc: đẩy payment lên trước transaction thì khoá ngoại lỗi và
  * khoản trả tiền rơi mất.
  */
-export const pendingOps = async (): Promise<QueuedOp[]> => {
+export const pendingOps = async (userId?: string): Promise<QueuedOp[]> => {
   const db = await openLocalDb();
-  return db.getAllFromIndex('queue', 'seq');
+  const ops = await db.getAllFromIndex('queue', 'seq');
+  return userId ? ops.filter(op => (op.userId ?? op.payload.user_id) === userId) : ops;
 };
 
 export const pendingCount = async (): Promise<number> => {
@@ -108,8 +122,8 @@ export const isDue = (op: QueuedOp, now = Date.now()): boolean =>
   new Date(op.nextAttemptAt).getTime() <= now;
 
 /** Id các bản ghi còn thao tác chưa đẩy được — dùng để vẽ cờ "đang chờ gửi". */
-export const pendingRecordIds = async (): Promise<Set<string>> => {
-  const ops = await pendingOps();
+export const pendingRecordIds = async (userId?: string): Promise<Set<string>> => {
+  const ops = await pendingOps(userId);
   return new Set(ops.map((op) => op.recordId));
 };
 

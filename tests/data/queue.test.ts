@@ -11,6 +11,7 @@ import {
   isDue,
   isExhausted,
   markFailed,
+  markAttempted,
   MAX_TRIES,
   opInsert,
   opSoftDelete,
@@ -146,5 +147,26 @@ describe('đổi tài khoản', () => {
     await enqueue(opInsert('transactions', 'tx-1', { id: 'tx-1' }));
     await clearQueue();
     expect(await pendingCount()).toBe(0);
+  });
+  it('giữ hàng đợi cũ nhưng chỉ đọc thao tác đúng chủ tài khoản', async () => {
+    await enqueue(opSoftDelete('notes', 'a'), 'alice');
+    await enqueue(opSoftDelete('notes', 'b'), 'bob');
+    expect((await pendingOps('alice')).map(op => op.recordId)).toEqual(['a']);
+    expect((await pendingOps('bob')).map(op => op.recordId)).toEqual(['b']);
+    expect(await pendingCount()).toBe(2);
+  });
+  it('không gộp hoặc xóa thao tác đang gửi và giữ nguyên khóa gửi lại', async () => {
+    const first = await enqueue(opUpdate('drafts', 'a', { note: 'old' }), 'alice');
+    await markAttempted(first.id);
+    await enqueue(opUpdate('drafts', 'a', { note: 'new' }), 'alice');
+    const ops = await pendingOps('alice');
+    expect(ops).toHaveLength(2);
+    expect(ops[0]?.id).toBe(first.id);
+    expect(ops[0]?.payload.note).toBe('old');
+  });
+  it('gộp các trường sửa khác nhau trong cùng giao dịch IndexedDB', async () => {
+    await enqueue(opUpdate('drafts', 'a', { note: 'n' }), 'alice');
+    await enqueue(opUpdate('drafts', 'a', { supplier_name: 's' }), 'alice');
+    expect((await pendingOps('alice'))[0]?.payload).toEqual({note:'n',supplier_name:'s'});
   });
 });
