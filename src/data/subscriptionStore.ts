@@ -17,7 +17,7 @@
  */
 
 import type { PaymentIntent, Subscription } from '@/core/subscription';
-import { fetchPaymentIntents, fetchSubscription } from './billing';
+import { fetchSubscription } from './billing';
 import { getSupabase } from './client';
 
 const KEY_PREFIX = 'thumua365:plan:';
@@ -44,6 +44,7 @@ const remember = (userId: string, subscription: Subscription | null): void => {
     if (subscription) localStorage.setItem(KEY_PREFIX + userId, JSON.stringify(subscription));
     else localStorage.removeItem(KEY_PREFIX + userId);
   } catch {
+    if (loadedFor !== userId) return;
     // Bộ nhớ đầy hoặc bị chặn — không đáng làm hỏng một lượt đồng bộ.
   }
 };
@@ -64,7 +65,8 @@ export const subscribeSubscription = (listener: () => void): (() => void) => {
   };
 };
 
-export const subscriptionSnapshot = (): SubscriptionSnapshot => snapshot;
+export const subscriptionSnapshot = (orgId?: string | null): SubscriptionSnapshot =>
+  orgId === undefined || loadedFor === orgId ? snapshot : EMPTY;
 
 /**
  * Đọc lại từ máy chủ. `force` để màn chờ chuyển khoản hỏi theo nhịp; không có
@@ -84,16 +86,16 @@ export const loadSubscription = async (userId: string | null, force = false): Pr
 
   // Hiện ngay bản nhớ trong máy để không có khoảnh khắc nào người đã trả tiền
   // bị coi là bậc miễn phí trong lúc chờ mạng.
-  emit({ subscription: recall(userId), intents: snapshot.intents, loading: true });
+  emit({ subscription: recall(userId), intents: [], loading: true });
 
   try {
-    const [subscription, intents] = await Promise.all([
-      fetchSubscription(supabase, userId),
-      fetchPaymentIntents(supabase, userId),
-    ]);
+    const subscription = await fetchSubscription(supabase, userId);
+    if (loadedFor !== userId) return;
+    const intents: PaymentIntent[] = [];
     remember(userId, subscription);
     emit({ subscription, intents, loading: false });
   } catch {
+    if (loadedFor !== userId) return;
     // Hỏi hụt thì giữ nguyên bản đang có. Không hạ bậc vì một lần mất sóng.
     emit({ ...snapshot, loading: false });
   }

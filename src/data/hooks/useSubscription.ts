@@ -19,6 +19,7 @@ import { FREE_RECEIPTS_PER_MONTH, GRACE_DAYS } from '@/config';
 import { quotaFor, type QuotaState } from '@/core/receiptQuota';
 import { planFor, type PaymentIntent, type PlanState, type Subscription } from '@/core/subscription';
 import { createPaymentIntent } from '../billing';
+import { backendCapabilities } from '../capabilities';
 import { getSupabase } from '../client';
 import { isDemoActive } from '../demoMode';
 import {
@@ -31,6 +32,7 @@ import {
 import { useStore } from '../useStore';
 
 export interface SubscriptionValue {
+  readonly billingAvailable: boolean;
   readonly plan: PlanState;
   readonly quota: QuotaState;
   readonly subscription: Subscription | null;
@@ -45,12 +47,12 @@ export interface SubscriptionValue {
 const SERVER: SubscriptionSnapshot = { subscription: null, intents: [], loading: false };
 
 export function useSubscription(): SubscriptionValue {
-  const { data, user } = useStore();
-  const userId = user?.id ?? null;
+  const { data, currentOrgId } = useStore();
+  const userId = currentOrgId;
 
   const snapshot = useSyncExternalStore(
     subscribeSubscription,
-    subscriptionSnapshot,
+    () => subscriptionSnapshot(userId),
     () => SERVER,
   );
 
@@ -91,6 +93,7 @@ export function useSubscription(): SubscriptionValue {
   );
 
   return {
+    billingAvailable: backendCapabilities.billingIntents,
     plan,
     quota,
     subscription: snapshot.subscription,

@@ -1,43 +1,13 @@
-/**
- * Chỗ DUY NHẤT hai thế giới gặp nhau: camelCase của app ↔ snake_case của database.
- *
- * Luật: không `as any`, không trải `...row`. Viết ra từng trường — trường bị
- * quên ở đây biểu hiện thành "mất dữ liệu" chứ không thành lỗi biên dịch.
- * Kiểu sinh từ database không được rò rỉ ra ngoài `src/data/`.
- */
-
-import { formulaFrom, GUEST_BUYER_ID, GUEST_SUPPLIER_ID } from '@/core/normalizeTransaction';
-import type {
-  Buyer,
-  DraftReceipt,
-  Note,
-  Payment,
-  PricingRule,
-  Product,
-  Supplier,
-  Transaction,
-} from '@/core/types';
-import type {
-  DraftRow,
-  NoteRow,
-  PartyRow,
-  PaymentRow,
-  PricingRuleRow,
-  ProductRow,
-  TransactionRow,
-} from './rows';
-
-/** Mã khách lẻ là quy ước của `core/`, không phải hồ sơ thật ⇒ không xuống database. */
-const partyIdToRow = (id: string): string | null =>
-  id === GUEST_SUPPLIER_ID || id === GUEST_BUYER_ID ? null : id;
-
-const partyIdFromRow = (id: string | null, kind: string): string =>
-  id ?? (kind === 'sale' ? GUEST_BUYER_ID : GUEST_SUPPLIER_ID);
+import type { Buyer, DraftReceipt, Note, Payment, PricingRule, Product, Supplier, Transaction } from '@/core/types';
+import { formulaFrom } from '@/core/normalizeTransaction';
+import type { DraftRow, NoteRow, PartyRow, PaymentRow, PricingRuleRow, ProductRow, TransactionRow } from './rows';
+import { partyIdFromWire, partyIdToWire } from './wireMappers';
+export * from './wireMappers';
+export * from './recordMappers';
 
 const nullable = <T>(value: T | undefined): T | null => value ?? null;
-const optional = <T>(value: T | null): T | undefined => value ?? undefined;
 
-// ─── Đối tác ─────────────────────────────────────────────────────────────────
+const optional = <T>(value: T | null): T | undefined => value ?? undefined;
 
 export const partyToRow = (party: Supplier | Buyer, userId: string) => ({
   id: party.id,
@@ -57,8 +27,6 @@ export const supplierFromRow = (row: PartyRow): Supplier => ({
 });
 
 export const buyerFromRow = (row: PartyRow): Buyer => supplierFromRow(row);
-
-// ─── Mặt hàng ────────────────────────────────────────────────────────────────
 
 export const productToRow = (product: Product, userId: string) => ({
   id: product.id,
@@ -89,8 +57,6 @@ export const productFromRow = (row: ProductRow): Product => ({
   trackInventory: optional(row.track_inventory),
 });
 
-// ─── Lần trả tiền ────────────────────────────────────────────────────────────
-
 export const paymentToRow = (payment: Payment, transactionId: string, userId: string) => ({
   id: payment.id,
   transaction_id: transactionId,
@@ -107,14 +73,12 @@ export const paymentFromRow = (row: PaymentRow): Payment => ({
   note: optional(row.note),
 });
 
-// ─── Phiếu ───────────────────────────────────────────────────────────────────
-
 export const transactionToRow = (tx: Transaction, userId: string) => ({
   id: tx.id,
   user_id: userId,
   date: tx.date,
   kind: tx.kind,
-  counterparty_id: partyIdToRow(tx.counterpartyId),
+  counterparty_id: partyIdToWire(tx.counterpartyId),
   supplier_id: tx.supplierId,
   supplier_name: tx.supplierName,
   lines: tx.lines,
@@ -124,11 +88,6 @@ export const transactionToRow = (tx: Transaction, userId: string) => ({
   note: nullable(tx.note),
 });
 
-/**
- * `amountPaid` LUÔN tính lại từ bảng payments — không có cột nào để đọc.
- * Đây là chỗ bất biến `amountPaid = sum(payments)` được database bảo đảm
- * thay vì chỉ là quy ước trong code.
- */
 export const transactionFromRow = (row: TransactionRow): Transaction => {
   const payments = (row.payments ?? [])
     .filter((p) => p.deleted_at === null)
@@ -139,8 +98,8 @@ export const transactionFromRow = (row: TransactionRow): Transaction => {
     id: row.id,
     date: row.date,
     kind: row.kind === 'sale' ? 'sale' : 'purchase',
-    counterpartyId: partyIdFromRow(row.counterparty_id, row.kind),
-    supplierId: row.supplier_id ?? partyIdFromRow(row.counterparty_id, row.kind),
+    counterpartyId: partyIdFromWire(row.counterparty_id, row.kind),
+    supplierId: row.supplier_id ?? partyIdFromWire(row.counterparty_id, row.kind),
     supplierName: row.supplier_name,
     lines: row.lines,
     creditTerms: optional(row.credit_terms),
@@ -153,14 +112,12 @@ export const transactionFromRow = (row: TransactionRow): Transaction => {
   };
 };
 
-// ─── Nháp ────────────────────────────────────────────────────────────────────
-
 export const draftToRow = (draft: DraftReceipt, userId: string) => ({
   id: draft.id,
   user_id: userId,
   status: draft.status,
   kind: nullable(draft.kind),
-  counterparty_id: draft.counterpartyId ? partyIdToRow(draft.counterpartyId) : null,
+  counterparty_id: draft.counterpartyId ? partyIdToWire(draft.counterpartyId) : null,
   supplier_id: nullable(draft.supplierId),
   supplier_name: draft.supplierName,
   lines: draft.lines,
@@ -186,8 +143,6 @@ export const draftFromRow = (row: DraftRow): DraftReceipt => ({
   updatedAt: row.updated_at,
 });
 
-// ─── Quy tắc giá ─────────────────────────────────────────────────────────────
-
 export const pricingRuleToRow = (rule: PricingRule, userId: string) => ({
   id: rule.id,
   user_id: userId,
@@ -212,8 +167,6 @@ export const pricingRuleFromRow = (row: PricingRuleRow): PricingRule => ({
   appliesOnPickup: row.applies_on_pickup,
   active: row.active,
 });
-
-// ─── Ghi chú ─────────────────────────────────────────────────────────────────
 
 export const noteToRow = (note: Note, userId: string) => ({
   id: note.id,

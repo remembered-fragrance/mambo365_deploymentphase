@@ -10,7 +10,7 @@ import { getSupabase } from '../client';
 import { cacheRemoteAttachment, getLocalAttachment, signedAttachmentUrl } from '../attachments';
 import { useStore } from '../useStore';
 
-export type AttachmentStatus = 'loading' | 'ready' | 'missing';
+export type AttachmentStatus = 'loading' | 'ready' | 'missing' | 'unavailable';
 
 export interface AttachmentUrl {
   readonly url: string | null;
@@ -63,7 +63,9 @@ export function useAttachmentUrl(id: string | undefined): AttachmentUrl {
     };
 
     setState({ url: null, status: 'loading' });
-    void load();
+    void load().catch(() => {
+      if (!cancelled) setState({ url: null, status: 'unavailable' });
+    });
 
     return () => {
       cancelled = true;

@@ -5,28 +5,31 @@
  */
 
 import type { AppData } from '@/core/types';
-import { partyToRow, productToRow } from './mappers';
+import { partyToInsert, productToInsert, productToPatch } from './mappers';
 import { opInsert, opUpdate, type NewOp } from './queue';
 
-export const derivedOps = (before: AppData, after: AppData, userId: string): NewOp[] => {
+export const derivedOps = (before: AppData, after: AppData, _userId?: string): NewOp[] => {
   const ops: NewOp[] = [];
 
   for (const supplier of after.suppliers) {
     if (before.suppliers.some((s) => s.id === supplier.id)) continue;
-    ops.push(opInsert('suppliers', supplier.id, partyToRow(supplier, userId)));
+    ops.push(opInsert('supplier', supplier.id, partyToInsert(supplier)));
   }
 
   for (const buyer of after.buyers) {
     if (before.buyers.some((b) => b.id === buyer.id)) continue;
-    ops.push(opInsert('buyers', buyer.id, partyToRow(buyer, userId)));
+    ops.push(opInsert('buyer', buyer.id, partyToInsert(buyer)));
   }
 
   for (const product of after.products) {
     const old = before.products.find((p) => p.id === product.id);
     if (!old) {
-      ops.push(opInsert('products', product.id, productToRow(product, userId)));
+      ops.push(opInsert('product', product.id, productToInsert(product)));
     } else if (old.lastPricePerUnit !== product.lastPricePerUnit) {
-      ops.push(opUpdate('products', product.id, productToRow(product, userId)));
+      // Sửa mặt hàng chỉ đổi giá gần nhất — hợp lệ với người cân (quyền receipt:create)
+      ops.push(
+        opUpdate('product', product.id, productToPatch({ lastPricePerUnit: product.lastPricePerUnit })),
+      );
     }
   }
 
