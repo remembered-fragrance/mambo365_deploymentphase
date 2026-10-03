@@ -5,7 +5,7 @@ Sửa lần 3: sau BE1 — khớp với code đã chạy (log ở middleware, `C
 Sửa lần 4: 28/09/2026 — §4 khớp hợp đồng đồng bộ đã code (BE3)
 Tiến độ: **BE0 ✅ · BE1 ✅ · BE2 ✅** (OTP dời sang BE4) · **BE3 ✅** (`v0.4.0`) · **BE4 🟡** hợp đồng + API +
 test xong, còn Phone provider và nghiệm thu trên staging · **BE5 🟡** (03/10) hợp đồng + API + test xong, còn
-email và nghiệm thu trên staging · **BE7 🟡** (03/10) hợp đồng + API + test xong — nhật ký ở [MEMORY.md](../MEMORY.md)
+email và nghiệm thu trên staging · **BE7 🟡** (03/10) hợp đồng + API + test xong · **BE6 🟡** (03/10) hợp đồng + API + test xong, còn một lần chuyển khoản thật — nhật ký ở [MEMORY.md](../MEMORY.md)
 Từ 03/10/2026 backend + frontend ở **một monorepo** (`apps/api`, `apps/web`) — §2 mô tả bố cục hai repo cũ
 Hướng làm (28/09/2026): **backend làm trước, frontend làm sau** — frontend dựng lại app từ đầu theo
 hợp đồng khi backend xong các bước; mục "Frontend" của từng bước là việc để dành
@@ -562,7 +562,15 @@ việc đã cân thật). Đơn đã xong nhận thêm phiếu (chỉ gắn). Lu
   → vựa cân, lập phiếu theo đơn, trả một phần **lúc mất mạng** → có mạng → đơn tự
   `fulfilled` → nông dân thấy phiếu và số còn nợ. Một test Playwright chạy luồng này trong CI.
 
-### BE6 — Tài khoản, gói, thanh toán (2–3 buổi)
+### BE6 — Tài khoản, gói, thanh toán (2–3 buổi) · 🟡 03/10 — hợp đồng + API + test xong
+
+**Chốt khi làm BE6 (03/10/2026):** `PrivilegedDatabase` (role `api_privileged`, biến
+`PRIVILEGED_DATABASE_URL`) chỉ inject vào webhook, quản trị, xoá tài khoản. Quản trị viên = id trong
+`ADMIN_USER_IDS` (RouteAuth `admin`). Webhook + kích hoạt tay dùng chung `activatePlan`: ghi sổ
+đối soát → gia hạn → thông báo + nhật ký trong MỘT transaction. Trigger `billing_guard`: api_service
+không mở / gia hạn gói, không đánh dấu "đã trả". Xoá tài khoản: ảnh → dữ liệu (tổ chức chủ duy nhất bị
+xoá hẳn, kể cả đơn / kết nối với bên kia) → Auth; giữ `bank_transactions`, `audit_log`.
+
 
 - **Backend:** `/me/profile`, `/me/subscription`, `/billing/intents`, `/referrals/claim`,
   `/webhooks/bank` (role `api_privileged`, chống trùng `bank_tx_id` ghi **trước** khi gia
