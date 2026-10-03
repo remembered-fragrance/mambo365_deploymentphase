@@ -5,7 +5,7 @@ Sửa lần 3: sau BE1 — khớp với code đã chạy (log ở middleware, `C
 Sửa lần 4: 28/09/2026 — §4 khớp hợp đồng đồng bộ đã code (BE3)
 Tiến độ: **BE0 ✅ · BE1 ✅ · BE2 ✅** (OTP dời sang BE4) · **BE3 ✅** (`v0.4.0`) · **BE4 🟡** hợp đồng + API +
 test xong, còn Phone provider và nghiệm thu trên staging · **BE5 🟡** (03/10) hợp đồng + API + test xong, còn
-email và nghiệm thu trên staging · **BE7 🟡** (03/10) hợp đồng + API + test xong · **BE6 🟡** (03/10) hợp đồng + API + test xong, còn một lần chuyển khoản thật — nhật ký ở [MEMORY.md](../MEMORY.md)
+email và nghiệm thu trên staging · **BE7 🟡** (03/10) hợp đồng + API + test xong · **BE6 🟡** (03/10) hợp đồng + API + test xong, còn một lần chuyển khoản thật · **BE8 🟡** (03/10) — nhật ký ở [MEMORY.md](../MEMORY.md)
 Từ 03/10/2026 backend + frontend ở **một monorepo** (`apps/api`, `apps/web`) — §2 mô tả bố cục hai repo cũ
 Hướng làm (28/09/2026): **backend làm trước, frontend làm sau** — frontend dựng lại app từ đầu theo
 hợp đồng khi backend xong các bước; mục "Frontend" của từng bước là việc để dành
@@ -597,7 +597,12 @@ phiếu vựa ghi về mình (lật chiều).
 - **Xong khi:** DN hai chi nhánh, mỗi nơi một nhân viên cân — mỗi người chỉ thấy phiếu chi
   nhánh mình; owner thấy tổng khớp hai chi nhánh cộng lại; tạo chi nhánh thứ N+1 → `BRANCH_LIMIT`.
 
-### BE8 — Ảnh chứng từ (1 buổi)
+### BE8 — Ảnh chứng từ (1 buổi) · 🟡 03/10 — hợp đồng + API + test xong
+
+**Chốt khi làm BE8 (03/10/2026):** đường dẫn `attachments/<orgId>/<attachmentId>`, API chỉ ký URL
+(tải lên: hạn 2 giờ, không ghi đè; xem: 10 phút). Xem chỉ khi phiếu / nháp mình được thấy (RLS + chi
+nhánh) nhắc tới id. Giới hạn 3MB, JPEG/PNG/WebP — kiểm ở API, bucket chặn lần nữa.
+
 
 - **Backend:** signed URL; kiểm `MAX_ATTACHMENTS`, loại và kích thước file; bucket không
   còn policy cho `authenticated`.
