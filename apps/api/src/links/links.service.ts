@@ -208,7 +208,7 @@ export class LinksService {
       return { summary: await findSummary(tx, link.id), accepted: true, ownerOrgId: link.ownerOrgId };
     });
 
-    if (accepted) this.events.emit('link.accepted', { linkId, ownerOrgId, linkedOrgId: orgId });
+    if (accepted) this.events.emit('link.accepted', { linkId, ownerOrgId, linkedOrgId: orgId, actorUserId: user.id });
     return summary;
   }
 
@@ -243,6 +243,7 @@ export class LinksService {
         ownerOrgId: result.revoked.ownerOrgId,
         linkedOrgId: result.revoked.linkedOrgId,
         by: result.revoked.side,
+        actorUserId: user.id,
       });
     }
     return result.summary;
