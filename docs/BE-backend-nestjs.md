@@ -5,7 +5,7 @@ Sửa lần 3: sau BE1 — khớp với code đã chạy (log ở middleware, `C
 Sửa lần 4: 28/09/2026 — §4 khớp hợp đồng đồng bộ đã code (BE3)
 Tiến độ: **BE0 ✅ · BE1 ✅ · BE2 ✅** (OTP dời sang BE4) · **BE3 ✅** (`v0.4.0`) · **BE4 🟡** hợp đồng + API +
 test xong, còn Phone provider và nghiệm thu trên staging · **BE5 🟡** (03/10) hợp đồng + API + test xong, còn
-email và nghiệm thu trên staging — nhật ký ở [MEMORY.md](../MEMORY.md)
+email và nghiệm thu trên staging · **BE7 🟡** (03/10) hợp đồng + API + test xong — nhật ký ở [MEMORY.md](../MEMORY.md)
 Từ 03/10/2026 backend + frontend ở **một monorepo** (`apps/api`, `apps/web`) — §2 mô tả bố cục hai repo cũ
 Hướng làm (28/09/2026): **backend làm trước, frontend làm sau** — frontend dựng lại app từ đầu theo
 hợp đồng khi backend xong các bước; mục "Frontend" của từng bước là việc để dành
@@ -573,7 +573,15 @@ việc đã cân thật). Đơn đã xong nhận thêm phiếu (chỉ gắn). Lu
 - **Xong khi:** 10 mục VAN_HANH §7.3 chạy trên API; một lần chuyển khoản thật. **Đạt
   phần luồng của R3.**
 
-### BE7 — Doanh nghiệp: nhân viên, chi nhánh, báo cáo (2–3 buổi)
+### BE7 — Doanh nghiệp: nhân viên, chi nhánh, báo cáo (2–3 buổi) · 🟡 03/10 — hợp đồng + API + test xong
+
+**Chốt khi làm BE7 (03/10/2026):** chủ TẠO tài khoản cho nhân viên (tên, SĐT, mật khẩu ban đầu —
+Auth Admin API) thay vì mời: người cân không phải tự đăng ký, không cần OTP. Số đã có tài khoản nơi
+khác → `ACCOUNT_EXISTS` (mời tài khoản có sẵn: giai đoạn sau); người từng bị gỡ → bật lại. Vai trò
+`owner` chỉ có từ lúc lập tổ chức — trigger `memberships_guard`. Chi nhánh chỉ lưu trữ, không xoá;
+giới hạn gói kiểm dưới khoá advisory. Báo cáo tính bằng `transactionTotals` của core; nông dân xem
+phiếu vựa ghi về mình (lật chiều).
+
 
 - **Backend:** `/org/members`, `/org/branches` (`BRANCH_LIMIT`), `/reports/summary`; sự kiện
   `member.*`.
