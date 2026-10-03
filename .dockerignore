@@ -5,3 +5,5 @@
 **/*.tgz
 .git
 docs
+# Image chỉ chứa API — Dockerfile không chép frontend.
+apps/web

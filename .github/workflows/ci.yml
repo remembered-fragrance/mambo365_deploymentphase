@@ -25,8 +25,12 @@ jobs:
       - name: Kiểm kiểu
         run: npm run typecheck
 
+      # Gồm cả ranh giới tầng của apps/web.
       - name: Ranh giới gói
         run: npm run boundaries
+
+      - name: Luật frontend (apps/web README §3)
+        run: npm run rules -w @mambo/web
 
       # Gồm cả test "openapi.json khớp hợp đồng" — quên `npm run openapi` là đỏ.
       - name: Test
@@ -34,6 +38,9 @@ jobs:
 
       - name: Build API
         run: npm run build -w @mambo/api
+
+      - name: Build web
+        run: npm run build -w @mambo/web
 
   # Postgres thật (cùng bản Supabase: 17 + PostGIS), dựng bằng đúng docker-compose.yml
   # của máy dev: migration chạy từ database trống, schema không lệch, RLS và API trên DB.

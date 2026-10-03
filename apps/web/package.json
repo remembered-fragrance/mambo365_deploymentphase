@@ -1,7 +1,7 @@
 {
-  "name": "thumua365",
+  "name": "@mambo/web",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -20,9 +20,9 @@
   },
   "dependencies": {
     "@fontsource/be-vietnam-pro": "^5.2.8",
-    "@mambo/contracts": "https://github.com/remembered-fragrance/Thumua365_BE/releases/download/v0.4.0/mambo-contracts-0.4.0.tgz",
-    "@mambo/core": "https://github.com/remembered-fragrance/Thumua365_BE/releases/download/v0.4.0/mambo-core-0.4.0.tgz",
-    "@mambo/sdk": "https://github.com/remembered-fragrance/Thumua365_BE/releases/download/v0.4.0/mambo-sdk-0.4.0.tgz",
+    "@mambo/contracts": "0.4.0",
+    "@mambo/core": "0.4.0",
+    "@mambo/sdk": "0.4.0",
     "@supabase/supabase-js": "^2.112.2",
     "html2canvas": "^1.4.1",
     "idb": "^8.0.3",
@@ -49,9 +49,5 @@
     "vite": "^8.1.0",
     "vite-plugin-pwa": "^1.3.0",
     "vitest": "^4.1.10"
-  },
-  "allowScripts": {
-    "esbuild@0.28.2": true,
-    "core-js@3.50.0": true
   }
 }

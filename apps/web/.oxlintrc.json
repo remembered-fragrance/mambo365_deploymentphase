@@ -13,7 +13,10 @@
     "no-var": "error",
     "eqeqeq": "error",
     "typescript/no-explicit-any": "error",
-    "typescript/no-non-null-assertion": "error"
+    "typescript/no-non-null-assertion": "error",
+    "react/set-state-in-effect": "warn",
+    "react/refs": "warn",
+    "react/purity": "warn"
   },
   "ignorePatterns": ["dist", "coverage", "node_modules"]
 }

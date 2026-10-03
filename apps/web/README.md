@@ -11,9 +11,13 @@ Sổ thu mua nông sản cho chủ vựa / thương lái. Chạy được khi kh
 
 ## Chạy
 
+Từ 03/10/2026 frontend nằm trong monorepo (`apps/web`, workspace `@mambo/web`) và dùng thẳng
+`packages/core|contracts|sdk`. Chạy từ **gốc repo**:
+
 ```bash
 npm install
-npm run dev
+npm run dev:web      # build packages/* rồi chạy Vite
+npm run verify       # kiểm cả backend lẫn frontend
 ```
 
 ## Kiểm trước khi merge

@@ -78,6 +78,11 @@ khi backend đổi thì chỉ phải sửa một thư mục:
 
 ### 2.1 Gói
 
+> **Trong monorepo này** (`apps/web`, từ 03/10/2026): khai `"@mambo/core": "0.4.0"` (cùng cho
+> `contracts`, `sdk`) thay cho URL — npm workspaces nối thẳng vào `packages/*`; chạy
+> `npm run build:packages` ở gốc trước `dev`/`typecheck`/`test` của web. URL `.tgz` dưới đây chỉ
+> dành cho nơi cài ngoài monorepo.
+
 ```json
 {
   "dependencies": {

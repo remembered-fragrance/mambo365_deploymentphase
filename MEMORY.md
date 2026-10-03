@@ -16,8 +16,8 @@ frontend cũ) nằm ở `MEMORY.md` của repo frontend.
 
 | | |
 |---|---|
-| Repo | `C:\Users\nino\Desktop\Thumua365_BE` — [github](https://github.com/remembered-fragrance/Thumua365_BE), nhánh `master` |
-| Repo frontend | `C:\Users\nino\Desktop\mambo365deployment` — `mambo365_deploymentphase`, nhánh `master` |
+| Repo | **Monorepo `thumua365`** (gộp 03/10/2026, nhánh `master`): backend ở gốc, frontend ở `apps/web` — xem mục "Gộp monorepo" |
+| Repo cũ (chỉ đọc) | [`Thumua365_BE`](https://github.com/remembered-fragrance/Thumua365_BE) · [`mambo365_deploymentphase`](https://github.com/remembered-fragrance/mambo365_deploymentphase) |
 | Người làm | Tài (backend, ghép cặp với AI) · một thành viên khác làm frontend |
 | Trạng thái sản phẩm | BE0–BE3 xong (`v0.4.0`), chạy trên staging (Render + Supabase) · **BE4 đang làm** (hợp đồng + API + test xong) · chỉ có tài khoản thử, **chưa có dữ liệu thật** · **backend làm trước, frontend làm sau** (28/09) |
 
@@ -674,6 +674,54 @@ Phone provider (`/auth/v1/settings`: `external.phone = false`) ⇒ OTP chưa ch�
 - [ ] Chọn nhà cung cấp SMS thật cho "OTP tới máy thật" (Twilio/Vonage hoặc eSMS/SpeedSMS qua Send
       SMS Hook).
 - [ ] Merge, `prisma migrate deploy` lên staging, nghiệm thu bằng trang thử, phát hành `0.5.0`.
+
+---
+
+## Gộp monorepo · 03/10/2026
+
+**Kết quả:** một repo cho cả backend lẫn frontend, giữ nguyên lịch sử commit của hai repo cũ;
+`npm run verify` xanh cho mọi workspace. Đảo quyết định BE0 #1 ("hai repo, không monorepo").
+
+### Làm gì
+
+- Gốc = `Thumua365_BE` nhánh `be4/ket-noi` (BE4 chưa merge — hợp đồng + API + test xong, chưa lên
+  staging) kèm tag `v0.1.0`–`v0.4.0`.
+- `git subtree add --prefix=apps/web` từ `mambo365_deploymentphase` nhánh
+  `feat/backend-integration` (03/10 — tầng `src/data/` đã chuyển sang `@mambo/sdk` v0.4.0).
+- `apps/web` thành workspace `@mambo/web`: `@mambo/*` khai `0.4.0` → nối thẳng `packages/*`, bỏ
+  URL `.tgz`. Bỏ `apps/web/package-lock.json` và `apps/web/.github` (CI cũ chạy nhánh `main`).
+- Script gốc: `dev:web`; `build`, `boundaries`, `verify` gồm cả web. CI thêm "Luật frontend" và
+  "Build web"; typecheck/test đã gồm web qua `--workspaces`. `release.yml` kiểm cả version web.
+- `.dockerignore` bỏ `apps/web`; `render.yaml` `buildFilter.ignoredPaths: apps/web/**`;
+  `apps/web/vercel.json` cài và build từ gốc repo (Vercel: Root Directory = `apps/web`).
+
+### Quyết định / phát hiện
+
+1. **oxlint 1.83 (khoá của BE) có ba luật React mới** mà 1.77 (của web) chưa có:
+   `set-state-in-effect` ×7, `refs` ×1, `purity` ×1 — lỗi có sẵn trong code web, không do gộp.
+   Hạ xuống `warn` trong `apps/web/.oxlintrc.json`; sửa code rồi nâng lại `error`.
+2. **`allowScripts: { "prisma@7.10.0": false }` làm npm 11.16 không tạo lệnh `prisma`** (đã thử
+   trên thư mục trống: `false` → 0 file trong `.bin`, không khai → có) ⇒ `typecheck`/`build` của
+   API hỏng trên máy dùng npm mới. CI không gặp vì Node 22 đi kèm npm 10 (không đọc
+   `allowScripts`). Đổi thành `true` — script `preinstall` của prisma chỉ kiểm phiên bản Node.
+3. Image API không đổi: `npm ci` (npm 10.9) với lockfile mới và **không** có `apps/web` vẫn chạy,
+   không kéo thư viện frontend (đã thử đúng tầng `deps` của Dockerfile).
+4. `apps/web/src/core/` (bản sao cũ) **giữ nguyên** — thay bằng `@mambo/core` là việc riêng. Nó
+   lệch `packages/core` đúng một chỗ: `draftActions.ts` giữ `createdAt` của bản nháp cũ.
+
+### Chạy thật đã kiểm
+
+| Việc | Kết quả |
+|---|---|
+| `npm run verify` (Windows, Node 24, npm 11.16) | Xanh — contracts 75 · core 315 · sdk 10 · api 42 · **web 370**; ranh giới 0 vi phạm cả hai cấu hình; luật web 191 file; build API + web |
+| `npm run test:db`, build image Docker | **Chưa chạy** — máy gộp không có Docker |
+
+### Còn treo
+
+- [ ] Tạo remote GitHub cho monorepo, nối lại Render (Blueprint) và Vercel vào repo mới.
+- [ ] Đóng băng hai repo cũ (archive) khi repo mới chạy CI xanh.
+- [ ] Web: thay `src/core/` bằng `@mambo/core`; đưa chỗ sửa `draftActions` thành PR vào
+      `packages/core`; sửa 9 cảnh báo React rồi nâng luật về `error`.
 
 ---
 

@@ -15,6 +15,10 @@ services:
     autoDeployTrigger: checksPass
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
+    # Monorepo: sửa riêng frontend (apps/web) không deploy lại API.
+    buildFilter:
+      ignoredPaths:
+        - apps/web/**
     healthCheckPath: /v1/health
     envVars:
       - key: APP_ENV
