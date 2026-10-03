@@ -19,7 +19,7 @@ frontend cũ) nằm ở `MEMORY.md` của repo frontend.
 | Repo | **Monorepo `thumua365`** (gộp 03/10/2026, nhánh `master`): backend ở gốc, frontend ở `apps/web` — xem mục "Gộp monorepo" |
 | Repo cũ (chỉ đọc) | [`Thumua365_BE`](https://github.com/remembered-fragrance/Thumua365_BE) · [`mambo365_deploymentphase`](https://github.com/remembered-fragrance/mambo365_deploymentphase) |
 | Người làm | Tài (backend, ghép cặp với AI) · một thành viên khác làm frontend |
-| Trạng thái sản phẩm | BE0–BE3 xong (`v0.4.0`), chạy trên staging (Render + Supabase) · **BE4–BE8 đang làm** (hợp đồng + API + test xong, chưa lên staging) · chỉ có tài khoản thử, **chưa có dữ liệu thật** · **backend làm trước, frontend làm sau** (28/09) |
+| Trạng thái sản phẩm | BE0–BE3 xong (`v0.4.0`), chạy trên staging (Render + Supabase) · **BE4–BE9 xong phần code** (hợp đồng + API + test, chưa lên staging) · chỉ có tài khoản thử, **chưa có dữ liệu thật** · **backend làm trước, frontend làm sau** (28/09) |
 
 ---
 
@@ -914,6 +914,52 @@ lúc mất mạng → có mạng xin URL, tải lên, đẩy phiếu → máy c�
       `image/jpeg,image/png,image/webp`; **không** policy nào cho `authenticated` / `anon`.
 - [ ] Thử thật: URL hết hạn thì không mở được; PUT lại ảnh đã có → 409.
 - [ ] Frontend: hàng đợi ảnh trong `attachments.ts`.
+
+---
+
+## BE9 — Đo lường + giám sát · 🟡 · nhánh `be9/do-luong` · 03/10/2026
+
+**Kết quả:** hợp đồng + API + test xong. Đúng "Xong khi" ở mức API: một vòng luồng R2 (đăng ký → kết
+nối → đơn → phiếu theo đơn → gói mở) cho ra phễu 6 bước đúng thứ tự, tách nông dân / vựa
+(`GET /v1/admin/funnel`). `/metrics` đọc được bằng token, nhãn route là mẫu.
+
+### Làm gì
+
+- Contracts `events.ts`: `TrackedEvent` (17 sự kiện của app, thuộc tính strict), `SERVER_EVENT_NAMES`,
+  `AdminFunnel`; `RouteDef.optionalAuth`. SDK `events.track`; route có `optionalAuth` gửi token nếu có.
+- API: `EventsService` (tự xác thực nếu có token; sai → ẩn danh), `AnalyticsListener` (server bắn
+  `plan_activated`, `order_fulfilled`, `link_accepted`), `AdminService.funnel`,
+  `Database.system(orgId)` cho việc của hệ thống không có người gọi.
+- `metrics/metrics.ts` (prom-client): thời gian phản hồi, op đồng bộ, op bị từ chối theo mã, cỡ lô,
+  listener hỏng, sự kiện nhận / bỏ. `/metrics` cần `METRICS_TOKEN`, không có → 404.
+- `ops/grafana/thumua365-api.json` (8 bảng, ngưỡng p95 300ms), `ops/README.md` (cấu hình scrape).
+
+### Quyết định
+
+1. **Sự kiện sai bỏ riêng, không 422 cả lô** — như sync: 422 cả lô thì hàng đợi đo lường kẹt mãi.
+2. **Không tin `orgType` app khai khi đã đăng nhập** — lấy từ membership. Chưa đăng nhập thì dùng
+   cái app khai (chỉ ảnh hưởng thống kê).
+3. **`link_accepted` do server bắn** — kế hoạch §BE9 nói vậy; `FRONTEND.md` cũ liệt nó trong danh mục
+   của app — đã sửa.
+4. `analytics_events`: `api_service` chỉ INSERT (không đọc lại được) — ghi bằng `createMany` (không
+   RETURNING). Phễu đọc bằng `api_privileged`.
+5. Giờ sự kiện lấy từ máy (đúng thứ tự khi gửi muộn), kẹp trong [−30 ngày, +5 phút].
+
+### Lỗi bắt được trong lúc làm
+
+- Bản đầu `TrackedEvent = strictObject(chung).and(union strict)` — hai bên từ chối trường của nhau, mọi
+  sự kiện hỏng. Test hợp đồng bắt; gộp phần chung vào từng sự kiện.
+- SDK cũ cố ý KHÔNG gửi token cho route công khai (có test) — không đổi luật chung, thêm cờ
+  `optionalAuth` cho riêng route đo lường.
+- **Test DB thỉnh thoảng deadlock ở `TRUNCATE`** khi chạy cả bộ: listener (thông báo, đo lường) chạy SAU
+  khi API trả lời, còn đang ghi lúc test sau dọn bảng. `truncateAll` giờ đợi transaction của
+  api_service / api_privileged lắng xuống và thử lại khi gặp 40P01. Hai lần chạy liền: 146/146.
+
+### Còn lại của BE9
+
+- [ ] Đặt `METRICS_TOKEN` trên Render production; Grafana Cloud (free) scrape + import dashboard.
+- [ ] Frontend: `track()` qua hàng đợi, Sentry cho web, sửa trang Quyền riêng tư cùng PR.
+- [ ] Số đo job pg-boss lỗi — khi có kênh email.
 
 ---
 
