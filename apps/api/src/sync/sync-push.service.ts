@@ -39,6 +39,7 @@ import { ApiException } from '../common/api-exception';
 import { DATABASE, type Database, type Tx } from '../db/database';
 import { DomainEvents, LOGGER, type OrderChanged } from '../events/domain-events';
 import { Prisma } from '../generated/prisma/client';
+import { syncPushBatch, syncPushOps, syncPushRejected } from '../metrics/metrics';
 import { changeOf, logStep } from '../orders/order-records';
 import { type BranchRule, delegateOf, SYNC_TABLES } from './sync-tables';
 
@@ -93,6 +94,11 @@ export class SyncPushService {
       if (result.status === 'rejected') break;
     }
 
+    syncPushBatch.observe(input.ops.length);
+    for (const r of results) {
+      syncPushOps.inc({ status: r.status });
+      if (r.error) syncPushRejected.inc({ code: r.error.code });
+    }
     this.logger.info('sync.push', {
       requestId,
       orgId: membership.organizationId,
