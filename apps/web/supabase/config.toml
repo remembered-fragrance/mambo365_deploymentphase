@@ -1,0 +1,46 @@
+project_id = "thumua365"
+
+[db]
+port = 54322
+major_version = 17
+
+[auth]
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+
+# Phiên dài — mục tiêu là chủ vựa gần như không bao giờ phải gõ lại mật khẩu.
+# 30 ngày, refresh token xoay vòng.
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+
+enable_signup = true
+# Người chỉ có số điện thoại dùng email nội bộ +84…@id.thumua365.vn —
+# tên miền ta sở hữu và KHÔNG gửi thư tới, nên không thể xác nhận được.
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = true
+# Bắt buộc tắt: xem lý do ở trên.
+enable_confirmations = false
+double_confirm_changes = true
+# Tối thiểu 6 ký tự, CHO PHÉP TOÀN SỐ. Không bắt chữ hoa / ký tự đặc biệt:
+# với tệp người dùng này, quy tắc phức tạp dẫn tới viết mật khẩu ra giấy dán
+# lên tường — an toàn thực tế giảm chứ không tăng. Bù bằng rate limit + phiên dài.
+[auth.password]
+min_length = 6
+
+[auth.rate_limit]
+# Chặn dò mật khẩu hàng loạt qua resolve_identifier + signInWithPassword.
+sign_in_sign_ups = 30
+token_refresh = 150
+
+[auth.sms]
+# OTP-SMS tạm hoãn (quyết định 09/08/2026). Bật khi vượt ~200 người dùng
+# hoạt động hoặc quá 5 yêu cầu đặt lại mật khẩu mỗi tuần.
+enable_signup = false
+enable_confirmations = false
+
+[storage]
+enabled = true
+file_size_limit = "5MiB"
