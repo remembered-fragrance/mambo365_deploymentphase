@@ -4,7 +4,9 @@ Ngày lập: **21/09/2026** · Sửa lần 2: cùng ngày — đối chiếu l�
 Sửa lần 3: sau BE1 — khớp với code đã chạy (log ở middleware, `ContractInterceptor`, mã lỗi, Render)
 Sửa lần 4: 28/09/2026 — §4 khớp hợp đồng đồng bộ đã code (BE3)
 Tiến độ: **BE0 ✅ · BE1 ✅ · BE2 ✅** (OTP dời sang BE4) · **BE3 ✅** (`v0.4.0`) · **BE4 🟡** hợp đồng + API +
-test xong, còn Phone provider và nghiệm thu trên staging — nhật ký ở [MEMORY.md](../MEMORY.md)
+test xong, còn Phone provider và nghiệm thu trên staging · **BE5 🟡** (03/10) hợp đồng + API + test xong, còn
+email và nghiệm thu trên staging — nhật ký ở [MEMORY.md](../MEMORY.md)
+Từ 03/10/2026 backend + frontend ở **một monorepo** (`apps/api`, `apps/web`) — §2 mô tả bố cục hai repo cũ
 Hướng làm (28/09/2026): **backend làm trước, frontend làm sau** — frontend dựng lại app từ đầu theo
 hợp đồng khi backend xong các bước; mục "Frontend" của từng bước là việc để dành
 Người làm backend: **Tài** · Frontend: người khác trong nhóm
@@ -541,7 +543,15 @@ chưa đạt.
 - **Xong khi:** vựa ghi phiếu có nợ → nông dân đăng ký, **xác thực OTP**, đồng ý → thấy
   đúng phiếu, đúng số nợ; chưa OTP → `PHONE_NOT_VERIFIED`; huỷ kết nối → mất quyền ngay.
 
-### BE5 — Đơn, đặt lịch, thông báo (3–4 buổi) · luồng giá trị chính
+### BE5 — Đơn, đặt lịch, thông báo (3–4 buổi) · luồng giá trị chính · 🟡 03/10 — hợp đồng + API + test xong
+
+**Chốt khi làm BE5 (03/10/2026):** accept/reject = bên NHẬN đơn; schedule = bên MUA (hẹn lại được);
+cancel = bên nào cũng được; `fulfilled` chỉ qua phiếu theo đơn, từ MỌI trạng thái còn mở (phiếu là
+việc đã cân thật). Đơn đã xong nhận thêm phiếu (chỉ gắn). Luật ở database: trigger `orders_guard`
+(trạng thái, version, ai làm bước nào), `book_order_guard` (phiếu/nháp chỉ gắn đơn mà tổ chức là
+đúng bên — khoá ngoại không qua RLS). Thông báo là của TỔ CHỨC, ghi bằng `notify_order()` /
+`notify_link()` (security definer, chỉ cho bên kia). Kênh email chờ chọn nhà cung cấp gửi thư.
+
 
 - **Backend:** `OrdersModule` (state machine, `version`, `order_events`) nối vào sync;
   `NotificationsModule` với hai kênh: **trong app** (bảng `notifications`) và **email**
