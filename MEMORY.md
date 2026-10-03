@@ -19,7 +19,7 @@ frontend cũ) nằm ở `MEMORY.md` của repo frontend.
 | Repo | **Monorepo `thumua365`** (gộp 03/10/2026, nhánh `master`): backend ở gốc, frontend ở `apps/web` — xem mục "Gộp monorepo" |
 | Repo cũ (chỉ đọc) | [`Thumua365_BE`](https://github.com/remembered-fragrance/Thumua365_BE) · [`mambo365_deploymentphase`](https://github.com/remembered-fragrance/mambo365_deploymentphase) |
 | Người làm | Tài (backend, ghép cặp với AI) · một thành viên khác làm frontend |
-| Trạng thái sản phẩm | BE0–BE3 xong (`v0.4.0`), chạy trên staging (Render + Supabase) · **BE4–BE7 đang làm** (hợp đồng + API + test xong, chưa lên staging) · chỉ có tài khoản thử, **chưa có dữ liệu thật** · **backend làm trước, frontend làm sau** (28/09) |
+| Trạng thái sản phẩm | BE0–BE3 xong (`v0.4.0`), chạy trên staging (Render + Supabase) · **BE4–BE8 đang làm** (hợp đồng + API + test xong, chưa lên staging) · chỉ có tài khoản thử, **chưa có dữ liệu thật** · **backend làm trước, frontend làm sau** (28/09) |
 
 ---
 
@@ -883,6 +883,37 @@ mở tay, chạy lại → "đã xử lý"; #7 hết gói → 402; #8 api_servic
       `PRIVILEGED_DATABASE_URL`, `BANK_WEBHOOK_SECRET`, `ADMIN_USER_IDS` trên Render; khai URL webhook ở
       Casso / SePay.
 - [ ] Một lần chuyển khoản thật; một lần hoàn tiền thật (#6). Sau đó gỡ Edge Function `payment-webhook`.
+
+---
+
+## BE8 — Ảnh chứng từ · 🟡 · nhánh `be8/anh-chung-tu` · 03/10/2026
+
+**Kết quả:** hợp đồng + API + test xong (`test:db` thêm 5). Đúng "Xong khi" ở mức API: người cân chụp
+lúc mất mạng → có mạng xin URL, tải lên, đẩy phiếu → máy của chủ xin được URL xem (10 phút).
+
+### Làm gì
+
+- Contracts `attachments.ts`, 2 route trong `routes.ts`. SDK `attachments.upload(id, blob)` gói cả
+  xin URL + PUT + coi 409 là xong; `attachments.url(id)`.
+- `StorageAdmin.signUpload`, `signDownload` (Supabase Storage REST bằng khoá secret). Không cần migration.
+- `AttachmentsService`: đường dẫn luôn trong thư mục tổ chức đang làm việc; xem cần phiếu / nháp nhắc tới
+  id, cùng lọc chi nhánh như sổ.
+
+### Quyết định
+
+1. **Không ghi đè** (`x-upsert: false`): ảnh chứng từ không bị thay sau khi đã lên; hàng đợi gửi lại
+   gặp 409 thì coi là xong — đúng nghĩa idempotent.
+2. **Tải lên không cần phiếu có trước** — ảnh chụp lúc mất mạng có thể lên trước op của phiếu. Xem thì
+   cần (đó là chỗ kiểm phạm vi).
+3. Không có bảng `attachments`: id nằm trong `attachment_ids` của phiếu / nháp là đủ để kiểm quyền; ảnh
+   mồ côi (chụp rồi bỏ phiếu) nằm lại trong thư mục tổ chức tới khi xoá tài khoản — chấp nhận ở pilot.
+
+### Còn lại của BE8
+
+- [ ] Supabase (staging, prod): bucket `attachments` **riêng tư**, giới hạn 3MB, chỉ
+      `image/jpeg,image/png,image/webp`; **không** policy nào cho `authenticated` / `anon`.
+- [ ] Thử thật: URL hết hạn thì không mở được; PUT lại ảnh đã có → 409.
+- [ ] Frontend: hàng đợi ảnh trong `attachments.ts`.
 
 ---
 
