@@ -714,7 +714,8 @@ Phone provider (`/auth/v1/settings`: `external.phone = false`) ⇒ OTP chưa ch�
 | Việc | Kết quả |
 |---|---|
 | `npm run verify` (Windows, Node 24, npm 11.16) | Xanh — contracts 75 · core 315 · sdk 10 · api 42 · **web 370**; ranh giới 0 vi phạm cả hai cấu hình; luật web 191 file; build API + web |
-| `npm run test:db`, build image Docker | **Chưa chạy** — máy gộp không có Docker |
+| `npm run db:reset` + `npm run test:db` (Docker Desktop 29.8.1, WSL2) | 3 migration áp từ database trống · **91/91** · `prisma migrate diff`: `No difference detected` |
+| Build image API từ gốc monorepo | ✅ **469MB** (bằng trước khi gộp — không kéo thư viện web) · container: `/v1/health` 200 · `/v1/me` 401 `UNAUTHENTICATED` |
 
 ### Còn treo
 
