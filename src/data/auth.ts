@@ -1,11 +1,16 @@
 /**
  * Đăng ký / đăng nhập / bootstrap tổ chức.
  *
- * Người dùng gõ MỘT ô: tên tài khoản, số điện thoại hoặc email.
- * Gọi API `api.resolveIdentifier` dịch ra email nội bộ rồi mới đăng nhập qua Supabase Auth.
+ * Quy tắc đăng nhập:
+ * - Email: đăng nhập thẳng qua Supabase Auth.
+ * - Số điện thoại: thử đúng email nội bộ đã dùng khi đăng ký; nếu tài khoản
+ *   dùng email thật thì mới fallback qua API resolveIdentifier.
+ * - Tên tài khoản: resolve qua API rồi mới đăng nhập Supabase.
  *
- * 🔴 Lỗi LUÔN cùng một câu: "Tài khoản hoặc mật khẩu không đúng".
- * Không bao giờ gọi trực tiếp bảng `profiles` qua PostgREST (đã bị tắt).
+ * 🔴 Lỗi đăng nhập luôn dùng cùng một câu:
+ * "Tài khoản hoặc mật khẩu không đúng".
+ *
+ * Không gọi trực tiếp bảng `profiles` qua PostgREST.
  */
 
 import type { SupabaseClient, User } from '@supabase/supabase-js';
@@ -16,7 +21,7 @@ import { FeatureUnavailableError } from './capabilities';
 import { api, setCurrentOrg } from './client';
 import type { ProfileRow } from './rows';
 
-/** Tên miền ta sở hữu, không gửi thư tới. Dùng cho người chỉ có số điện thoại. */
+/** Tên miền nội bộ dùng cho tài khoản chỉ có số điện thoại. */
 const INTERNAL_EMAIL_DOMAIN = 'id.thumua365.vn';
 
 export const SIGN_IN_ERROR = 'Tài khoản hoặc mật khẩu không đúng';
@@ -28,7 +33,6 @@ export interface SignUpInput {
   readonly username?: string;
   readonly email?: string;
   readonly businessName?: string;
-  /** Mã của người đã mời. Sai mã thì bỏ qua, không chặn việc đăng ký. */
   readonly referralCode?: string;
 }
 
@@ -55,52 +59,155 @@ export const profileFromMe = (me: Me, defaultEmail?: string): UserProfile => ({
   businessName: me.memberships[0]?.organization.name ?? undefined,
 });
 
+const signInWithEmail = async (
+  supabase: SupabaseClient,
+  email: string,
+  password: string,
+): Promise<User | null> => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error || !data.user) return null;
+  return data.user;
+};
+
 export const signIn = async (
   supabase: SupabaseClient,
   identifier: string,
   password: string,
 ): Promise<User> => {
-  let loginEmail = identifier.trim();
+  const rawIdentifier = identifier.trim();
 
-  // Dùng API resolveIdentifier để tra email đăng nhập từ username/SĐT/email
-  try {
-    const res = await api.resolveIdentifier({ identifier: loginEmail });
-    if (res?.email) {
-      loginEmail = res.email;
-    }
-  } catch {
-    // Không tra được cũng báo y hệt sai mật khẩu
+  if (!rawIdentifier || !password) {
     throw new Error(SIGN_IN_ERROR);
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: loginEmail,
-    password,
-  });
+  const kind = detectIdentifierKind(rawIdentifier);
 
-  if (error || !data.user) throw new Error(SIGN_IN_ERROR);
-  return data.user;
+  // 1. Email: Supabase Auth dùng được trực tiếp, không cần hỏi backend.
+  if (kind === 'email') {
+    const user = await signInWithEmail(
+      supabase,
+      rawIdentifier.toLowerCase(),
+      password,
+    );
+
+    if (!user) throw new Error(SIGN_IN_ERROR);
+    return user;
+  }
+
+  // 2. Số điện thoại:
+  //    thử đúng email nội bộ được tạo bởi signUp() trước.
+  if (kind === 'phone') {
+    const phone = normalizePhone(rawIdentifier);
+    if (!phone) throw new Error(SIGN_IN_ERROR);
+
+    const generatedEmail = internalEmail(phone);
+
+    const directUser = await signInWithEmail(
+      supabase,
+      generatedEmail,
+      password,
+    );
+
+    if (directUser) return directUser;
+
+    /*
+     * Nếu lúc đăng ký người dùng có nhập email thật thì Supabase Auth có thể
+     * đang dùng email đó thay vì email nội bộ. Khi ấy mới nhờ backend tra cứu.
+     *
+     * Nếu backend chưa có mapping thì vẫn trả lỗi chung, không tiết lộ tài khoản
+     * có tồn tại hay không.
+     */
+    try {
+      const resolved = await api.resolveIdentifier({
+        identifier: rawIdentifier,
+      });
+
+      const resolvedEmail = resolved?.email?.trim().toLowerCase();
+
+      if (resolvedEmail && resolvedEmail !== generatedEmail.toLowerCase()) {
+        const resolvedUser = await signInWithEmail(
+          supabase,
+          resolvedEmail,
+          password,
+        );
+
+        if (resolvedUser) return resolvedUser;
+      }
+    } catch {
+      // Giữ lỗi chung phía dưới.
+    }
+
+    throw new Error(SIGN_IN_ERROR);
+  }
+
+  // 3. Tên tài khoản: backend là nơi duy nhất biết username thuộc email nào.
+  try {
+    const resolved = await api.resolveIdentifier({
+      identifier: rawIdentifier,
+    });
+
+    const loginEmail = resolved?.email?.trim().toLowerCase();
+    if (!loginEmail) throw new Error(SIGN_IN_ERROR);
+
+    const user = await signInWithEmail(
+      supabase,
+      loginEmail,
+      password,
+    );
+
+    if (!user) throw new Error(SIGN_IN_ERROR);
+    return user;
+  } catch {
+    throw new Error(SIGN_IN_ERROR);
+  }
 };
 
-export const signUp = async (supabase: SupabaseClient, input: SignUpInput): Promise<User> => {
+export const signUp = async (
+  supabase: SupabaseClient,
+  input: SignUpInput,
+): Promise<User> => {
   const phone = normalizePhone(input.phone);
   if (!phone) throw new Error('Số điện thoại chưa đúng');
 
   const recoveryEmail =
-    input.email && detectIdentifierKind(input.email) === 'email'
+    input.email && detectIdentifierKind(input.email.trim()) === 'email'
       ? input.email.trim().toLowerCase()
       : undefined;
 
-  // Có email thật thì dùng chính nó để đăng nhập; không thì dùng email nội bộ.
-  if (input.referralCode?.trim()) throw new FeatureUnavailableError('Referral');
+  if (input.referralCode?.trim()) {
+    throw new FeatureUnavailableError('Referral');
+  }
+
+  /*
+   * Giữ tương thích với dữ liệu hiện tại:
+   * - Có email thật: Supabase Auth dùng email thật.
+   * - Không có email: dùng email nội bộ sinh từ số điện thoại.
+   */
   const loginEmail = recoveryEmail ?? internalEmail(phone);
 
   const { data, error } = await supabase.auth.signUp({
     email: loginEmail,
     password: input.password,
+    options: {
+      data: {
+        name: input.name.trim(),
+        phone,
+        ...(input.username?.trim()
+          ? { username: input.username.trim().toLowerCase() }
+          : {}),
+        ...(recoveryEmail ? { recoveryEmail } : {}),
+      },
+    },
   });
 
-  if (error || !data.user) throw new Error(error?.message ?? 'Không tạo được tài khoản');
+  if (error || !data.user) {
+    throw new Error(error?.message ?? 'Không tạo được tài khoản');
+  }
+
   return data.user;
 };
 
@@ -124,9 +231,8 @@ export interface ProfilePatch {
 }
 
 /**
- * Sửa hồ sơ vựa.
- * Backend chưa mở endpoint PATCH /v1/me/profile (dự kiến BE6).
- * Frontend tạm lưu trên máy, không gọi bảng profiles qua PostgREST.
+ * Backend chưa hỗ trợ cập nhật hồ sơ.
+ * Không fallback sang `supabase.from('profiles')`.
  */
 export const updateProfile = async (
   _supabase: SupabaseClient,
@@ -141,7 +247,10 @@ export const changePassword = async (
   password: string,
 ): Promise<void> => {
   const { error } = await supabase.auth.updateUser({ password });
-  if (error) throw new Error(`Không đổi được mật khẩu: ${error.message}`);
+
+  if (error) {
+    throw new Error(`Không đổi được mật khẩu: ${error.message}`);
+  }
 };
 
 export const loadProfile = async (
@@ -152,13 +261,21 @@ export const loadProfile = async (
     const me = await api.me();
     return profileFromMe(me, user.email ?? '');
   } catch {
-    // Nếu offline hoặc API chưa phản hồi, trả profile cơ bản từ Supabase session
     return {
       id: user.id,
-      identifier: user.phone ?? user.email ?? '',
-      name: user.user_metadata?.name ?? '',
+      identifier:
+        (user.user_metadata?.phone as string | undefined) ??
+        user.phone ??
+        user.email ??
+        '',
+      name:
+        (user.user_metadata?.name as string | undefined) ??
+        '',
       email: user.email ?? undefined,
-      phone: user.phone ?? undefined,
+      phone:
+        (user.user_metadata?.phone as string | undefined) ??
+        user.phone ??
+        undefined,
     };
   }
 };
