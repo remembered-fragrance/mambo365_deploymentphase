@@ -8,6 +8,9 @@
  */
 
 export const BILLING_LABELS = {
+  billingUnavailable: 'Thanh toán chưa khả dụng trên backend hiện tại.',
+  billingHistoryUnavailable: 'Lịch sử thanh toán chưa khả dụng trên backend hiện tại.',
+  attachmentsUnavailable: 'Ảnh chứng từ chưa khả dụng trên backend hiện tại.',
   // ─── Bậc gói ──────────────────────────────────────────────────────────────
   planTitle: 'Gói dịch vụ',
   planFree: 'Gói miễn phí',

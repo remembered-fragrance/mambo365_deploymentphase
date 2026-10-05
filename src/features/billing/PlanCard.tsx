@@ -24,7 +24,7 @@ const INTENT_LABEL: Record<PaymentIntentStatus, string> = {
  * họ sẽ phát hiện ra vào đúng lúc cần nó nhất.
  */
 export function PlanCard() {
-  const { plan, quota, intents } = useSubscription();
+  const { plan, quota, intents, billingAvailable } = useSubscription();
 
   return (
     <Card
@@ -50,7 +50,9 @@ export function PlanCard() {
 
         <div>
           <p className="mb-1 text-sm font-bold text-ink">{L.payHistory}</p>
-          {intents.length === 0 ? (
+          {!billingAvailable ? (
+            <p className="text-sm text-ink-3">{L.billingHistoryUnavailable}</p>
+          ) : intents.length === 0 ? (
             <p className="text-sm text-ink-3">{L.payNoHistory}</p>
           ) : (
             <ul className="flex flex-col divide-y divide-rule">

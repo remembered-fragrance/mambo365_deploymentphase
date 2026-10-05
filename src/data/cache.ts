@@ -2,36 +2,42 @@
  * Bản sao cục bộ của sổ.
  *
  * Mở app là đọc từ đây và hiện ngay — không bao giờ để màn trắng chờ mạng.
- * Cache tách theo `userId`: hai người cùng dùng một máy không thấy sổ của nhau.
+ * Cache tách theo `orgId` (hoặc `userId` khi chạy tài khoản máy): hai tổ chức không lẫn sổ của nhau.
  */
 
 import type { AppData } from '@/core/types';
 import { normalize } from '@/core/normalize';
-import { openLocalDb } from './localDb';
+import { clearCursor, openLocalDb } from './localDb';
 
-export const readBook = async (userId: string): Promise<AppData | null> => {
+export const readBook = async (key: string): Promise<AppData | null> => {
   const db = await openLocalDb();
-  const raw = await db.get('books', userId);
+  const raw = await db.get('books', key);
   return raw ? normalize(raw) : null;
 };
 
-export const writeBook = async (userId: string, data: AppData): Promise<void> => {
+export const writeBook = async (key: string, data: AppData): Promise<void> => {
   const db = await openLocalDb();
-  await db.put('books', data, userId);
+  await db.put('books', data, key);
 };
 
 /** Đăng xuất hoặc đổi tài khoản: xoá sạch dấu vết của tài khoản cũ. */
-export const clearUserCache = async (userId: string): Promise<void> => {
+export const clearUserCache = async (key: string): Promise<void> => {
   const db = await openLocalDb();
-  await Promise.all([db.delete('books', userId), db.delete('syncMarks', userId)]);
+  await Promise.all([
+    db.delete('books', key),
+    db.delete('syncMarks', key),
+    clearCursor(key),
+  ]);
 };
 
-export const readSyncMark = async (userId: string): Promise<string | null> => {
+export const clearOrgCache = clearUserCache;
+
+export const readSyncMark = async (key: string): Promise<string | null> => {
   const db = await openLocalDb();
-  return (await db.get('syncMarks', userId)) ?? null;
+  return (await db.get('syncMarks', key)) ?? null;
 };
 
-export const writeSyncMark = async (userId: string, isoTime: string): Promise<void> => {
+export const writeSyncMark = async (key: string, isoTime: string): Promise<void> => {
   const db = await openLocalDb();
-  await db.put('syncMarks', isoTime, userId);
+  await db.put('syncMarks', isoTime, key);
 };

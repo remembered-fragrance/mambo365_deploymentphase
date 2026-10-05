@@ -12,6 +12,8 @@ import { useCallback } from 'react';
 import { MAX_ATTACHMENTS } from '@/config';
 import { newId } from '@/core/id';
 import { deleteLocalAttachment, putLocalAttachment } from '../attachments';
+import { FeatureUnavailableError } from '../capabilities';
+import { getSupabase } from '../client';
 import { compressImage } from '../compressImage';
 
 export interface Attachments {
@@ -23,6 +25,7 @@ export interface Attachments {
 
 export function useAttachments(): Attachments {
   const addPhoto = useCallback(async (file: File, current: readonly string[]) => {
+    if (getSupabase()) throw new FeatureUnavailableError('Attachments');
     if (current.length >= MAX_ATTACHMENTS) return null;
     const id = newId();
     await putLocalAttachment(id, await compressImage(file));
@@ -33,5 +36,5 @@ export function useAttachments(): Attachments {
     await deleteLocalAttachment(id);
   }, []);
 
-  return { addPhoto, removePhoto, maxPhotos: MAX_ATTACHMENTS };
+  return { addPhoto, removePhoto, maxPhotos: getSupabase() ? 0 : MAX_ATTACHMENTS };
 }

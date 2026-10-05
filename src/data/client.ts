@@ -1,35 +1,64 @@
-/**
- * Một instance Supabase duy nhất cho cả app.
- *
- * Chưa cấu hình biến môi trường thì trả `null` — app vẫn chạy hoàn toàn bằng
- * bản sao cục bộ. Đây không phải trạng thái lỗi: khi đang cân hàng giữa rẫy,
- * "không có máy chủ" và "không có mạng" là cùng một chuyện, và app phải dùng
- * được trong cả hai.
- *
- * Chỉ `anon key` được đưa vào frontend — nó chịu Row Level Security.
- * `service_role` không bao giờ xuất hiện ở đây.
- */
-
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient as createSupabase, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient as createApiClient, type Client as ApiClient } from '@mambo/sdk';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const publishableKey =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+const apiUrl = import.meta.env.VITE_API_URL?.trim();
 
 let client: SupabaseClient | null = null;
 
-if (url && anonKey) {
-  client = createClient(url, anonKey, {
+if (url && publishableKey) {
+  client = createSupabase(url, publishableKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      // "Ghi nhớ đăng nhập" bật sẵn: mục tiêu là chủ vựa gần như không bao giờ
-      // phải gõ lại mật khẩu.
       detectSessionInUrl: false,
     },
   });
 }
 
-export const getSupabase = (): SupabaseClient | null => client;
+const ORG_STORAGE_KEY = 'thumua365_current_org_id';
+let currentOrgId: string | null = null;
+try {
+  currentOrgId = typeof localStorage !== 'undefined' ? localStorage.getItem(ORG_STORAGE_KEY) : null;
+} catch {
+  // Trình duyệt chặn lưu
+}
 
-/** App có máy chủ để đồng bộ hay đang chạy thuần cục bộ. */
-export const hasBackend = (): boolean => client !== null;
+export const setCurrentOrg = (id: string | null) => {
+  currentOrgId = id;
+  try {
+    if (id) localStorage.setItem(ORG_STORAGE_KEY, id);
+    else localStorage.removeItem(ORG_STORAGE_KEY);
+  } catch {
+    // Trình duyệt chặn lưu
+  }
+};
+
+export const getCurrentOrgId = (): string | null => currentOrgId;
+
+export const supabase = client;
+export const getSupabase = (): SupabaseClient | null => client;
+export const hasBackend = (): boolean => client !== null && Boolean(apiUrl);
+
+const makeApi = (orgId: () => string | null): ApiClient => createApiClient({
+  baseUrl: (apiUrl ?? '').replace(/\/+$/, ''),
+  getAccessToken: async () => {
+    if (!apiUrl) throw new Error('Chưa cấu hình VITE_API_URL');
+    return (await client?.auth.getSession())?.data.session?.access_token ?? null;
+  },
+  getOrganizationId: orgId,
+  fetch: (input, init) => {
+    if (!apiUrl) throw new Error('Chưa cấu hình VITE_API_URL');
+    return fetch(input, init);
+  },
+});
+
+export const api: ApiClient = makeApi(() => currentOrgId);
+
+/** Header is captured for the entire sync, even across token refresh/org switching. */
+export const apiForOrg = (orgId: string): ApiClient => {
+  if (!orgId) throw new Error('Chưa chọn tổ chức');
+  return makeApi(() => orgId);
+};
