@@ -11,33 +11,36 @@ type Mode = 'signIn' | 'signUp';
 /**
  * Đăng nhập / đăng ký.
  *
- * MỘT ô nhận cả tên tài khoản, số điện thoại lẫn email (lỗi chặn L4) — tệp
- * người dùng phần lớn không có email, và bắt họ chọn "đăng nhập bằng gì" là
- * bắt trả lời một câu hỏi kỹ thuật trước khi vào được app.
+ * Đăng nhập:
+ * - Một ô nhận số điện thoại, email hoặc tên tài khoản.
  *
- * Ở máy tính: nửa trái nói app này làm gì, nửa phải là form. Ở điện thoại chỉ
- * còn form.
+ * Đăng ký:
+ * - Tách số điện thoại và email thành hai ô riêng.
+ * - Số điện thoại là bắt buộc.
+ * - Email là không bắt buộc.
  */
 export function AuthPage() {
   const { signIn, signUp } = useStore();
   const online = useBackend();
 
   const [mode, setMode] = useState<Mode>('signIn');
+
+  // Đăng nhập vẫn dùng một ô chung.
   const [identifier, setIdentifier] = useState('');
+
+  // Đăng ký dùng dữ liệu riêng.
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
+
   const [password, setPassword] = useState('');
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | undefined>();
-  // Lỗi riêng, không dùng chung `error`: lời nhắc phải nằm ngay dưới ô đồng ý.
-  // Hiện nó dưới ô mật khẩu là chỉ sai chỗ cần sửa.
   const [consentMissing, setConsentMissing] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
-    // 🔴 Không tick sẵn, và không tick thì không đăng ký được (G §3.5). Đồng ý
-    // mặc định không phải là đồng ý — app lưu tên và số điện thoại của NGƯỜI
-    // THỨ BA do người dùng nhập vào, nên chỗ này phải là một hành động thật.
     if (mode === 'signUp' && !consent) {
       setConsentMissing(true);
       return;
@@ -45,14 +48,31 @@ export function AuthPage() {
 
     setBusy(true);
     setError(undefined);
+
     try {
-      if (mode === 'signIn') await signIn(identifier, password);
-      else await signUp({ name, phone: identifier, password, referralCode });
+      if (mode === 'signIn') {
+        await signIn(identifier.trim(), password);
+      } else {
+        await signUp({
+          name: name.trim(),
+          phone: phone.trim(),
+          email: email.trim() || undefined,
+          password,
+          referralCode: referralCode.trim() || undefined,
+        });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : L.authFailed);
     } finally {
       setBusy(false);
     }
+  };
+
+  const switchMode = () => {
+    setMode((current) => (current === 'signIn' ? 'signUp' : 'signIn'));
+    setError(undefined);
+    setConsentMissing(false);
+    setPassword('');
   };
 
   return (
@@ -73,16 +93,44 @@ export function AuthPage() {
 
           <div className="mt-4 flex flex-col gap-3">
             {mode === 'signUp' && (
-              <Input label={L.authName} value={name} onChange={(e) => setName(e.target.value)} />
+              <Input
+                label={L.authName}
+                value={name}
+                autoComplete="name"
+                onChange={(e) => setName(e.target.value)}
+              />
             )}
 
-            <Input
-              label={L.authIdentifier}
-              value={identifier}
-              hint={L.authIdentifierHint}
-              autoComplete="username"
-              onChange={(e) => setIdentifier(e.target.value)}
-            />
+            {mode === 'signIn' ? (
+              <Input
+                label={L.authIdentifier}
+                value={identifier}
+                hint={L.authIdentifierHint}
+                autoComplete="username"
+                onChange={(e) => setIdentifier(e.target.value)}
+              />
+            ) : (
+              <>
+                <Input
+                  label="Số điện thoại"
+                  value={phone}
+                  hint="Dùng số điện thoại này để đăng nhập."
+                  inputMode="tel"
+                  autoComplete="tel"
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+
+                <Input
+                  label="Email (không bắt buộc)"
+                  type="email"
+                  value={email}
+                  hint="Có thể dùng email để đăng nhập nếu bác muốn thêm."
+                  inputMode="email"
+                  autoComplete="email"
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </>
+            )}
 
             <Input
               label={L.authPassword}
@@ -97,8 +145,6 @@ export function AuthPage() {
               }}
             />
 
-            {/* Mã mời để CUỐI và không bắt buộc: người đăng ký không có mã
-                không được phải nghĩ xem mình thiếu cái gì. */}
             {mode === 'signUp' && (
               <Input
                 label={L.referralAtSignUp}
@@ -155,11 +201,7 @@ export function AuthPage() {
 
             <button
               type="button"
-              onClick={() => {
-                setMode(mode === 'signIn' ? 'signUp' : 'signIn');
-                setError(undefined);
-                setConsentMissing(false);
-              }}
+              onClick={switchMode}
               className="min-h-11 text-sm font-semibold text-brand"
             >
               {mode === 'signIn' ? L.authToSignUp : L.authToSignIn}

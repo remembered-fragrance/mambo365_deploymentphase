@@ -25,6 +25,18 @@ const BASE = {
   purchase: 'Mua',
   sale: 'Bán',
 
+  // ─── Đăng nhập / đăng ký ───────────────────────────────────────────────────
+  // Đăng nhập vẫn dùng MỘT ô chung. Frontend tự nhận biết người dùng nhập
+  // số điện thoại, email hay tên tài khoản.
+  authLoginIdentifier: 'Số điện thoại, email hoặc tên tài khoản',
+  authLoginIdentifierHint: 'Nhập thông tin bác đã dùng để đăng nhập.',
+
+  // Đăng ký tách riêng số điện thoại và email để không nhầm hai loại dữ liệu.
+  authPhone: 'Số điện thoại',
+  authPhoneHint: 'Dùng số này để đăng nhập.',
+  authEmailOptional: 'Email (không bắt buộc)',
+  authEmailOptionalHint: 'Thêm email nếu bác muốn đăng nhập bằng email.',
+
   // ─── Đối tác ───────────────────────────────────────────────────────────────
   supplier: 'Người bán',
   buyer: 'Người mua',
@@ -66,7 +78,7 @@ const BASE = {
   pickupFee: 'Phí xe đến lấy',
   minWeightThreshold: 'Từ bao nhiêu kg trở lên',
 
-  // ─── Chung ─────────────────────────────────────────────────────────────────
+  // ─── Chung ──────────────────────────────────────────────────────────────────
   time: 'Thời gian',
   note: 'Ghi chú',
   history: 'Lịch sử giao dịch',
