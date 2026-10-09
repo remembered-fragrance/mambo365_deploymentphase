@@ -28,7 +28,7 @@ Gồm năm bước, đúng thứ tự CI chạy:
 |---|---|
 | `npm run lint` | oxlint — cấm `alert`, `any`, `console.log`… |
 | `npm run typecheck` | `strict` + `noUncheckedIndexedAccess` |
-| `npm run rules` | Luật dự án ở README §3: chuỗi tiếng Việt trong JSX, màu viết cứng, `parseFloat` cho tiền, file > 300 dòng |
+| `npm run rules` | Luật dự án ở README §3: chuỗi tiếng Việt trong JSX, màu viết cứng, `parseFloat` cho tiền |
 | `npm run boundaries` | Ranh giới bốn tầng (dependency-cruiser) |
 | `npm run test` | Test `core/`, ngưỡng phủ 80% dòng |
 
@@ -51,12 +51,11 @@ tests/core/      test nghiệp vụ
 Ai được import ai: xem bảng ở [deploy_plan/README.md §3.1](deploy_plan/README.md).
 Luật được ép bằng máy trong [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs) — CI đỏ nếu vi phạm.
 
-## Bốn số phải giữ trong tầm
+## Ba số phải giữ trong tầm
 
 | Chỉ số | Ngưỡng | Hiện tại (hết giai đoạn D) |
 |---|---|---|
 | JS khởi tạo | ≤ 250KB gzip | 88KB |
-| File dài nhất trong `src/` | ≤ 300 dòng | 276 |
 | Phủ test `core/` | ≥ 80% dòng | 97% |
 | Lighthouse mobile | Perf ≥85 · A11y ≥95 | đo cuối mỗi giai đoạn |
 

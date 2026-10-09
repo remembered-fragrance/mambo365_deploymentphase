@@ -454,16 +454,36 @@ iPhone / Android thật cũng phải đo trên bản deploy.
 
 ---
 
-## Bốn số phải giữ trong tầm
+## Bỏ luật 300 dòng mỗi file · 09/10/2026
+
+Theo issue #7. Luật "file trong `src/` ≤ 300 dòng" (thêm ở `5c1dcec`, giai đoạn
+A) đếm cả dòng trống, comment và dòng do formatter tách, nên chặn PR vì định
+dạng chứ không vì thiết kế: PR #6 đỏ CI vì `store.tsx` dài 312 dòng, trong khi
+phần logic thêm vào chỉ khoảng 15 dòng. Từ nay việc tách file do review quyết
+theo trách nhiệm của file.
+
+- `scripts/check-rules.mjs`: bỏ `MAX_LINES` và bước kiểm độ dài; các luật khác
+  giữ nguyên.
+- Bỏ luật khỏi `README.md`, `deploy_plan/README.md` §3.3 và §3.9, các ô kiểm
+  ở `deploy_plan/` A, D, E, H; sửa comment ở `labels.ts`, `screenLabels.ts`.
+  Mục "Chuyện nhỏ mà phải sửa" của giai đoạn E giữ nguyên như nhật ký.
+- Bảng chỉ số dưới đây còn ba số; số đo cũ ghi ở chú thích dưới bảng.
+- Repo backend bỏ chỉ số cùng loại cùng ngày (Thumua365_BE#19).
+
+---
+
+## Ba số phải giữ trong tầm
 
 Đo lúc kết thúc mỗi giai đoạn.
 
 | Chỉ số | Ngưỡng | Cuối D | Cuối E | Cuối F | Cuối G |
 |---|---|---|---|---|---|
 | JS khởi tạo | ≤ 250KB gzip | 88KB | 89KB | 91KB | **91KB** |
-| File dài nhất trong `src/` | ≤ 300 dòng | 276 | 276 | 284 | **284** |
 | Phủ test `core/` | ≥ 80% dòng | 97% (262 test) | 97% (310 test) | 98% (357 test) | **98%** (358 test) |
 | Lighthouse mobile | Perf ≥85 · A11y ≥95 | chưa đo | chưa đo | chưa đo | **chưa đo** |
+
+Đã bỏ 09/10/2026: "File dài nhất trong `src/`" (≤ 300 dòng), đo được cuối D 276
+· E 276 · F 284 · G 284. Xem mục "Bỏ luật 300 dòng mỗi file" ở trên.
 
 `npm run site:check` là bước kiểm thứ sáu, chạy **trước khi xuất bản site**, cố
 ý không nằm trong `npm run verify`.
