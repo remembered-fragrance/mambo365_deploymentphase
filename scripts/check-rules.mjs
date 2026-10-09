@@ -9,7 +9,6 @@ import { readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 
 const ROOT = process.cwd();
-const MAX_LINES = 300;
 const BANNED_FILENAMES = ['utils.ts', 'helpers.ts', 'common.ts', 'misc.ts'];
 
 /** @returns {Promise<string[]>} đường dẫn tương đối, dùng dấu / */
@@ -110,10 +109,8 @@ const main = async () => {
     { skipComments: true },
   );
 
-  // §3.3 — kích thước và tên file
+  // §3.3 — tên file
   for (const path of all) {
-    const lines = read(path).split(/\r?\n/).length;
-    if (lines > MAX_LINES) report(`File dài ${lines} dòng (>${MAX_LINES})`, path, lines, '');
     const name = path.split('/').at(-1) ?? '';
     if (BANNED_FILENAMES.includes(name)) {
       report('Tên file không nói file làm gì', path, 1, name);

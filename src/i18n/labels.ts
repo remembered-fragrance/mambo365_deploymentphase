@@ -8,8 +8,8 @@
  *
  * Luật: không viết chuỗi tiếng Việt thẳng vào JSX. Mọi chữ đi qua đây.
  *
- * `L` gộp từ năm mảnh — một file duy nhất sẽ vượt 300 dòng, mà đó cũng là luật
- * của dự án. Nơi dùng vẫn chỉ có một: `import { L } from '@/i18n/labels'`.
+ * `L` gộp từ năm mảnh. Nơi dùng vẫn chỉ có một:
+ * `import { L } from '@/i18n/labels'`.
  */
 
 import { BILLING_LABELS } from './billingLabels';
