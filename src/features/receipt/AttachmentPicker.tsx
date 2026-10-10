@@ -11,7 +11,7 @@ interface AttachmentPickerProps {
   readonly onChange: (ids: readonly string[]) => void;
 }
 
-function Thumbnail({ id, onRemove }: { readonly id: string; readonly onRemove: () => void }) {
+function Thumbnail({ id, onRemove }: { readonly id: string; readonly onRemove?: () => void }) {
   const { url, status } = useAttachmentUrl(id);
 
   return (
@@ -25,6 +25,7 @@ function Thumbnail({ id, onRemove }: { readonly id: string; readonly onRemove: (
       </span>
       <button
         type="button"
+        disabled={!onRemove}
         aria-label={L.removePhoto}
         onClick={onRemove}
         className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border border-rule bg-card text-alert"
@@ -65,10 +66,11 @@ export function AttachmentPicker({ ids, onChange }: AttachmentPickerProps) {
     <div className="flex flex-col gap-2">
       <p className="text-sm font-bold text-ink">{L.attachments}</p>
 
+      {maxPhotos === 0 && <p role="status" className="text-sm text-ink-2">{L.attachmentsUnavailable}</p>}
       {ids.length > 0 && (
         <ul className="flex flex-wrap gap-3">
           {ids.map((id) => (
-            <Thumbnail key={id} id={id} onRemove={() => void drop(id)} />
+            <Thumbnail key={id} id={id} onRemove={maxPhotos === 0 ? undefined : () => void drop(id)} />
           ))}
         </ul>
       )}

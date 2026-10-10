@@ -1,19 +1,24 @@
 /**
- * Vòng đồng bộ: xả hàng đợi lên, kéo thay đổi về, báo trạng thái.
+ * Vòng đồng bộ: xả hàng đợi lên (@mambo/sdk /v1/sync/push), kéo thay đổi về (/v1/sync/pull), báo trạng thái.
  *
- * Không nuốt lỗi. Mọi thất bại hoặc được hẹn thử lại, hoặc nổi lên
- * `status.error` để người dùng thấy — im lặng là cách chắc chắn nhất để họ
- * tưởng đã lưu trong khi thực ra chưa.
+ * Không nuốt lỗi. Mọi thất bại hoặc được hẹn thử lại theo isRetryable(code),
+ * hoặc nổi lên `status.error` để người dùng thấy.
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { emptyData } from '@/core/normalize';
 import type { AppData, SyncStatus } from '@/core/types';
+import { isRetryable, SYNC_PUSH_MAX_OPS, type SyncOp } from '@mambo/contracts';
+import { ApiError, type Client } from '@mambo/sdk';
 import { readSyncMark, writeBook, writeSyncMark } from './cache';
-import { fetchChanges, mergeChanges } from './pullChanges';
+import { apiForOrg } from './client';
+import { getDeviceId, openLocalDb, readCursor } from './localDb';
+import { mergeChanges } from './pullChanges';
 import {
   isDue,
   isExhausted,
+  markConflict,
   markFailed,
+  pendingCount,
   pendingOps,
   pendingRecordIds,
   removeOp,
@@ -27,42 +32,17 @@ export interface SyncOutcome {
   readonly conflicts: readonly string[];
 }
 
-const message = (err: unknown): string =>
-  err instanceof Error ? err.message : 'Không kết nối được máy chủ';
+const message = (err: unknown): string => {
+  if (err instanceof ApiError) {
+    return `${err.code}: ${err.message}${err.requestId ? ` (id: ${err.requestId})` : ''}`;
+  }
+  return err instanceof Error ? err.message : 'Không kết nối được máy chủ';
+};
 
 /**
  * Máy chủ từ chối GHI vì gói hết hạn, không phải vì mạng.
- *
- * Phân biệt được là bắt buộc: lỗi mạng thì thử lại 5 lần rồi báo "kẹt", còn
- * cái này thử lại bao nhiêu lần cũng vậy cho tới khi người dùng trả tiền. Đốt
- * hết lượt thử ở đây nghĩa là mọi phiếu ghi trong lúc hết hạn đều bị đánh dấu
- * "cần xem lại" — trong khi chúng hoàn toàn lành lặn và chỉ đang đợi.
  */
 export const PLAN_BLOCKED = 'Gói đã hết hạn, chưa gửi lên mạng được';
-
-class PolicyRefusal extends Error {
-  constructor() {
-    super(PLAN_BLOCKED);
-    this.name = 'PolicyRefusal';
-  }
-}
-
-/**
- * `42501` là mã Postgres cho vi phạm row-level security.
- *
- * Sau migration 0008, policy ghi của bảng nghiệp vụ chỉ có hai điều kiện:
- * đúng chủ sở hữu và còn gói. Vế đầu không thể sai ở đây — `clearQueue()` chạy
- * cả lúc đăng nhập lẫn lúc đăng xuất nên hàng đợi không mang thao tác của tài
- * khoản khác. Vì vậy 42501 trên đường ghi nghĩa là hết gói. Thêm điều kiện mới
- * vào policy thì phải xem lại chỗ này.
- */
-const isPolicyRefusal = (error: { code?: string; message: string }): boolean =>
-  error.code === '42501' || /row-level security/i.test(error.message);
-
-const raise = (error: { code?: string; message: string }): never => {
-  if (isPolicyRefusal(error)) throw new PolicyRefusal();
-  throw new Error(error.message);
-};
 
 /**
  * Gắn cờ đồng bộ lên từng phiếu để giao diện vẽ được "đang chờ gửi" / "kẹt".
@@ -82,62 +62,96 @@ export const markSyncStates = (
 
 // ─── Đẩy lên ─────────────────────────────────────────────────────────────────
 
-const applyOp = async (supabase: SupabaseClient, op: QueuedOp): Promise<void> => {
-  if (op.kind === 'insert') {
-    // Bấm hai lần vì mạng chậm không được thành hai phiếu: id đã có thì bỏ qua.
-    const { error } = await supabase
-      .from(op.table)
-      .upsert(op.payload, { onConflict: 'id', ignoreDuplicates: true });
-    if (error) raise(error);
-    return;
-  }
-
-  if (op.kind === 'update') {
-    const { error } = await supabase.from(op.table).update(op.payload).eq('id', op.recordId);
-    if (error) raise(error);
-    return;
-  }
-
-  // Xoá là xoá mềm. Xoá cứng làm bản ghi sống dậy khi máy khác đồng bộ lại.
-  const { error } = await supabase
-    .from(op.table)
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', op.recordId);
-  if (error) raise(error);
-};
-
-/**
- * Xả hàng đợi TUẦN TỰ theo thứ tự tạo. Gặp lỗi là dừng cả lượt: các thao tác
- * sau có thể phụ thuộc thao tác trước (lần trả tiền cần phiếu đã tồn tại).
- */
 export const flushQueue = async (
-  supabase: SupabaseClient,
+  deviceId: string,
+  orgId: string,
+  client: Client = apiForOrg(orgId),
 ): Promise<{ pushed: number; conflicts: string[]; error?: string; blocked?: boolean }> => {
-  const ops = await pendingOps();
+  const allOps = await pendingOps(orgId);
   const conflicts: string[] = [];
   let pushed = 0;
 
-  for (const op of ops) {
+  const batch: QueuedOp[] = [];
+  for (const op of allOps) {
+    if (op.conflict) {
+      conflicts.push(op.recordId);
+      break;
+    }
     if (isExhausted(op)) {
       conflicts.push(op.recordId);
-      continue;
+      break;
     }
     if (!isDue(op)) break;
+    batch.push(op);
+    if (batch.length === SYNC_PUSH_MAX_OPS) break;
+  }
 
-    try {
-      await applyOp(supabase, op);
-      await removeOp(op.id);
-      pushed++;
-    } catch (err) {
-      // Hết gói: giữ nguyên hàng đợi, KHÔNG tính là một lần thử hỏng. Trả tiền
-      // xong là cả hàng đợi tự đi tiếp, không mất phiếu nào.
-      if (err instanceof PolicyRefusal) {
-        return { pushed, conflicts, error: PLAN_BLOCKED, blocked: true };
-      }
-      const failed = await markFailed(op, message(err));
-      if (isExhausted(failed)) conflicts.push(failed.recordId);
-      return { pushed, conflicts, error: message(err) };
+  if (batch.length === 0) {
+    return { pushed: 0, conflicts };
+  }
+
+  const wireOps = batch.map((op) => {
+    const wire: Record<string, unknown> = {
+      opId: op.opId,
+      seq: op.seq,
+      entity: op.entity,
+      kind: op.kind,
+      recordId: op.recordId,
+    };
+    if (op.kind !== 'softDelete') {
+      wire.data = op.data ?? {};
     }
+    return wire as unknown as SyncOp;
+  });
+
+  try {
+    const { results } = await client.sync.push({ deviceId, ops: wireOps });
+    const rejectedAt = results.findIndex((result) => result.status === 'rejected');
+    if (results.length === 0 || results.some((result, index) => result.opId !== batch[index]?.opId) ||
+        (rejectedAt >= 0 ? rejectedAt !== results.length - 1 : results.length !== batch.length)) {
+      throw new ApiError('CONTRACT_MISMATCH', 200, 'Sync response does not match the submitted operations');
+    }
+    for (const r of results) {
+      const op = batch.find((b) => b.opId === r.opId);
+      if (!op) throw new Error('Unknown operation in sync response');
+      if (r.status === 'applied' || r.status === 'duplicate') {
+        if (op) await removeOp(op.id, orgId);
+        pushed++;
+      } else if (r.status === 'rejected') {
+        if (r.error?.code === 'PLAN_EXPIRED') return { pushed, conflicts, error: PLAN_BLOCKED, blocked: true };
+        if (r.error && isRetryable(r.error.code)) {
+          if (op) {
+            const failed = await markFailed(op, r.error.message, orgId);
+            if (isExhausted(failed)) conflicts.push(failed.recordId);
+          }
+        } else {
+          if (op) {
+            await markConflict(
+              op.id,
+              orgId,
+              r.error ?? { code: 'VALIDATION_FAILED', message: 'Thao tác bị từ chối' },
+            );
+            conflicts.push(op.recordId);
+          }
+        }
+        return { pushed, conflicts, error: r.error?.message };
+      }
+    }
+  } catch (err) {
+    if (err instanceof ApiError && err.code === 'PLAN_EXPIRED') {
+      return { pushed, conflicts, error: PLAN_BLOCKED, blocked: true };
+    }
+    const first = batch[0];
+    if (first) {
+      if (err instanceof TypeError || (err instanceof ApiError && err.code !== 'CONTRACT_MISMATCH' && isRetryable(err.code))) {
+        const failed = await markFailed(first, message(err), orgId);
+        if (isExhausted(failed)) conflicts.push(failed.recordId);
+      } else if (err instanceof ApiError) {
+        await markConflict(first.id, orgId, { code: err.code, message: err.message });
+        conflicts.push(first.recordId);
+      }
+    }
+    return { pushed, conflicts, error: message(err) };
   }
 
   return { pushed, conflicts };
@@ -146,54 +160,100 @@ export const flushQueue = async (
 // ─── Một lượt đồng bộ đầy đủ ────────────────────────────────────────────────
 
 export const syncOnce = async (
-  supabase: SupabaseClient,
-  userId: string,
+  _supabaseClient: unknown,
+  orgId: string,
   local: AppData,
+  isCurrent: () => boolean = () => true,
 ): Promise<SyncOutcome> => {
   const startedAt = new Date().toISOString();
+  const deviceId = getDeviceId();
+  const client = apiForOrg(orgId);
 
-  const flush = await flushQueue(supabase);
-  const pendingIds = await pendingRecordIds();
+  const flush = await flushQueue(deviceId, orgId, client);
+  const pendingIds = await pendingRecordIds(orgId);
 
-  if (flush.error) {
+  if (flush.error && flush.blocked) {
     return {
       data: markSyncStates(local, pendingIds, flush.conflicts),
       status: {
         loading: false,
         error: flush.error,
-        blocked: flush.blocked,
-        lastSyncedAt: (await readSyncMark(userId)) ?? undefined,
-        pendingCount: pendingIds.size,
+        blocked: true,
+        lastSyncedAt: (await readSyncMark(orgId)) ?? undefined,
+        pendingCount: await pendingCount(orgId),
       },
       conflicts: flush.conflicts,
     };
   }
 
+  let currentBook = local;
   try {
-    const since = await readSyncMark(userId);
-    const merged = mergeChanges(local, await fetchChanges(supabase, since), pendingIds);
+    let currentCursor = await readCursor(orgId);
 
-    await writeBook(userId, merged);
-    await writeSyncMark(userId, startedAt);
+    // Kéo các trang thay đổi về
+    for (let page = 0; page < 200; page++) {
+      if (!isCurrent()) throw new Error('Sync context changed');
+      const res = await client.sync.pull(currentCursor ? { cursor: currentCursor } : {});
+      if (!isCurrent()) throw new Error('Sync context changed');
+      if (res.resetRequired) {
+        const remaining = await pendingCount(orgId);
+        if (remaining > 0) {
+          // Hoãn reset cho tới khi xả hết hàng đợi
+          break;
+        }
+        currentBook = emptyData();
+        currentCursor = res.cursor;
+        continue;
+      }
 
-    const stillPending = await pendingRecordIds();
+      currentBook = mergeChanges(currentBook, res.changes, pendingIds);
+      currentCursor = res.cursor;
+      const db = await openLocalDb();
+      const tx = db.transaction(['books', 'cursors'], 'readwrite');
+      await tx.objectStore('books').put(currentBook, orgId);
+      await tx.objectStore('cursors').put(res.cursor, orgId);
+      await tx.done;
+
+      if (!res.hasMore) break;
+    }
+
+    if (!isCurrent()) throw new Error('Sync context changed');
+    await writeBook(orgId, currentBook);
+    await writeSyncMark(orgId, startedAt);
+
+    const stillPending = await pendingRecordIds(orgId);
     return {
-      data: markSyncStates(merged, stillPending, flush.conflicts),
+      data: markSyncStates(currentBook, stillPending, flush.conflicts),
       status: {
         loading: false,
+        error: flush.error,
         lastSyncedAt: startedAt,
-        pendingCount: stillPending.size,
+        pendingCount: await pendingCount(orgId),
       },
       conflicts: flush.conflicts,
     };
   } catch (err) {
+    if (err instanceof ApiError && err.code === 'PLAN_EXPIRED') {
+      return {
+        data: markSyncStates(currentBook, pendingIds, flush.conflicts),
+        status: {
+          loading: false,
+          error: PLAN_BLOCKED,
+          blocked: true,
+          lastSyncedAt: (await readSyncMark(orgId)) ?? undefined,
+          pendingCount: await pendingCount(orgId),
+        },
+        conflicts: flush.conflicts,
+      };
+    }
+
     return {
-      data: markSyncStates(local, pendingIds, flush.conflicts),
+      data: markSyncStates(currentBook, pendingIds, flush.conflicts),
       status: {
         loading: false,
-        error: message(err),
-        lastSyncedAt: (await readSyncMark(userId)) ?? undefined,
-        pendingCount: pendingIds.size,
+        error: flush.error || message(err),
+        lastSyncedAt: (await readSyncMark(orgId)) ?? undefined,
+        pendingCount: await pendingCount(orgId),
       },
       conflicts: flush.conflicts,
     };

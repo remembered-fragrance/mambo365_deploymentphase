@@ -8,11 +8,12 @@
  *
  * Luật: không viết chuỗi tiếng Việt thẳng vào JSX. Mọi chữ đi qua đây.
  *
- * `L` gộp từ bốn mảnh — một file duy nhất sẽ vượt 300 dòng, mà đó cũng là luật
- * của dự án. Nơi dùng vẫn chỉ có một: `import { L } from '@/i18n/labels'`.
+ * `L` gộp từ năm mảnh. Nơi dùng vẫn chỉ có một:
+ * `import { L } from '@/i18n/labels'`.
  */
 
 import { BILLING_LABELS } from './billingLabels';
+import { LEGAL_LABELS } from './legalLabels';
 import { ONBOARDING_LABELS } from './onboardingLabels';
 import { SCREEN_LABELS } from './screenLabels';
 
@@ -23,6 +24,18 @@ const BASE = {
   saleReceipt: 'Phiếu bán hàng',
   purchase: 'Mua',
   sale: 'Bán',
+
+  // ─── Đăng nhập / đăng ký ───────────────────────────────────────────────────
+  // Đăng nhập vẫn dùng MỘT ô chung. Frontend tự nhận biết người dùng nhập
+  // số điện thoại, email hay tên tài khoản.
+  authLoginIdentifier: 'Số điện thoại, email hoặc tên tài khoản',
+  authLoginIdentifierHint: 'Nhập thông tin bác đã dùng để đăng nhập.',
+
+  // Đăng ký tách riêng số điện thoại và email để không nhầm hai loại dữ liệu.
+  authPhone: 'Số điện thoại',
+  authPhoneHint: 'Dùng số này để đăng nhập.',
+  authEmailOptional: 'Email (không bắt buộc)',
+  authEmailOptionalHint: 'Thêm email nếu bác muốn đăng nhập bằng email.',
 
   // ─── Đối tác ───────────────────────────────────────────────────────────────
   supplier: 'Người bán',
@@ -65,7 +78,7 @@ const BASE = {
   pickupFee: 'Phí xe đến lấy',
   minWeightThreshold: 'Từ bao nhiêu kg trở lên',
 
-  // ─── Chung ─────────────────────────────────────────────────────────────────
+  // ─── Chung ──────────────────────────────────────────────────────────────────
   time: 'Thời gian',
   note: 'Ghi chú',
   history: 'Lịch sử giao dịch',
@@ -230,7 +243,13 @@ const BASE = {
   emptyTitle: 'Chưa có gì ở đây',
 } as const;
 
-export const L = { ...BASE, ...SCREEN_LABELS, ...ONBOARDING_LABELS, ...BILLING_LABELS } as const;
+export const L = {
+  ...BASE,
+  ...SCREEN_LABELS,
+  ...ONBOARDING_LABELS,
+  ...BILLING_LABELS,
+  ...LEGAL_LABELS,
+} as const;
 
 /** Phụ đề giải thích cho các thuật ngữ buộc phải giữ. */
 export const SUB = {

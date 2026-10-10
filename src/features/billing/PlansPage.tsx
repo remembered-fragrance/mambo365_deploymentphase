@@ -20,7 +20,7 @@ import { daysLeftText, planLabel, planTone } from './planText';
  * vựa có tiền vào mùa và quen trả một lần cho xong (F §3.1).
  */
 export function PlansPage() {
-  const { plan, intents, loading, startPayment, refresh } = useSubscription();
+  const { plan, intents, loading, startPayment, refresh, billingAvailable } = useSubscription();
   const [intent, setIntent] = useState<PaymentIntent | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
@@ -54,6 +54,7 @@ export function PlansPage() {
 
         <Card title={L.planUpgrade}>
           <div className="flex flex-col gap-3">
+            {!billingAvailable && <p role="status" className="text-sm text-ink-2">{L.billingUnavailable}</p>}
             <div className="rounded-xl border border-brand p-4">
               <p className="text-sm font-semibold text-ink-2">{L.priceYearly}</p>
               <p className="text-2xl font-extrabold text-ink">
@@ -66,7 +67,7 @@ export function PlansPage() {
                 size="lg"
                 block
                 className="mt-3"
-                disabled={busy || loading}
+                disabled={!billingAvailable || busy || loading}
                 onClick={() => void buy(PRICE_YEARLY)}
               >
                 {L.planUpgrade}
@@ -82,7 +83,7 @@ export function PlansPage() {
               <Button
                 block
                 className="mt-3"
-                disabled={busy || loading}
+                disabled={!billingAvailable || busy || loading}
                 onClick={() => void buy(PRICE_MONTHLY)}
               >
                 {L.planUpgrade}

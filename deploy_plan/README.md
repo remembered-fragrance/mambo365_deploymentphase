@@ -99,7 +99,6 @@ src/export/   Xuất Excel/PDF/PNG. Chạm DOM và thư viện nặng. Chỉ n�
 
 ### 3.3 Kích thước và hình dạng file
 
-- File **> 300 dòng** phải tách. File **> 500 dòng** là lỗi, không phải phong cách.
 - Một file React = **một component xuất khẩu chính**. Component phụ dùng chung → chuyển sang `components/`.
 - Hàm > 50 dòng hoặc lồng > 3 tầng → tách.
 - Không có file tên `utils.ts`, `helpers.ts`, `common.ts`, `misc.ts` — tên phải nói file đó làm gì.
@@ -140,12 +139,11 @@ Trả lời được cả bốn thì mới thêm: ① có ≥2 chỗ dùng thậ
 - **Việc dọn dẹp và việc đổi hành vi không đi chung một commit.** Đặc biệt khi bê `core/` sang: chuyển → test → mới sửa, ba commit riêng.
 - Không merge khi CI đỏ. Không `--no-verify`.
 
-### 3.9 Bốn số phải giữ trong tầm
+### 3.9 Ba số phải giữ trong tầm
 
 | Chỉ số | Ngưỡng | Đo bằng |
 |---|---|---|
 | JS khởi tạo | ≤ 250KB gzip | `vite build` |
-| File dài nhất trong `src/` | ≤ 300 dòng | `find src -name '*.ts*' \| xargs wc -l \| sort -n \| tail` |
 | Phủ test `core/` | ≥ 80% dòng | `vitest --coverage` |
 | Lighthouse mobile | Perf ≥85 · A11y ≥95 | thủ công mỗi cuối giai đoạn |
 

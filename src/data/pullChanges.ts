@@ -1,26 +1,42 @@
 /**
  * Kéo thay đổi từ máy chủ về và hoà vào sổ cục bộ.
  *
- * Kéo theo `updated_at > mốc lần trước`, không tải lại toàn bộ — nếu không,
- * app chậm dần theo thời gian và tốn băng thông của người dùng dùng 3G.
- *
- * Quy tắc hoà (README C §3.4):
- *   trường vô hướng  → ghi sau thắng theo updated_at
- *   payments         → KHÔNG BAO GIỜ ghi đè, hợp nhất theo id
- *   xoá              → xoá mềm thắng, bản cập nhật đến sau không hồi sinh
- *   bản ghi còn nằm trong hàng đợi → giữ bản cục bộ, nó sẽ được đẩy lên sau
+ * Quy tắc hoà (BE FRONTEND §7.6 & năm quy tắc chống mất tiền):
+ *   1. Số đã trả = tổng các payment; huỷ lần trả = softDelete
+ *   2. Gửi trùng id = duplicate (id sinh lúc tạo)
+ *   3. Xoá mềm thắng: bản ghi có deletedAt khác null thì xoá khỏi sổ cục bộ
+ *   4. Xử lý theo seq tăng dần
+ *   5. Hợp nhất qua nhiều trang, không bỏ payment chưa thấy phiếu cha
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AppData, Payment, Transaction } from '@/core/types';
+import type {
+  DraftRecord,
+  NoteRecord,
+  PartyRecord,
+  PaymentRecord,
+  PricingRuleRecord,
+  ProductRecord,
+  SyncChanges,
+  SyncPullResult,
+  TransactionRecord,
+} from '@mambo/contracts';
+import { apiForOrg } from './client';
 import {
   buyerFromRow,
+  draftFromRecord,
   draftFromRow,
+  noteFromRecord,
   noteFromRow,
+  partyFromRecord,
+  paymentFromRecord,
   paymentFromRow,
+  pricingRuleFromRecord,
   pricingRuleFromRow,
+  productFromRecord,
   productFromRow,
   supplierFromRow,
+  transactionFromRecord,
   transactionFromRow,
 } from './mappers';
 import type {
@@ -33,48 +49,26 @@ import type {
   TransactionRow,
 } from './rows';
 
-const EPOCH = '1970-01-01T00:00:00.000Z';
-
-interface RemoteChanges {
-  readonly suppliers: PartyRow[];
-  readonly buyers: PartyRow[];
-  readonly products: ProductRow[];
-  readonly transactions: TransactionRow[];
-  readonly payments: PaymentRow[];
-  readonly drafts: DraftRow[];
-  readonly pricingRules: PricingRuleRow[];
-  readonly notes: NoteRow[];
+export interface RemoteChanges {
+  readonly suppliers: (PartyRow | PartyRecord)[];
+  readonly buyers: (PartyRow | PartyRecord)[];
+  readonly products: (ProductRow | ProductRecord)[];
+  readonly transactions: (TransactionRow | TransactionRecord)[];
+  readonly payments: (PaymentRow | PaymentRecord)[];
+  readonly drafts: (DraftRow | DraftRecord)[];
+  readonly pricingRules: (PricingRuleRow | PricingRuleRecord)[];
+  readonly notes: (NoteRow | NoteRecord)[];
 }
 
-const fetchSince = async <T>(
-  supabase: SupabaseClient,
-  table: string,
-  column: string,
-  since: string,
-  select = '*',
-): Promise<T[]> => {
-  const { data, error } = await supabase.from(table).select(select).gt(column, since);
-  if (error) throw new Error(`Không đọc được ${table}: ${error.message}`);
-  return (data ?? []) as unknown as T[];
-};
-
-export const fetchChanges = async (
-  supabase: SupabaseClient,
-  since: string | null,
-): Promise<RemoteChanges> => {
-  const mark = since ?? EPOCH;
-  const [suppliers, buyers, products, transactions, payments, drafts, pricingRules, notes] =
-    await Promise.all([
-      fetchSince<PartyRow>(supabase, 'suppliers', 'updated_at', mark),
-      fetchSince<PartyRow>(supabase, 'buyers', 'updated_at', mark),
-      fetchSince<ProductRow>(supabase, 'products', 'updated_at', mark),
-      fetchSince<TransactionRow>(supabase, 'transactions', 'updated_at', mark, '*, payments(*)'),
-      fetchSince<PaymentRow>(supabase, 'payments', 'created_at', mark),
-      fetchSince<DraftRow>(supabase, 'drafts', 'updated_at', mark),
-      fetchSince<PricingRuleRow>(supabase, 'pricing_rules', 'updated_at', mark),
-      fetchSince<NoteRow>(supabase, 'notes', 'updated_at', mark),
-    ]);
-  return { suppliers, buyers, products, transactions, payments, drafts, pricingRules, notes };
+/**
+ * Kéo một trang thay đổi qua @mambo/sdk /v1/sync/pull
+ */
+export const pullChanges = async (
+  orgId: string,
+  cursor?: string,
+  limit?: number,
+): Promise<SyncPullResult> => {
+  return apiForOrg(orgId).sync.pull({ cursor, limit });
 };
 
 // ─── Hoà từng loại ───────────────────────────────────────────────────────────
@@ -83,11 +77,17 @@ interface Identified {
   readonly id: string;
 }
 
+const getDeletedAt = (row: unknown): string | null => {
+  if (!row || typeof row !== 'object') return null;
+  const r = row as Record<string, unknown>;
+  return (r.deletedAt as string | null) ?? (r.deleted_at as string | null) ?? null;
+};
+
 /**
  * Hoà danh sách: hàng máy chủ thay hàng cục bộ cùng id, hàng bị xoá mềm thì
  * biến mất. Bản ghi đang nằm trong hàng đợi được GIỮ NGUYÊN bản cục bộ.
  */
-const mergeList = <TLocal extends Identified, TRow extends { id: string; deleted_at: string | null }>(
+const mergeList = <TLocal extends Identified, TRow extends { id: string }>(
   local: readonly TLocal[],
   rows: readonly TRow[],
   fromRow: (row: TRow) => TLocal,
@@ -97,28 +97,45 @@ const mergeList = <TLocal extends Identified, TRow extends { id: string; deleted
 
   for (const row of rows) {
     if (pendingIds.has(row.id)) continue;
-    if (row.deleted_at !== null) merged.delete(row.id);
+    if (getDeletedAt(row) !== null) merged.delete(row.id);
     else merged.set(row.id, fromRow(row));
   }
 
   return [...merged.values()];
 };
 
+const mapSupplier = (row: PartyRow | PartyRecord) =>
+  'user_id' in row ? supplierFromRow(row as PartyRow) : partyFromRecord(row as PartyRecord);
+
+const mapBuyer = (row: PartyRow | PartyRecord) =>
+  'user_id' in row ? buyerFromRow(row as PartyRow) : partyFromRecord(row as PartyRecord);
+
+const mapProduct = (row: ProductRow | ProductRecord) =>
+  'user_id' in row ? productFromRow(row as ProductRow) : productFromRecord(row as ProductRecord);
+
+const mapPricingRule = (row: PricingRuleRow | PricingRuleRecord) =>
+  'user_id' in row ? pricingRuleFromRow(row as PricingRuleRow) : pricingRuleFromRecord(row as PricingRuleRecord);
+
+const mapNote = (row: NoteRow | NoteRecord) =>
+  'user_id' in row ? noteFromRow(row as NoteRow) : noteFromRecord(row as NoteRecord);
+
+const mapDraft = (row: DraftRow | DraftRecord) =>
+  'user_id' in row ? draftFromRow(row as DraftRow) : draftFromRecord(row as DraftRecord);
+
+const mapPayment = (row: PaymentRow | PaymentRecord): Payment =>
+  'user_id' in row ? paymentFromRow(row as PaymentRow) : paymentFromRecord(row as PaymentRecord);
+
 const sortByDate = (payments: Payment[]): Payment[] =>
   payments.sort((a, b) => a.date.localeCompare(b.date));
 
-/**
- * Áp các hàng payment vừa kéo về lên danh sách hiện có.
- * Hàng có `deleted_at` là lần trả bị huỷ ⇒ bỏ đi; còn lại là thêm/cập nhật.
- */
 const applyPaymentRows = (
   existing: readonly Payment[],
-  rows: readonly PaymentRow[],
+  rows: readonly (PaymentRow | PaymentRecord)[],
 ): Payment[] => {
   const byId = new Map(existing.map((p) => [p.id, p]));
   for (const row of rows) {
-    if (row.deleted_at !== null) byId.delete(row.id);
-    else byId.set(row.id, paymentFromRow(row));
+    if (getDeletedAt(row) !== null) byId.delete(row.id);
+    else byId.set(row.id, mapPayment(row));
   }
   return sortByDate([...byId.values()]);
 };
@@ -126,19 +143,18 @@ const applyPaymentRows = (
 /**
  * 🔴 HỢP NHẤT, không thay thế.
  * Bản phiếu từ máy chủ chỉ mang những lần trả mà máy chủ biết. Nếu lấy thẳng
- * danh sách đó thì khoản vừa ghi lúc mất mạng biến mất — đúng kịch bản mất
- * tiền mà việc tách bảng `payments` sinh ra để tránh.
+ * danh sách đó thì khoản vừa ghi lúc mất mạng biến mất.
  */
 const unionPayments = (
   local: readonly Payment[],
   fromServer: readonly Payment[],
-  serverRows: readonly PaymentRow[],
+  serverRows: readonly (PaymentRow | PaymentRecord)[],
 ): Payment[] => {
   const byId = new Map(local.map((p) => [p.id, p]));
   for (const p of fromServer) byId.set(p.id, p);
   // Máy chủ nói lần trả nào đã huỷ thì bỏ, kể cả khi bản cục bộ còn giữ.
   for (const row of serverRows) {
-    if (row.deleted_at !== null) byId.delete(row.id);
+    if (getDeletedAt(row) !== null) byId.delete(row.id);
   }
   return sortByDate([...byId.values()]);
 };
@@ -149,41 +165,53 @@ const withPayments = (tx: Transaction, payments: readonly Payment[]): Transactio
   amountPaid: payments.reduce((s, p) => s + p.amount, 0),
 });
 
+const getTxPaymentId = (row: PaymentRow | PaymentRecord): string => {
+  const r = row as Record<string, unknown>;
+  return (r.transactionId as string) ?? (r.transaction_id as string) ?? '';
+};
+
 const mergeTransactions = (
   local: readonly Transaction[],
-  rows: readonly TransactionRow[],
-  loosePayments: readonly PaymentRow[],
+  rows: readonly (TransactionRow | TransactionRecord)[],
+  loosePayments: readonly (PaymentRow | PaymentRecord)[],
   pendingIds: ReadonlySet<string>,
 ): Transaction[] => {
   const byId = new Map(local.map((t) => [t.id, t]));
 
   for (const row of rows) {
     if (pendingIds.has(row.id)) continue;
-    if (row.deleted_at !== null) {
+    if (getDeletedAt(row) !== null) {
       byId.delete(row.id);
       continue;
     }
 
-    const incoming = transactionFromRow(row);
+    const incoming =
+      'user_id' in row
+        ? transactionFromRow(row as TransactionRow)
+        : transactionFromRecord(row as TransactionRecord);
     const existing = byId.get(row.id);
+    const embeddedPaymentRows = ('payments' in row && Array.isArray(row.payments) ? row.payments : []) as (PaymentRow | PaymentRecord)[];
+
     byId.set(
       row.id,
       existing
         ? withPayments(
             incoming,
-            unionPayments(existing.payments, incoming.payments, row.payments ?? []),
+            unionPayments(existing.payments, incoming.payments, embeddedPaymentRows),
           )
         : incoming,
     );
   }
 
   // Ghi trả nợ KHÔNG làm đổi updated_at của phiếu, nên lần trả từ máy khác đến
-  // theo đường riêng — chỉ kéo phiếu là mất khoản đó.
-  const looseByTx = new Map<string, PaymentRow[]>();
+  // theo đường riêng qua bảng payments.
+  const looseByTx = new Map<string, (PaymentRow | PaymentRecord)[]>();
   for (const row of loosePayments) {
-    const list = looseByTx.get(row.transaction_id) ?? [];
+    const txId = getTxPaymentId(row);
+    if (!txId) continue;
+    const list = looseByTx.get(txId) ?? [];
     list.push(row);
-    looseByTx.set(row.transaction_id, list);
+    looseByTx.set(txId, list);
   }
 
   for (const [txId, rowsOfTx] of looseByTx) {
@@ -197,7 +225,7 @@ const mergeTransactions = (
 
 export const mergeChanges = (
   local: AppData,
-  changes: RemoteChanges,
+  changes: RemoteChanges | SyncChanges,
   pendingIds: ReadonlySet<string>,
 ): AppData => {
   const transactions = mergeTransactions(
@@ -209,17 +237,17 @@ export const mergeChanges = (
 
   return {
     ...local,
-    suppliers: mergeList(local.suppliers, changes.suppliers, supplierFromRow, pendingIds),
-    buyers: mergeList(local.buyers, changes.buyers, buyerFromRow, pendingIds),
-    products: mergeList(local.products, changes.products, productFromRow, pendingIds),
+    suppliers: mergeList(local.suppliers, changes.suppliers, mapSupplier, pendingIds),
+    buyers: mergeList(local.buyers, changes.buyers, mapBuyer, pendingIds),
+    products: mergeList(local.products, changes.products, mapProduct, pendingIds),
     transactions: transactions.sort((a, b) => b.date.localeCompare(a.date)),
-    drafts: mergeList(local.drafts, changes.drafts, draftFromRow, pendingIds),
+    drafts: mergeList(local.drafts, changes.drafts, mapDraft, pendingIds),
     pricingRules: mergeList(
       local.pricingRules ?? [],
       changes.pricingRules,
-      pricingRuleFromRow,
+      mapPricingRule,
       pendingIds,
     ),
-    notes: mergeList(local.notes, changes.notes, noteFromRow, pendingIds),
+    notes: mergeList(local.notes, changes.notes, mapNote, pendingIds),
   };
 };

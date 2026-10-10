@@ -1,18 +1,15 @@
 /**
- * Ảnh phiếu cân / hoá đơn: IndexedDB ⇄ Supabase Storage.
+ * Ảnh phiếu cân / hoá đơn: IndexedDB & Storage.
  *
  * Ảnh luôn được lưu vào máy TRƯỚC. Chụp ảnh giữa rẫy không có sóng vẫn phải
  * xong việc; đẩy lên là chuyện của lúc có mạng.
  *
- * Đường dẫn trên Storage: /{user_id}/{attachment_id} — policy của bucket khớp
- * đúng thư mục đầu tiên với người đang đăng nhập.
+ * Backend sẽ cấp URL ký sẵn ở BE8 (POST /v1/attachments/upload-url).
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { FeatureUnavailableError } from './capabilities';
 import { openLocalDb } from './localDb';
-
-const BUCKET = 'attachments';
-const SIGNED_URL_TTL_SECONDS = 3_600;
 
 export const putLocalAttachment = async (id: string, blob: Blob): Promise<void> => {
   const db = await openLocalDb();
@@ -29,48 +26,37 @@ export const deleteLocalAttachment = async (id: string): Promise<void> => {
   await db.delete('attachments', id);
 };
 
-const storagePath = (userId: string, id: string): string => `${userId}/${id}`;
-
 export const uploadAttachment = async (
-  supabase: SupabaseClient,
-  userId: string,
-  id: string,
-  blob: Blob,
+  _supabase: SupabaseClient,
+  _userId: string,
+  _id: string,
+  _blob: Blob,
 ): Promise<void> => {
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(storagePath(userId, id), blob, { upsert: true, contentType: blob.type });
-  if (error) throw new Error(`Không tải được ảnh lên: ${error.message}`);
+  throw new FeatureUnavailableError('Attachments');
 };
 
-/** Bucket là private nên phải xin đường dẫn có chữ ký, không dùng URL công khai. */
+/** Bucket là private. BE8 sẽ cấp URL có hạn từ API. */
 export const signedAttachmentUrl = async (
-  supabase: SupabaseClient,
-  userId: string,
-  id: string,
+  _supabase: SupabaseClient,
+  _userId: string,
+  _id: string,
 ): Promise<string | null> => {
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(storagePath(userId, id), SIGNED_URL_TTL_SECONDS);
-  return error ? null : (data?.signedUrl ?? null);
+  throw new FeatureUnavailableError('Attachments');
 };
 
 export const removeAttachment = async (
-  supabase: SupabaseClient,
-  userId: string,
-  id: string,
+  _supabase: SupabaseClient,
+  _userId: string,
+  _id: string,
 ): Promise<void> => {
-  await supabase.storage.from(BUCKET).remove([storagePath(userId, id)]);
+  throw new FeatureUnavailableError('Attachments');
 };
 
 /** Tải ảnh từ máy chủ về máy để lần sau xem được khi không có mạng. */
 export const cacheRemoteAttachment = async (
-  supabase: SupabaseClient,
-  userId: string,
-  id: string,
+  _supabase: SupabaseClient,
+  _userId: string,
+  _id: string,
 ): Promise<Blob | null> => {
-  const { data, error } = await supabase.storage.from(BUCKET).download(storagePath(userId, id));
-  if (error || !data) return null;
-  await putLocalAttachment(id, data);
-  return data;
+  throw new FeatureUnavailableError('Attachments');
 };
