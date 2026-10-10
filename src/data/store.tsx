@@ -68,9 +68,9 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const kickSync = useCallback(() => {
     const supabase = getSupabase();
     if (!supabase || !hasBackend() || !currentOrg || !activeKey ||
-        selected.current !== activeKey || readyKey.current !== activeKey ||
-        !looksOnline() || syncing.current || !hasBook(currentOrg.organization.type) ||
-        !currentOrg.permissions.includes('book:sync')) return;
+      selected.current !== activeKey || readyKey.current !== activeKey ||
+      !looksOnline() || syncing.current || !hasBook(currentOrg.organization.type) ||
+      !currentOrg.permissions.includes('book:sync')) return;
     const run = generation.current;
     syncing.current = true;
     void persistence.current.then(() => {
@@ -91,7 +91,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   }, [activeKey, currentOrg, show]);
   const commit = useCallback((next: AppData, ops: NewOp[]) => {
     if (!activeKey || readyKey.current !== activeKey ||
-        (getSupabase() && selected.current !== activeKey)) throw new Error('Organization book is not ready');
+      (getSupabase() && selected.current !== activeKey)) throw new Error('Organization book is not ready');
     const run = ++generation.current;
     show(next);
     persistence.current = persistence.current.then(async () => {
@@ -128,8 +128,10 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       return result;
     } catch (error) {
       if (epoch !== sessionEpoch.current) return null;
-      setStatus((previous) => ({ ...previous, loading: false,
-        error: error instanceof Error ? error.message : 'Cannot validate membership' }));
+      setStatus((previous) => ({
+        ...previous, loading: false,
+        error: error instanceof Error ? error.message : 'Cannot validate membership'
+      }));
       return null;
     }
   }, [applyMe]);
@@ -186,12 +188,16 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       const count = currentOrgId ? await pendingCount(currentOrgId) : 0;
       const legacyCount = await legacyQueueCount();
       if (cancelled || (currentOrgId && selected.current !== currentOrgId)) return;
-      setStatus({ loading: false, pendingCount: count,
-        error: legacyCount > 0 ? 'Có thao tác cũ chưa xác định tổ chức, đã cách ly để tránh gửi nhầm.' : undefined });
+      setStatus({
+        loading: false, pendingCount: count,
+        error: legacyCount > 0 ? 'Có thao tác cũ chưa xác định tổ chức, đã cách ly để tránh gửi nhầm.' : undefined
+      });
       kickSync();
     }).catch((error: unknown) => {
-      if (!cancelled) setStatus({ loading: false, pendingCount: 0,
-        error: error instanceof Error ? error.message : 'Cannot load local book' });
+      if (!cancelled) setStatus({
+        loading: false, pendingCount: 0,
+        error: error instanceof Error ? error.message : 'Cannot load local book'
+      });
     });
     return () => { cancelled = true; };
   }, [activeKey, currentOrgId, kickSync, show]);
@@ -226,11 +232,22 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       signIn: async (identifier, password) => {
         const supabase = getSupabase();
         if (!supabase) throw new Error('Chưa cấu hình máy chủ');
+
         sessionEpoch.current++;
         activateOrg(null);
         memberships.current = [];
         setMe(null);
-        await auth.signIn(supabase, identifier, password);
+
+        const account = await auth.signIn(supabase, identifier, password);
+
+        // Set user ngay sau khi Supabase Auth thành công
+        const fallbackProfile = await auth.loadProfile(supabase, account);
+
+        if (fallbackProfile) {
+          setUser(fallbackProfile);
+        }
+
+        // Sau đó mới lấy dữ liệu đầy đủ từ backend
         await refreshMe();
       },
       signUp: async (input) => {
