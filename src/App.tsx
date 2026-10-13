@@ -5,9 +5,11 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ToastProvider } from '@/components/ui/Toast';
 import { StoreProvider } from '@/data/store';
+import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { RequireAccount } from '@/features/auth/RequireAccount';
 import { AppLayout } from '@/features/shared/AppLayout';
+import { Gated } from '@/features/shared/Gated';
 import { ROUTES } from '@/features/shared/navItems';
 import { NotFoundPage } from '@/features/NotFoundPage';
 import { saveBookToFile } from '@/features/shared/bookFile';
@@ -15,6 +17,9 @@ import { saveBookToFile } from '@/features/shared/bookFile';
 // Tách bundle theo route: mở app chỉ tải màn Tổng quan, không tải cả app.
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+);
+const FarmerHomePage = lazy(() =>
+  import('@/features/farmer/FarmerHomePage').then((m) => ({ default: m.FarmerHomePage })),
 );
 const ReceiptsPage = lazy(() =>
   import('@/features/receipts/ReceiptsPage').then((m) => ({ default: m.ReceiptsPage })),
@@ -57,9 +62,18 @@ const MorePage = lazy(() =>
 const PlansPage = lazy(() =>
   import('@/features/billing/PlansPage').then((m) => ({ default: m.PlansPage })),
 );
+const LegalPage = lazy(() =>
+  import('@/features/legal/LegalPage').then((m) => ({ default: m.LegalPage })),
+);
 const ImportDataPage = lazy(() =>
   import('@/features/importData/ImportDataPage').then((m) => ({ default: m.ImportDataPage })),
 );
+
+/** Trang chủ theo vỏ: nông dân không có sổ ⇒ trang riêng; vựa, doanh nghiệp ⇒ Tổng quan của sổ. */
+function HomePage() {
+  const { orgType } = useStore();
+  return orgType === 'farmer' ? <FarmerHomePage /> : <DashboardPage />;
+}
 
 export function App() {
   return (
@@ -70,37 +84,48 @@ export function App() {
       <StoreProvider>
         <ToastProvider>
           <BrowserRouter>
-            <RequireAccount>
-              <AppLayout>
-                <Suspense
-                  fallback={
-                    <PageContainer>
-                      <Skeleton rows={4} label={L.loading} />
-                    </PageContainer>
-                  }
-                >
-                  <Routes>
-                    <Route path={ROUTES.dashboard} element={<DashboardPage />} />
-                    <Route path={ROUTES.receipts} element={<ReceiptsPage />} />
-                    <Route path={ROUTES.create} element={<CreateReceiptPage />} />
-                    <Route path="/phieu/:id" element={<ReceiptDetailPage />} />
-                    <Route path={ROUTES.debts} element={<DebtsPage />} />
-                    <Route path={ROUTES.inventory} element={<InventoryPage />} />
-                    <Route path={ROUTES.suppliers} element={<PartnerListPage role="supplier" />} />
-                    <Route path={ROUTES.buyers} element={<PartnerListPage role="buyer" />} />
-                    <Route path={ROUTES.products} element={<ProductsPage />} />
-                    <Route path={ROUTES.pricing} element={<PricingPage />} />
-                    <Route path={ROUTES.reports} element={<ReportsPage />} />
-                    <Route path={ROUTES.utilities} element={<UtilitiesPage />} />
-                    <Route path={ROUTES.profile} element={<ProfilePage />} />
-                    <Route path={ROUTES.plans} element={<PlansPage />} />
-                    <Route path={ROUTES.importData} element={<ImportDataPage />} />
-                    <Route path={ROUTES.more} element={<MorePage />} />
-                    <Route path="*" element={<NotFoundPage />} />
-                  </Routes>
-                </Suspense>
-              </AppLayout>
-            </RequireAccount>
+            <Routes>
+              {/* Pháp lý & hướng dẫn: công khai, ngoài cổng đăng nhập và ngoài khung app. */}
+              <Route path={ROUTES.terms} element={<Suspense fallback={null}><LegalPage kind="terms" /></Suspense>} />
+              <Route path={ROUTES.privacy} element={<Suspense fallback={null}><LegalPage kind="privacy" /></Suspense>} />
+              <Route path={ROUTES.guide} element={<Suspense fallback={null}><LegalPage kind="guide" /></Suspense>} />
+              <Route
+                path="*"
+                element={
+                <RequireAccount>
+                  <AppLayout>
+                    <Suspense
+                      fallback={
+                        <PageContainer>
+                          <Skeleton rows={4} label={L.loading} />
+                        </PageContainer>
+                      }
+                    >
+                      <Routes>
+                        <Route path={ROUTES.dashboard} element={<HomePage />} />
+                        <Route path={ROUTES.receipts} element={<Gated route={ROUTES.receipts}><ReceiptsPage /></Gated>} />
+                        <Route path={ROUTES.create} element={<Gated route={ROUTES.create}><CreateReceiptPage /></Gated>} />
+                        <Route path="/phieu/:id" element={<Gated route={ROUTES.receipts}><ReceiptDetailPage /></Gated>} />
+                        <Route path={ROUTES.debts} element={<Gated route={ROUTES.debts}><DebtsPage /></Gated>} />
+                        <Route path={ROUTES.inventory} element={<Gated route={ROUTES.inventory}><InventoryPage /></Gated>} />
+                        <Route path={ROUTES.suppliers} element={<Gated route={ROUTES.suppliers}><PartnerListPage role="supplier" /></Gated>} />
+                        <Route path={ROUTES.buyers} element={<Gated route={ROUTES.buyers}><PartnerListPage role="buyer" /></Gated>} />
+                        <Route path={ROUTES.products} element={<Gated route={ROUTES.products}><ProductsPage /></Gated>} />
+                        <Route path={ROUTES.pricing} element={<Gated route={ROUTES.pricing}><PricingPage /></Gated>} />
+                        <Route path={ROUTES.reports} element={<Gated route={ROUTES.reports}><ReportsPage /></Gated>} />
+                        <Route path={ROUTES.utilities} element={<Gated route={ROUTES.utilities}><UtilitiesPage /></Gated>} />
+                        <Route path={ROUTES.profile} element={<ProfilePage />} />
+                        <Route path={ROUTES.plans} element={<Gated route={ROUTES.plans}><PlansPage /></Gated>} />
+                        <Route path={ROUTES.importData} element={<Gated route={ROUTES.importData}><ImportDataPage /></Gated>} />
+                        <Route path={ROUTES.more} element={<MorePage />} />
+                        <Route path="*" element={<NotFoundPage />} />
+                      </Routes>
+                    </Suspense>
+                  </AppLayout>
+                </RequireAccount>
+                }
+              />
+            </Routes>
           </BrowserRouter>
         </ToastProvider>
       </StoreProvider>

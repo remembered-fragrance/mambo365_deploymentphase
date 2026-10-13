@@ -94,8 +94,10 @@ const main = async () => {
   );
 
   // C §4.3 — supabase chỉ tồn tại trong src/data/
+  // Miễn `src/i18n/legal/`: Chính sách quyền riêng tư BẮT BUỘC nêu tên bên xử lý dữ liệu
+  // (Luật BVDLCN 2025) — đó là văn bản, không phải code biết dữ liệu đến từ đâu.
   scan(
-    all.filter((p) => !p.startsWith('src/data/')),
+    all.filter((p) => !p.startsWith('src/data/') && !p.startsWith('src/i18n/legal/')),
     'supabase ngoài src/data/ — tầng khác không được biết dữ liệu đến từ đâu',
     (line) => /supabase/i.test(line),
     { skipComments: true },

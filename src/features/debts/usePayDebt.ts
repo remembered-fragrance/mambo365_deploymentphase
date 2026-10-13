@@ -12,11 +12,13 @@ import type { Transaction } from '@/core/types';
 import type { DebtSide } from '@/core/debtSelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { useAccess } from '../shared/useAccess';
 
 export type PayDebt = (tx: Transaction, amount: number) => void;
 
 export function usePayDebt(side: DebtSide): PayDebt {
   const { recordPayment, removePayment } = useStore();
+  const { can } = useAccess();
   const toast = useToast();
 
   return (tx, amount) => {
@@ -25,8 +27,8 @@ export function usePayDebt(side: DebtSide): PayDebt {
 
     toast({
       message: `${side === 'payable' ? L.paidToast : L.collectedToast} ${formatVnd(payment.amount)} · ${tx.supplierName}`,
-      undoLabel: L.undo,
-      onUndo: () => removePayment(tx.id, payment.id),
+      // Hoàn tác = huỷ lần trả (`payment:void`); người cân không có quyền này.
+      ...(can('payment:void') ? { undoLabel: L.undo, onUndo: () => removePayment(tx.id, payment.id) } : {}),
     });
   };
 }

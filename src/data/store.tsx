@@ -1,22 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { emptyData } from '@/core/normalize';
 import type { AppData, SyncStatus, UserProfile } from '@/core/types';
-import {
-  hasBook,
-  type Feature,
-  type Me,
-  type MeBootstrapInput,
-  type MeMembership,
-  type MemberRole,
-  type OrgType,
-  type Permission,
-  type PlanSummary,
-} from '@mambo/contracts';
+import { hasBook, type Feature, type Me, type MeBootstrapInput, type MeMembership } from '@mambo/contracts';
+import type { MemberRole, OrgType, Permission, PlanSummary } from '@mambo/contracts';
 import { deleteAccount } from './account';
 import * as auth from './auth';
+import { mergeProfile } from './authProfile';
 import { createBookActions } from './bookActions';
 import { clearOrgCache, clearUserCache, readBook, writeBook } from './cache';
-import { getCurrentOrgId, getSupabase, hasBackend, setCurrentOrg } from './client';
+import { api, getCurrentOrgId, getSupabase, hasBackend, setCurrentOrg } from './client';
 import { deviceAccount } from './deviceAccount';
 import { enqueue, legacyQueueCount, pendingCount, type NewOp } from './queue';
 import { forgetSubscription } from './subscriptionStore';
@@ -33,6 +26,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const [data, setData] = useState<AppData>(emptyData);
   const [status, setStatus] = useState<SyncStatus>({ loading: true, pendingCount: 0 });
   const latest = useRef(data);
+  /** Tài khoản Supabase của phiên — bù SĐT / email khôi phục mà `/v1/me` chưa trả. */
+  const authUser = useRef<User | null>(null);
   const syncing = useRef(false);
   const selected = useRef<string | null>(null);
   const readyKey = useRef<string | null>(null);
@@ -111,7 +106,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const applyMe = useCallback((result: Me) => {
     memberships.current = result.memberships;
     setMe(result);
-    setUser(auth.profileFromMe(result));
+    setUser(auth.profileFromMe(result, authUser.current));
     const stored = getCurrentOrgId();
     const target = result.memberships.find((m) => m.organization.id === stored) ?? result.memberships[0];
     const orgId = target?.organization.id ?? null;
@@ -125,6 +120,10 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       const result = await auth.getMe();
       if (epoch !== sessionEpoch.current) return null;
       applyMe(result);
+      // Tên đăng nhập / email khôi phục nằm ở `profiles`; lỗi (chưa bootstrap, API cũ) ⇒ giữ bản /v1/me.
+      if (result.memberships.length > 0) void api.account.profile().then((profile) => {
+        if (epoch === sessionEpoch.current) setUser((u) => (u ? mergeProfile(u, profile) : u));
+      }).catch(() => undefined);
       return result;
     } catch (error) {
       if (epoch !== sessionEpoch.current) return null;
@@ -142,6 +141,17 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     if (selected.current === orgId) return;
     activateOrg(orgId);
   }, [activateOrg]);
+  /**
+   * Vào phiên vừa có (mở app, đăng nhập, đăng ký). `/v1/me` lỗi — Render đang khởi động,
+   * mất mạng — vẫn phải có `user` từ phiên Supabase, không thì cổng giữ nguyên màn đăng
+   * nhập mà không báo gì ("đăng nhập không chuyển trang"); lỗi hiện ở thanh đồng bộ.
+   */
+  const enterSession = useCallback(async (supabase: SupabaseClient, account: User): Promise<void> => {
+    const epoch = sessionEpoch.current;
+    if (await refreshMe()) return;
+    const profile = await auth.loadProfile(supabase, account);
+    if (epoch === sessionEpoch.current) setUser(profile);
+  }, [refreshMe]);
   const bootstrap = useCallback(async (input: MeBootstrapInput): Promise<Me> => {
     const epoch = sessionEpoch.current;
     const result = await auth.bootstrap(input);
@@ -166,13 +176,10 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         setStatus(IDLE_STATUS);
         return;
       }
-      const meData = await refreshMe();
-      if (!meData) {
-        const profile = await auth.loadProfile(supabase, session.user);
-        if (epoch === sessionEpoch.current) setUser(profile);
-      }
+      authUser.current = session.user;
+      await enterSession(supabase, session.user);
     });
-  }, [refreshMe]);
+  }, [enterSession]);
   useEffect(() => {
     if (!activeKey) {
       show(emptyData());
@@ -237,18 +244,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         activateOrg(null);
         memberships.current = [];
         setMe(null);
-
-        const account = await auth.signIn(supabase, identifier, password);
-
-        // Set user ngay sau khi Supabase Auth thành công
-        const fallbackProfile = await auth.loadProfile(supabase, account);
-
-        if (fallbackProfile) {
-          setUser(fallbackProfile);
-        }
-
-        // Sau đó mới lấy dữ liệu đầy đủ từ backend
-        await refreshMe();
+        authUser.current = await auth.signIn(supabase, identifier, password);
+        await enterSession(supabase, authUser.current);
       },
       signUp: async (input) => {
         const supabase = getSupabase();
@@ -257,11 +254,12 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         activateOrg(null);
         memberships.current = [];
         setMe(null);
-        await auth.signUp(supabase, input);
-        await refreshMe();
+        authUser.current = await auth.signUp(supabase, input);
+        await enterSession(supabase, authUser.current);
       },
       signOut: async () => {
         sessionEpoch.current++;
+        authUser.current = null;
         activateOrg(null);
         memberships.current = [];
         await persistence.current;
@@ -280,8 +278,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       updateProfile: async (patch) => {
         const supabase = getSupabase();
         if (!supabase || !userId) throw new Error('Chưa cấu hình máy chủ');
-        await auth.updateProfile(supabase, userId, patch);
-        setUser((current) => (current ? { ...current, ...patch } : current));
+        const saved = await auth.updateProfile(supabase, userId, patch);
+        setUser((current) => (current ? mergeProfile(current, saved) : current));
       },
       changePassword: async (password) => {
         const supabase = getSupabase();
@@ -304,7 +302,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     [
       activateOrg, data, status, user, me, currentOrgId, currentOrg, orgType,
       userRole, permissions, features, plan, needsBootstrap, bootstrap,
-      selectOrg, refreshMe, activeKey, commit, kickSync, userId, show,
+      selectOrg, refreshMe, enterSession, activeKey, commit, kickSync, userId, show,
     ],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
