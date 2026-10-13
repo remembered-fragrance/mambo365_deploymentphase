@@ -1,38 +1,61 @@
 import { Link } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useLinkedBalance } from '@/data/hooks/useLinked';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
+import { ClaimCodeCard } from './ClaimCodeCard';
+import { TraderBalanceCard } from './TraderBalanceCard';
 
 /**
  * Trang chủ vỏ Nông dân (`farmer`): không có sổ offline, không có gói.
- *
- * Đơn bán, tiền vựa còn nợ, nhập mã kết nối cần SDK ≥ v0.6.0 (`api.orders`,
- * `api.linked`, `api.links.claim`); app đang dùng v0.4.0 nên tạm hiện là "Sắp có".
+ * Nhập mã kết nối vựa đưa → thấy từng vựa còn nợ bao nhiêu → bấm vào xem phiếu.
  */
 export function FarmerHomePage() {
   const { user, currentOrg } = useStore();
+  const balance = useLinkedBalance();
   const name = user?.name || currentOrg?.organization.name || '';
 
   return (
     <PageContainer width="content">
-      <PageHeader title={`${L.farmerHello}${name ? ` ${name}` : ''}`} />
+      <PageHeader title={`${L.farmerHello}${name ? ` ${name}` : ''}`} subtitle={L.farmerIntro} />
 
       <div className="grid gap-4">
-        <Card>
-          <p className="text-base text-ink-2">{L.farmerIntro}</p>
-          {currentOrg && <p className="mt-2 text-lg font-bold text-ink">{currentOrg.organization.name}</p>}
-        </Card>
+        <ClaimCodeCard onClaimed={balance.reload} />
 
-        <Card>
-          <h2 className="text-base font-bold text-ink">{L.farmerSoonTitle}</h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-2">
-            <li>{L.farmerSoonOrders}</li>
-            <li>{L.farmerSoonDebts}</li>
-            <li>{L.farmerSoonLinks}</li>
-          </ul>
+        <section aria-labelledby="farmer-traders">
+          <h2 id="farmer-traders" className="mb-2 text-sm font-bold uppercase tracking-wide text-ink-3">
+            {L.farmerTradersTitle}
+          </h2>
+          {balance.loading && !balance.data ? (
+            <Skeleton rows={2} label={L.loading} />
+          ) : balance.error ? (
+            <ErrorState
+              title={L.errorTitle}
+              description={balance.error}
+              actions={<Button onClick={balance.reload}>{L.retry}</Button>}
+            />
+          ) : balance.data && balance.data.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {balance.data.map((item) => (
+                <li key={item.organization.id}>
+                  <TraderBalanceCard item={item} to={ROUTES.linkedTrader(item.organization.id)} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState title={L.farmerNoTraders} description={L.farmerNoTradersHint} icon="🤝" />
+          )}
+        </section>
+
+        <Card title={L.farmerSoonTitle}>
+          <p className="text-sm text-ink-2">{L.farmerSoonOrders}</p>
         </Card>
 
         <Link to={ROUTES.profile} className="card flex min-h-16 items-center p-4 text-base font-bold text-brand">

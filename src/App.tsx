@@ -21,6 +21,9 @@ const DashboardPage = lazy(() =>
 const FarmerHomePage = lazy(() =>
   import('@/features/farmer/FarmerHomePage').then((m) => ({ default: m.FarmerHomePage })),
 );
+const LinkedTraderPage = lazy(() =>
+  import('@/features/farmer/LinkedTraderPage').then((m) => ({ default: m.LinkedTraderPage })),
+);
 const ReceiptsPage = lazy(() =>
   import('@/features/receipts/ReceiptsPage').then((m) => ({ default: m.ReceiptsPage })),
 );
@@ -117,6 +120,7 @@ export function App() {
                         <Route path={ROUTES.profile} element={<ProfilePage />} />
                         <Route path={ROUTES.plans} element={<Gated route={ROUTES.plans}><PlansPage /></Gated>} />
                         <Route path={ROUTES.importData} element={<Gated route={ROUTES.importData}><ImportDataPage /></Gated>} />
+                        <Route path="/vua/:orgId" element={<Gated route={ROUTES.linked}><LinkedTraderPage /></Gated>} />
                         <Route path={ROUTES.more} element={<MorePage />} />
                         <Route path="*" element={<NotFoundPage />} />
                       </Routes>

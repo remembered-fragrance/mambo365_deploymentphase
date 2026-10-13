@@ -46,6 +46,8 @@ export const ROUTES = {
   profile: '/tai-khoan',
   plans: '/goi-dich-vu',
   importData: '/nhap-du-lieu',
+  linked: '/vua',
+  linkedTrader: (orgId: string) => `/vua/${orgId}`,
   more: '/them',
   auth: '/dang-nhap',
   terms: LEGAL_LINKS.terms,
@@ -71,6 +73,7 @@ export const ROUTE_GATES: Readonly<Record<string, Gate>> = {
   [ROUTES.utilities]: BOOK,
   [ROUTES.plans]: { book: true, permission: 'billing:manage' },
   [ROUTES.importData]: { book: true, permission: 'partner:manage' },
+  [ROUTES.linked]: { permission: 'linked:read' },
 };
 
 const visible = (access: Access) => (item: NavItem): boolean => allows(access, ROUTE_GATES[item.to]);
