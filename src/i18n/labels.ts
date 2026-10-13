@@ -233,6 +233,10 @@ const BASE = {
   savingDraft: 'Đang lưu',
   savedDraft: 'Đã lưu',
   nothingToFinish: 'Chưa đủ thông tin để chốt phiếu',
+  discardDraft: 'Xoá phiếu đang cân',
+  discardDraftTitle: 'Xoá phiếu đang cân này?',
+  discardDraftConsequence: 'Số đã cân mất hẳn, không lấy lại được. Sổ không ghi gì.',
+  draftDiscarded: 'Đã xoá phiếu đang cân',
 
   // ─── Chi tiết phiếu ───────────────────────────────────────────────────────
   receiptNumber: 'Số phiếu',
