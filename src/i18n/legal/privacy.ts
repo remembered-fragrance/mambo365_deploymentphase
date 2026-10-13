@@ -1,7 +1,7 @@
 /**
  * Chính sách quyền riêng tư — thông báo xử lý dữ liệu cá nhân theo Luật Bảo vệ
  * dữ liệu cá nhân 2025 (91/2025/QH15) và Nghị định 356/2025/NĐ-CP (thay Nghị
- * định 13/2023). Thời hạn ở mục "Quyền của bác" lấy theo Điều 5 Nghị định 356.
+ * định 13/2023). Thời hạn ở mục "Quyền của bạn" lấy theo Điều 5 Nghị định 356.
  *
  * Chỉ ghi những gì hệ thống THẬT SỰ làm. Thêm công cụ thống kê, Sentry, gửi SMS…
  * thì phải sửa trang này trong cùng PR.
@@ -16,7 +16,7 @@ export const PRIVACY: LegalDoc = {
   title: 'Chính sách quyền riêng tư',
   meta: `Phiên bản ${LEGAL_VERSION} · Áp dụng từ ${LEGAL_EFFECTIVE_DATE}`,
   intro:
-    'Trang này nói THUMUA365 thu thập dữ liệu gì, để làm gì, lưu ở đâu, ai xem được, giữ bao lâu và bác có quyền gì. Chỗ nào app không làm được thì trang này không hứa.',
+    'Trang này nói THUMUA365 thu thập dữ liệu gì, để làm gì, lưu ở đâu, ai xem được, giữ bao lâu và bạn có quyền gì. Chỗ nào app không làm được thì trang này không hứa.',
   sections: [
     {
       id: 'chu-the',
@@ -33,17 +33,17 @@ export const PRIVACY: LegalDoc = {
       blocks: [
         table(
           ['Nhóm', 'Gồm những gì', 'Nguồn'],
-          ['Tài khoản', 'Tên, số điện thoại, mật khẩu (chỉ lưu dạng băm, không ai đọc được), email khôi phục và tên đăng nhập nếu bác tự khai.', 'Bác khai khi đăng ký'],
-          ['Tổ chức', 'Loại (nông dân / vựa / doanh nghiệp), tên vựa / doanh nghiệp, chi nhánh, vai trò của từng thành viên.', 'Bác khai ở bước "Bác là ai?"'],
-          ['Sổ', 'Phiếu mua bán, số cân, đơn giá, công nợ, mặt hàng, quy tắc giá, tồn kho, ghi chú.', 'Bác và nhân viên nhập'],
-          ['Người thứ ba', 'Tên, số điện thoại, khu vực của nông hộ và người mua.', 'Bác nhập (mục 8)'],
-          ['Ảnh chứng từ', 'Ảnh phiếu cân, hoá đơn bác tự chụp và tự đính vào phiếu.', 'Bác chọn'],
+          ['Tài khoản', 'Tên, số điện thoại, mật khẩu (chỉ lưu dạng băm, không ai đọc được), email khôi phục và tên đăng nhập nếu bạn tự khai.', 'Bạn khai khi đăng ký'],
+          ['Tổ chức', 'Loại (nông dân / vựa / doanh nghiệp), tên vựa / doanh nghiệp, chi nhánh, vai trò của từng thành viên.', 'Bạn khai ở bước "Bạn là ai?"'],
+          ['Sổ', 'Phiếu mua bán, số cân, đơn giá, công nợ, mặt hàng, quy tắc giá, tồn kho, ghi chú.', 'Bạn và nhân viên nhập'],
+          ['Người thứ ba', 'Tên, số điện thoại, khu vực của nông hộ và người mua.', 'Bạn nhập (mục 8)'],
+          ['Ảnh chứng từ', 'Ảnh phiếu cân, hoá đơn bạn tự chụp và tự đính vào phiếu.', 'Bạn chọn'],
           ['Thanh toán gói', 'Số tiền, thời điểm, mã đối soát, mã giao dịch ngân hàng. Không lưu số thẻ, mật khẩu hay thông tin đăng nhập ngân hàng.', 'Ngân hàng / dịch vụ đối soát'],
           ['Kỹ thuật', 'Nhật ký truy cập máy chủ: địa chỉ IP, thời điểm, đường dẫn gọi, mã lỗi.', 'Tự sinh khi dùng app'],
           ['Sự kiện dùng app', 'Tên việc vừa làm (mở app, đăng nhập được / không được, lập phiếu, tạo đơn, xem gói…), thời điểm, loại tổ chức, phiên bản app, một mã máy ngẫu nhiên và vài con số không định danh (số dòng của phiếu, có mạng hay không). Không có tên, số điện thoại, email hay số tiền.', 'Tự sinh khi dùng app'],
         ),
         note(
-          'Không thu thập: vị trí GPS, danh bạ, ảnh trong máy (ngoài ảnh bác tự chọn), sinh trắc học, căn cước. App tự đếm các sự kiện ở trên trên máy chủ của mình, không dùng công cụ thống kê của bên thứ ba, không có mã quảng cáo, không có cookie theo dõi. THUMUA365 không chủ động thu thập dữ liệu cá nhân nhạy cảm; bác đừng ghi loại dữ liệu đó vào ô ghi chú.',
+          'Không thu thập: vị trí GPS, danh bạ, ảnh trong máy (ngoài ảnh bạn tự chọn), sinh trắc học, căn cước. App tự đếm các sự kiện ở trên trên máy chủ của mình, không dùng công cụ thống kê của bên thứ ba, không có mã quảng cáo, không có cookie theo dõi. THUMUA365 không chủ động thu thập dữ liệu cá nhân nhạy cảm; bạn đừng ghi loại dữ liệu đó vào ô ghi chú.',
         ),
       ],
     },
@@ -53,14 +53,14 @@ export const PRIVACY: LegalDoc = {
       blocks: [
         list(
           'Tạo và bảo vệ tài khoản, cho đăng nhập bằng số điện thoại, email hoặc tên đăng nhập.',
-          'Chạy đúng chức năng bác thấy trong app: ghi phiếu, tính tiền, công nợ, báo cáo, đồng bộ giữa các máy và giữa thành viên trong tổ chức.',
+          'Chạy đúng chức năng bạn thấy trong app: ghi phiếu, tính tiền, công nợ, báo cáo, đồng bộ giữa các máy và giữa thành viên trong tổ chức.',
           'Cho nông dân đã kết nối xem phiếu và công nợ ghi về chính họ.',
-          'Mở, gia hạn gói khi bác chuyển khoản; hoàn tiền khi bác yêu cầu.',
-          'Hỗ trợ khi bác nhắn hỏi; phát hiện, ngăn chặn truy cập trái phép và sửa lỗi.',
+          'Mở, gia hạn gói khi bạn chuyển khoản; hoàn tiền khi bạn yêu cầu.',
+          'Hỗ trợ khi bạn nhắn hỏi; phát hiện, ngăn chặn truy cập trái phép và sửa lỗi.',
           'Đếm sự kiện dùng app để biết chỗ nào người dùng bỏ dở và sửa cho dễ dùng hơn — chỉ xem số tổng, không xem riêng từng người.',
           'Thực hiện nghĩa vụ theo yêu cầu hợp pháp của cơ quan nhà nước có thẩm quyền.',
         ),
-        p('Không bán, không cho thuê, không chia sẻ dữ liệu cho bên thứ ba để quảng cáo. Muốn dùng vào mục đích mới, chúng tôi phải hỏi lại sự đồng ý của bác.'),
+        p('Không bán, không cho thuê, không chia sẻ dữ liệu cho bên thứ ba để quảng cáo. Muốn dùng vào mục đích mới, chúng tôi phải hỏi lại sự đồng ý của bạn.'),
       ],
     },
     {
@@ -68,8 +68,8 @@ export const PRIVACY: LegalDoc = {
       title: '4. Sự đồng ý',
       blocks: [
         list(
-          'Ô "Tôi đồng ý" lúc đăng ký không đánh dấu sẵn; bác phải tự bấm. Không đồng ý thì không tạo tài khoản, và không có dữ liệu nào được gửi đi.',
-          'Bác rút lại đồng ý bất cứ lúc nào bằng cách xoá tài khoản (mục 7). Rút lại không ảnh hưởng tới việc xử lý hợp pháp trước đó.',
+          'Ô "Tôi đồng ý" lúc đăng ký không đánh dấu sẵn; bạn phải tự bấm. Không đồng ý thì không tạo tài khoản, và không có dữ liệu nào được gửi đi.',
+          'Bạn rút lại đồng ý bất cứ lúc nào bằng cách xoá tài khoản (mục 7). Rút lại không ảnh hưởng tới việc xử lý hợp pháp trước đó.',
         ),
       ],
     },
@@ -77,7 +77,7 @@ export const PRIVACY: LegalDoc = {
       id: 'luu-tru',
       title: '5. Lưu ở đâu, ai cùng xử lý',
       blocks: [
-        p('Sổ được ghi vào bộ nhớ trình duyệt trên máy bác trước (để mất mạng vẫn dùng được), rồi đồng bộ lên máy chủ khi có mạng. Phiên đăng nhập cũng nằm trong bộ nhớ trình duyệt.'),
+        p('Sổ được ghi vào bộ nhớ trình duyệt trên máy bạn trước (để mất mạng vẫn dùng được), rồi đồng bộ lên máy chủ khi có mạng. Phiên đăng nhập cũng nằm trong bộ nhớ trình duyệt.'),
         table(
           ['Bên cung cấp hạ tầng', 'Xử lý gì', 'Đặt ở đâu'],
           ['Supabase', 'Đăng nhập, cơ sở dữ liệu, ảnh chứng từ (mã hoá khi truyền và khi lưu)', REGION],
@@ -85,7 +85,7 @@ export const PRIVACY: LegalDoc = {
           ['Vercel', 'Phát trang web của app; nhật ký truy cập kỹ thuật (IP, thời điểm)', 'Mạng phân phối toàn cầu'],
           ['vietqr.io', 'Sinh ảnh mã QR — chỉ nhận số tiền và nội dung chuyển khoản, không kèm tên hay dữ liệu sổ', 'Việt Nam'],
           ['Ngân hàng, Casso / SePay', 'Thông tin của chính giao dịch chuyển khoản, để tự mở gói', 'Việt Nam'],
-          ['Zalo', 'Tin nhắn bác tự gửi khi cần hỗ trợ', 'Theo chính sách của Zalo'],
+          ['Zalo', 'Tin nhắn bạn tự gửi khi cần hỗ trợ', 'Theo chính sách của Zalo'],
         ),
         p('Một phần dữ liệu được lưu trên máy chủ đặt ngoài Việt Nam. Chúng tôi chỉ chọn nhà cung cấp có cam kết bảo mật bằng hợp đồng, và thực hiện thủ tục chuyển dữ liệu cá nhân ra nước ngoài khi pháp luật yêu cầu.'),
       ],
@@ -97,7 +97,7 @@ export const PRIVACY: LegalDoc = {
         list(
           'Thành viên của tổ chức, theo đúng vai trò: chủ thấy toàn bộ sổ; quản lý doanh nghiệp thấy chi nhánh mình; nhân viên chỉ thấy phần được giao. Quyền được máy chủ kiểm ở mọi yêu cầu, tài khoản tổ chức khác gọi thẳng vào máy chủ cũng chỉ nhận về rỗng.',
           'Nông dân đã kết nối: chỉ các phiếu và công nợ ghi về chính họ.',
-          'Người vận hành: chỉ khi bác yêu cầu hỗ trợ (đặt lại mật khẩu, mở gói khi chuyển sai nội dung). Mỗi lần đều ghi nhật ký làm gì, cho tài khoản nào, lúc nào; bác hỏi thì được xem phần nhật ký của mình.',
+          'Người vận hành: chỉ khi bạn yêu cầu hỗ trợ (đặt lại mật khẩu, mở gói khi chuyển sai nội dung). Mỗi lần đều ghi nhật ký làm gì, cho tài khoản nào, lúc nào; bạn hỏi thì được xem phần nhật ký của mình.',
           'Cơ quan nhà nước: khi có yêu cầu bằng văn bản đúng thẩm quyền theo pháp luật.',
         ),
       ],
@@ -107,10 +107,10 @@ export const PRIVACY: LegalDoc = {
       title: '7. Giữ bao lâu, xoá thế nào',
       blocks: [
         list(
-          'Giữ đến khi bác xoá — không có hạn tự động xoá phiếu cũ.',
-          'Bấm "Xoá tài khoản" trong màn Tài khoản là xoá thật: ảnh chứng từ, sổ, kết nối của tổ chức mà bác là chủ duy nhất, hồ sơ, rồi tài khoản đăng nhập. Dữ liệu trong trình duyệt của máy đó cũng bị xoá.',
+          'Giữ đến khi bạn xoá — không có hạn tự động xoá phiếu cũ.',
+          'Bấm "Xoá tài khoản" trong màn Tài khoản là xoá thật: ảnh chứng từ, sổ, kết nối của tổ chức mà bạn là chủ duy nhất, hồ sơ, rồi tài khoản đăng nhập. Dữ liệu trong trình duyệt của máy đó cũng bị xoá.',
           'Bản sao lưu của máy chủ tự hết hạn trong vòng 30 ngày; sau đó dữ liệu đã xoá không còn ở đâu nữa.',
-          'Còn lại sau khi xoá, đều không kèm tên bác: dòng đối soát khoản tiền đã chuyển (để không cộng nhầm hai lần, và lưu theo thời hạn pháp luật về kế toán, thuế), dòng nhật ký hỗ trợ, và sự kiện dùng app (vốn không có tên, số điện thoại hay số tiền).',
+          'Còn lại sau khi xoá, đều không kèm tên bạn: dòng đối soát khoản tiền đã chuyển (để không cộng nhầm hai lần, và lưu theo thời hạn pháp luật về kế toán, thuế), dòng nhật ký hỗ trợ, và sự kiện dùng app (vốn không có tên, số điện thoại hay số tiền).',
         ),
       ],
     },
@@ -128,7 +128,7 @@ export const PRIVACY: LegalDoc = {
     },
     {
       id: 'quyen',
-      title: '9. Quyền của bác',
+      title: '9. Quyền của bạn',
       blocks: [
         table(
           ['Quyền', 'Cách làm', 'Thời hạn nếu cần chúng tôi xử lý'],
@@ -161,7 +161,7 @@ export const PRIVACY: LegalDoc = {
     {
       id: 'thay-doi',
       title: '12. Khi chính sách thay đổi',
-      blocks: [p('Sửa gì thì đổi phiên bản, ngày áp dụng ở đầu trang và báo trong app. Thay đổi làm giảm quyền của bác, hoặc thêm mục đích xử lý mới, thì báo trước ít nhất 30 ngày và hỏi lại sự đồng ý khi luật yêu cầu.')],
+      blocks: [p('Sửa gì thì đổi phiên bản, ngày áp dụng ở đầu trang và báo trong app. Thay đổi làm giảm quyền của bạn, hoặc thêm mục đích xử lý mới, thì báo trước ít nhất 30 ngày và hỏi lại sự đồng ý khi luật yêu cầu.')],
     },
   ],
 };

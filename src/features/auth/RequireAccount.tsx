@@ -14,7 +14,7 @@ import { AuthPage } from './AuthPage';
  * đã quyết. Chỉ khi có máy chủ mà chưa đăng nhập mới hiện màn đăng nhập.
  *
  * Đã đăng nhập mà chưa thuộc tổ chức nào (`/v1/me` trả `memberships: []`) ⇒ bước
- * "Bác là ai?" trước khi vào app — vỏ và quyền đều suy từ tổ chức đó.
+ * "Bạn là ai?" trước khi vào app — vỏ và quyền đều suy từ tổ chức đó.
  */
 export function RequireAccount({ children }: { readonly children: ReactNode }) {
   const { user, status, needsBootstrap } = useStore();

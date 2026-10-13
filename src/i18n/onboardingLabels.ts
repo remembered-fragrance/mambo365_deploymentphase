@@ -9,7 +9,7 @@
 
 export const ONBOARDING_LABELS = {
   // ─── Màn hình chào ────────────────────────────────────────────────────────
-  welcomeTitle: 'Sổ của bác còn trống',
+  welcomeTitle: 'Sổ của bạn còn trống',
   welcomeSubtitle: 'Chọn một trong ba cách dưới đây để bắt đầu.',
   welcomeCreate: 'Tạo phiếu đầu tiên',
   welcomeCreateHint: 'Cân một chuyến, app tính tiền và lưu lại.',
@@ -19,7 +19,7 @@ export const ONBOARDING_LABELS = {
   welcomeImportHint: 'Đã dùng app ở máy khác thì lấy file sổ về đây.',
 
   // ─── Chế độ trình diễn ────────────────────────────────────────────────────
-  demoBanner: 'Đang xem dữ liệu mẫu — số liệu này không phải của bác',
+  demoBanner: 'Đang xem dữ liệu mẫu — số liệu này không phải của bạn',
   demoClear: 'Xoá hết, bắt đầu thật',
   demoClearTitle: 'Xoá hết dữ liệu mẫu?',
   demoClearConsequence: 'Toàn bộ phiếu mẫu, nông hộ mẫu và ghi chú mẫu sẽ biến mất. Sổ về rỗng.',
@@ -34,7 +34,7 @@ export const ONBOARDING_LABELS = {
   helpDebts: 'Ai nợ mình, mình nợ ai. Phiếu quá hẹn trả nằm trên cùng. Bấm "Trả đủ" hoặc "Trả một phần" là ghi ngay, có 8 giây để hoàn tác nếu bấm nhầm.',
   helpInventory: 'Hàng còn trong kho, tính bằng cân thực tế đã mua trừ đi đã bán. Tồn âm nghĩa là có phiếu nhập sai, nên kiểm lại.',
   helpPartners: 'Danh bạ nông hộ và người mua. Bấm số điện thoại là gọi luôn. Sửa tên hoặc xoá khỏi danh bạ ở nút bên phải mỗi dòng.',
-  helpProducts: 'Các mặt hàng bác thu mua và cách tính tiền của từng loại. Cao su tính theo hàm lượng mủ, điều và cà phê tính theo cân trừ bì.',
+  helpProducts: 'Các mặt hàng bạn thu mua và cách tính tiền của từng loại. Cao su tính theo hàm lượng mủ, điều và cà phê tính theo cân trừ bì.',
   helpPricing: 'Quy tắc tự cộng hoặc trừ tiền khi lập phiếu: phí xe đến lấy, bớt giá khi mua nhiều. Bật tắt được, xem trước tác dụng trước khi bật.',
   helpReports: 'Số liệu cộng sẵn theo kỳ để đi khai thuế. Xuất ra Excel đưa cho kế toán.',
   helpUtilities: 'Máy tính nhẩm nhanh cân × giá, và chỗ ghi những thứ hay quên.',
@@ -64,7 +64,7 @@ export const ONBOARDING_LABELS = {
   authFailed: 'Chưa đăng nhập được',
   authNoServer: 'Máy chủ chưa được cấu hình — app đang ghi vào máy này',
   deviceBookTitle: 'Sổ đang nằm trên máy này',
-  deviceBookBody: 'Bác đã ghi phiếu khi chưa đăng nhập. Đưa số phiếu đó vào tài khoản để đồng bộ được.',
+  deviceBookBody: 'Bạn đã ghi phiếu khi chưa đăng nhập. Đưa số phiếu đó vào tài khoản để đồng bộ được.',
   deviceBookImport: 'Đưa sổ của máy vào tài khoản',
   deviceBookImported: 'Đã đưa sổ của máy vào tài khoản',
   deviceBookDismiss: 'Không cần',

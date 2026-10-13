@@ -54,9 +54,9 @@ export const SCREEN_LABELS = {
   deletePartyTitle: 'Xoá đối tác này?',
   deletePartyKeepsReceipts: 'Phiếu cũ vẫn còn, chỉ xoá tên khỏi danh bạ.',
   noSuppliers: 'Chưa có nông hộ nào',
-  noSuppliersHint: 'Tên nông hộ tự vào danh sách khi bác lập phiếu mua.',
+  noSuppliersHint: 'Tên nông hộ tự vào danh sách khi bạn lập phiếu mua.',
   noBuyers: 'Chưa có người mua nào',
-  noBuyersHint: 'Tên người mua tự vào danh sách khi bác lập phiếu bán.',
+  noBuyersHint: 'Tên người mua tự vào danh sách khi bạn lập phiếu bán.',
   nameRequired: 'Phải có tên',
   partyHistory: 'Phiếu gần đây',
 
@@ -106,7 +106,7 @@ export const SCREEN_LABELS = {
   exportExcel: 'Xuất Excel',
   reportLegalTitle: 'Số liệu tham khảo',
   reportLegalBody:
-    'Đây là số liệu do app cộng từ phiếu của bác, không phải tờ khai thuế. Đưa cho kế toán xem trước khi nộp.',
+    'Đây là số liệu do app cộng từ phiếu của bạn, không phải tờ khai thuế. Đưa cho kế toán xem trước khi nộp.',
 
   // ─── Tiện ích ─────────────────────────────────────────────────────────────
   navUtilities: 'Tiện ích',
@@ -130,7 +130,7 @@ export const SCREEN_LABELS = {
   profileBusinessHint: 'Tên này chưa sửa được trong app — cần đổi thì nhắn Zalo hỗ trợ.',
   profileUsername: 'Tên đăng nhập (không bắt buộc)',
   profilePhone: 'Số điện thoại',
-  profilePhoneHint: 'Số điện thoại là tài khoản của bác — không đổi ở đây.',
+  profilePhoneHint: 'Số điện thoại là tài khoản của bạn — không đổi ở đây.',
   profileEmail: 'Email khôi phục',
   profileEmailHint: 'Đăng nhập bằng email này cũng vào đúng tài khoản. Để trống = bỏ email.',
   profileSaved: 'Đã lưu hồ sơ',
@@ -147,7 +147,7 @@ export const SCREEN_LABELS = {
   weightUnitKg: 'Ki-lô-gam (kg)',
   weightUnitHg: 'Lạng (hg) — 302 lạng = 30,2 kg',
   displayModeTitle: 'Chế độ xem',
-  dataTitle: 'Dữ liệu của bác',
+  dataTitle: 'Dữ liệu của bạn',
   dataHint: 'Sổ nằm trong máy. Lưu ra file để đổi máy hoặc phòng khi mất điện thoại.',
   importReplaceWarning: 'Lấy lại từ file sẽ THAY toàn bộ sổ đang có trên máy này.',
   importFileTitle: 'Thay sổ hiện tại?',

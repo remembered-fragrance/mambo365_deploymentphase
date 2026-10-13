@@ -395,7 +395,7 @@ thật:
 | Câu trên trang pháp lý | Thứ phải xây để câu đó thành thật |
 |---|---|
 | "Bấm Xoá tài khoản là xoá hẳn, kể cả ảnh chứng từ" | `delete_own_account()` + `data/account.ts` |
-| "Quản trị viên chỉ chạm dữ liệu khi bác yêu cầu, có ghi nhận" | Bảng `admin_access_log`, hai script quản trị bắt buộc khai tên người duyệt |
+| "Quản trị viên chỉ chạm dữ liệu khi bạn yêu cầu, có ghi nhận" | Bảng `admin_access_log`, hai script quản trị bắt buộc khai tên người duyệt |
 | "Không có công cụ thống kê, không tải gì từ máy chủ ngoài" | `npm run site:check` chặn `<script>` và mọi tài nguyên ngoài |
 
 ### Ba quyết định đáng ghi
@@ -440,7 +440,7 @@ mỗi lần thêm địa chỉ ngoài phải chạy lại phép grep đó và s�
 | Ô đồng ý điều khoản | **Không tick sẵn**; không tick mà bấm đăng ký → hiện lỗi, không đăng ký |
 | Hai liên kết trong ô đồng ý | Đúng địa chỉ site, mở tab mới |
 | Nút xoá tài khoản: để trống · gõ sai tên vựa · gõ đúng | Mờ · mờ kèm "Chưa khớp tên vựa" · sáng lên |
-| Vị trí thẻ xoá tài khoản | Nằm **sau** thẻ "Dữ liệu của bác" — đường đi ngang qua nút "Lưu ra file" |
+| Vị trí thẻ xoá tài khoản | Nằm **sau** thẻ "Dữ liệu của bạn" — đường đi ngang qua nút "Lưu ra file" |
 | Bốn trang site ở 375px và 320px | Không trang nào cuộn ngang; bảng dài cuộn trong khung của nó |
 | Liên kết giữa bốn trang | Không liên kết nào gãy |
 | `site:check` | Chặn đúng 10 chỗ còn `ĐIỀN:`; giá, số Zalo, không-script đều qua |
@@ -487,7 +487,7 @@ Cần `@mambo/*` **0.13.0** (`api.reports.members`). `package.json` còn trỏ 0
   gần nhất. Thêm người chuyển vào hộp thoại. Thẻ "Nhân viên hôm nay" trên Tổng quan của chủ.
 - **Người làm không tự rời** (BE 0.13.0): app không có nút rời; chủ gỡ ra ở màn Nhân viên.
 - Còn treo: `data/account.ts` `deleteAccount` vẫn là stub (`backendCapabilities.deleteAccount: false`) — chưa
-  gọi `api.account.delete()`. Khi nối, bắt `STILL_MEMBER` → "Nhờ chủ gỡ bác ra trước".
+  gọi `api.account.delete()`. Khi nối, bắt `STILL_MEMBER` → "Nhờ chủ gỡ bạn ra trước".
 
 ---
 

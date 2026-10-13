@@ -7,7 +7,7 @@ import { APP_VERSION, SUPPORT_ZALO } from '@/config';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 
-/** Kênh liên lạc + số phiên bản (để hỗ trợ từ xa hỏi "bác đang dùng bản nào"). */
+/** Kênh liên lạc + số phiên bản (để hỗ trợ từ xa hỏi "bạn đang dùng bản nào"). */
 export function SupportCard() {
   const { signOut } = useStore();
   const [confirmOut, setConfirmOut] = useState(false);

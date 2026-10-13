@@ -16,7 +16,7 @@ interface Props {
  * 🔴 Màn chạm hạn mức — điểm chuyển đổi quan trọng nhất của cả sản phẩm.
  *
  * Nói bằng SỐ CỦA CHÍNH HỌ ở dòng đầu, trước mọi thứ khác. Bảng so sánh có ở
- * dưới cho ai muốn đọc, nhưng thứ đập vào mắt phải là "tháng này bác đã ghi 30
+ * dưới cho ai muốn đọc, nhưng thứ đập vào mắt phải là "tháng này bạn đã ghi 30
  * phiếu" — người đọc câu đó biết ngay chuyện gì đang xảy ra, còn người đọc một
  * bảng tính năng thì không.
  *

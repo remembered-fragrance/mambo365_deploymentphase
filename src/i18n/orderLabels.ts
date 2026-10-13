@@ -40,7 +40,7 @@ export const ORDER_LABELS = {
   orderReschedule: 'Đổi lịch',
   orderScheduleWhen: 'Ngày giờ đến cân',
   orderSaved: 'Đã cập nhật đơn',
-  orderChanged: 'Bên kia vừa đổi đơn — đã tải lại, bác xem rồi làm lại',
+  orderChanged: 'Bên kia vừa đổi đơn — đã tải lại, bạn xem rồi làm lại',
   orderMissing: 'Không tìm thấy đơn này',
   orderFulfilledHint: 'Đơn tự chuyển "Đã cân xong" khi vựa lập phiếu theo đơn.',
   orderPick: 'Theo đơn',

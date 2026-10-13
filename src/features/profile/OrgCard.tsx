@@ -34,7 +34,7 @@ export function OrgCard() {
       await work();
       toast({ message: done });
       setName(null);
-      // Tên mới / tổ chức đã rời lấy lại từ /v1/me — không còn tổ chức nào thì app tự về "Bác là ai?".
+      // Tên mới / tổ chức đã rời lấy lại từ /v1/me — không còn tổ chức nào thì app tự về "Bạn là ai?".
       await refreshMe();
     } catch (err) {
       setError(orgErrorMessage(err));

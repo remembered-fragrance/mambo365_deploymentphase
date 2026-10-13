@@ -3,7 +3,7 @@
  *
  * Khoá đăng nhập Supabase LUÔN là email nội bộ sinh từ SĐT (`849…@id.thumua365.vn`),
  * kể cả khi người dùng khai thêm email thật. Email thật chỉ là email khôi phục:
- * backend ghi vào hồ sơ ở bước "Bác là ai?" để đăng nhập bằng email tra ra đúng
+ * backend ghi vào hồ sơ ở bước "Bạn là ai?" để đăng nhập bằng email tra ra đúng
  * tài khoản đó. Trước đây có email thì dùng email làm khoá ⇒ một người thành hai
  * tài khoản (issue #9).
  *
@@ -186,7 +186,7 @@ export const signUp = async (
   /*
    * SĐT là khoá đăng nhập duy nhất ⇒ mỗi số đúng một tài khoản; số đã đăng ký
    * thì Supabase báo trùng. Email thật chỉ đi vào user_metadata.recoveryEmail,
-   * backend ghi thành email khôi phục ở bước "Bác là ai?".
+   * backend ghi thành email khôi phục ở bước "Bạn là ai?".
    */
   const loginEmail = internalEmail(phone);
 
