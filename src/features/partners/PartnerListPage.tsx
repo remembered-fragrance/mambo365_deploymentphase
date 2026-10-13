@@ -30,7 +30,7 @@ import { partnerColumns } from './partnerColumns';
  */
 export function PartnerListPage({ role }: { readonly role: PartyRole }) {
   const { can } = useAccess();
-  const { data, addSupplier, updateSupplier, deleteSupplier, addBuyer, updateBuyer, deleteBuyer } =
+  const { data, currentOrgId, addSupplier, updateSupplier, deleteSupplier, addBuyer, updateBuyer, deleteBuyer } =
     useStore();
   const [params, setParams] = useSearchParams();
   const toast = useToast();
@@ -121,6 +121,7 @@ export function PartnerListPage({ role }: { readonly role: PartyRole }) {
       role={role}
       transactions={partyTransactions(data, selected.id)}
       onEdit={can('partner:manage') ? () => openEdit(selected) : undefined}
+      linkable={Boolean(currentOrgId) && can('partner:manage')}
     />
   ) : undefined;
 
