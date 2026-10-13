@@ -9,7 +9,7 @@ import type { LinkedBalanceItem, LinkedReceipt, LinkSummary } from '@mambo/contr
 import { linkedBalance, linkedReceipts, linkErrorMessage, listLinks } from '../links';
 import { useStore } from '../useStore';
 
-export { claimLinkCode, formatLinkCode, inviteLink, linkErrorMessage, revokeLink } from '../links';
+export { claimErrorMessage, claimLinkCode, formatLinkCode, inviteLink, linkErrorMessage, revokeLink } from '../links';
 
 export interface Loaded<T> {
   readonly data: T | null;
