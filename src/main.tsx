@@ -11,9 +11,12 @@ import '@fontsource/be-vietnam-pro/latin-800.css';
 
 import './index.css';
 import { App } from './App';
+import { startEventFlushing } from './data/track';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Không tìm thấy #root');
+
+startEventFlushing();
 
 createRoot(container).render(
   <StrictMode>

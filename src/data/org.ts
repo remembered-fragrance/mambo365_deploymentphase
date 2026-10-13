@@ -16,9 +16,14 @@ import { ApiError } from '@mambo/sdk';
 import { L } from '@/i18n/labels';
 import { api } from './client';
 import { linkErrorMessage } from './links';
+import { track } from './track';
 
 export const listMembers = async (): Promise<readonly OrgMember[]> => (await api.org.members.list()).members;
-export const createMember = (input: OrgMemberCreateInput): Promise<OrgMember> => api.org.members.create(input);
+export const createMember = async (input: OrgMemberCreateInput): Promise<OrgMember> => {
+  const member = await api.org.members.create(input);
+  track('member_invited', { role: input.role });
+  return member;
+};
 export const updateMember = (id: string, patch: OrgMemberPatch): Promise<OrgMember> => api.org.members.update(id, patch);
 export const removeMember = (id: string): Promise<OrgMember> => api.org.members.remove(id);
 

@@ -14,17 +14,28 @@ import type {
   OrderSummary,
 } from '@mambo/contracts';
 import { api } from './client';
+import { track } from './track';
 
 export const listOrders = (cursor?: string): Promise<OrdersListResult> => api.orders.list({ cursor });
 export const getOrder = (id: string): Promise<OrderDetail> => api.orders.get(id);
-export const createOrder = (input: OrderCreateInput): Promise<OrderSummary> => api.orders.create(input);
+export const createOrder = async (input: OrderCreateInput): Promise<OrderSummary> => {
+  const order = await api.orders.create(input);
+  track('order_created', { role: input.role });
+  return order;
+};
 
 export type OrderStep = 'accept' | 'reject' | 'cancel';
-export const stepOrder = (step: OrderStep, id: string, version: number, note?: string): Promise<OrderSummary> =>
-  api.orders[step](id, { version, note: note || null });
+export const stepOrder = async (step: OrderStep, id: string, version: number, note?: string): Promise<OrderSummary> => {
+  const order = await api.orders[step](id, { version, note: note || null });
+  if (step === 'accept') track('order_accepted', {});
+  return order;
+};
 
-export const scheduleOrder = (id: string, input: OrderScheduleInput): Promise<OrderSummary> =>
-  api.orders.schedule(id, input);
+export const scheduleOrder = async (id: string, input: OrderScheduleInput): Promise<OrderSummary> => {
+  const order = await api.orders.schedule(id, input);
+  track('order_scheduled', {});
+  return order;
+};
 
 export const listNotifications = (): Promise<NotificationsResult> => api.notifications.list();
 /** Bỏ trống `ids` = đánh dấu tất cả. */
