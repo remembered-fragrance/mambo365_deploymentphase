@@ -16,6 +16,7 @@ import { DemoBanner } from '../onboarding/DemoBanner';
 import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
 import { navGroups, navItems, ROUTES } from './navItems';
+import { useAccess } from './useAccess';
 import { useTheme } from './useTheme';
 
 const SYNC_LABEL: Record<SyncTone, string> = {
@@ -57,7 +58,10 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
 
   const drafts = data.drafts.filter((d) => d.status === 'draft');
   const counts = { drafts: drafts.length, overdue: overdueCount(data) };
-  const items = navItems(counts);
+  const access = useAccess();
+  const items = navItems(counts, access);
+  // Nút tạo phiếu chỉ cho vỏ có sổ và người được lập phiếu (nông dân không có).
+  const canCreate = items.some((item) => item.to === ROUTES.receipts);
   const tone = syncTone(status.pendingCount, status.error);
 
   useBookRescue(data);
@@ -113,16 +117,18 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
         sidebar={
           <SidebarNav
             appName={L.appName}
-            groups={navGroups(counts)}
+            groups={navGroups(counts, access)}
             primaryActions={
-              <>
-                <Button tone="primary" block onClick={() => startReceipt('purchase')}>
-                  {L.createPurchase}
-                </Button>
-                <Button block onClick={() => startReceipt('sale')}>
-                  {L.createSale}
-                </Button>
-              </>
+              canCreate && (
+                <>
+                  <Button tone="primary" block onClick={() => startReceipt('purchase')}>
+                    {L.createPurchase}
+                  </Button>
+                  <Button block onClick={() => startReceipt('sale')}>
+                    {L.createSale}
+                  </Button>
+                </>
+              )
             }
             footer={badge}
           />
@@ -164,7 +170,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
           <BottomNav
             items={items}
             createLabel={L.createReceipt}
-            onCreate={() => setCreateOpen(true)}
+            onCreate={canCreate ? () => setCreateOpen(true) : undefined}
           />
         }
       >

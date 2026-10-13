@@ -18,6 +18,7 @@ import { L } from '@/i18n/labels';
 import { HelpButton } from '../help/HelpButton';
 import { useWideScreen } from '../shared/useWideScreen';
 import { PartnerDetail } from './PartnerDetail';
+import { useAccess } from '../shared/useAccess';
 import { PartnerFormDialog, emptyParty, type PartyDraft } from './PartnerFormDialog';
 import { partnerColumns } from './partnerColumns';
 
@@ -28,6 +29,7 @@ import { partnerColumns } from './partnerColumns';
  * chúng đã bắt đầu lệch. Gộp trước, tô vẽ sau (E §4.3).
  */
 export function PartnerListPage({ role }: { readonly role: PartyRole }) {
+  const { can } = useAccess();
   const { data, addSupplier, updateSupplier, deleteSupplier, addBuyer, updateBuyer, deleteBuyer } =
     useStore();
   const [params, setParams] = useSearchParams();
@@ -118,7 +120,7 @@ export function PartnerListPage({ role }: { readonly role: PartyRole }) {
       party={selected}
       role={role}
       transactions={partyTransactions(data, selected.id)}
-      onEdit={() => openEdit(selected)}
+      onEdit={can('partner:manage') ? () => openEdit(selected) : undefined}
     />
   ) : undefined;
 

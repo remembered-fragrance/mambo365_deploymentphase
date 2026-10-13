@@ -13,7 +13,8 @@ interface PartnerDetailProps {
   readonly party: PartySummary;
   readonly role: PartyRole;
   readonly transactions: readonly Transaction[];
-  readonly onEdit: () => void;
+  /** Vắng = không có `partner:manage` (người cân): không có nút sửa. */
+  readonly onEdit?: () => void;
 }
 
 /** Một đối tác: liên lạc, tổng kết, và những phiếu gần đây của họ. */
@@ -26,7 +27,7 @@ export function PartnerDetail({ party, role, transactions, onEdit }: PartnerDeta
             <p className="truncate text-lg font-extrabold text-ink">{party.name}</p>
             {party.location && <p className="text-sm text-ink-3">{party.location}</p>}
           </div>
-          {party.hasProfile && (
+          {party.hasProfile && onEdit && (
             <Button aria-label={L.editParty} onClick={onEdit}>
               <PencilIcon className="h-4 w-4" />
               {L.editParty}
