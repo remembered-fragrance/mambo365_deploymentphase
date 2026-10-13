@@ -66,11 +66,10 @@ export function AttachmentPicker({ ids, onChange }: AttachmentPickerProps) {
     <div className="flex flex-col gap-2">
       <p className="text-sm font-bold text-ink">{L.attachments}</p>
 
-      {maxPhotos === 0 && <p role="status" className="text-sm text-ink-2">{L.attachmentsUnavailable}</p>}
       {ids.length > 0 && (
         <ul className="flex flex-wrap gap-3">
           {ids.map((id) => (
-            <Thumbnail key={id} id={id} onRemove={maxPhotos === 0 ? undefined : () => void drop(id)} />
+            <Thumbnail key={id} id={id} onRemove={() => void drop(id)} />
           ))}
         </ul>
       )}

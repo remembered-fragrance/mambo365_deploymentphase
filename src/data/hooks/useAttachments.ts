@@ -11,10 +11,9 @@
 import { useCallback } from 'react';
 import { MAX_ATTACHMENTS } from '@/config';
 import { newId } from '@mambo/core/id';
-import { deleteLocalAttachment, putLocalAttachment } from '../attachments';
-import { FeatureUnavailableError } from '../capabilities';
-import { getSupabase } from '../client';
+import { deleteLocalAttachment, putLocalAttachment, queueAttachmentUpload } from '../attachments';
 import { compressImage } from '../compressImage';
+import { useStore } from '../useStore';
 
 export interface Attachments {
   /** Trả về id ảnh vừa lưu, hoặc null khi phiếu đã đủ số ảnh cho phép. */
@@ -24,17 +23,23 @@ export interface Attachments {
 }
 
 export function useAttachments(): Attachments {
-  const addPhoto = useCallback(async (file: File, current: readonly string[]) => {
-    if (getSupabase()) throw new FeatureUnavailableError('Attachments');
-    if (current.length >= MAX_ATTACHMENTS) return null;
-    const id = newId();
-    await putLocalAttachment(id, await compressImage(file));
-    return id;
-  }, []);
+  const { currentOrgId } = useStore();
+
+  const addPhoto = useCallback(
+    async (file: File, current: readonly string[]) => {
+      if (current.length >= MAX_ATTACHMENTS) return null;
+      const id = newId();
+      await putLocalAttachment(id, await compressImage(file));
+      // Sổ của máy này (chưa có tổ chức) không đẩy lên đâu cả — ảnh chỉ nằm trong máy.
+      if (currentOrgId) await queueAttachmentUpload(id, currentOrgId);
+      return id;
+    },
+    [currentOrgId],
+  );
 
   const removePhoto = useCallback(async (id: string) => {
     await deleteLocalAttachment(id);
   }, []);
 
-  return { addPhoto, removePhoto, maxPhotos: getSupabase() ? 0 : MAX_ATTACHMENTS };
+  return { addPhoto, removePhoto, maxPhotos: MAX_ATTACHMENTS };
 }

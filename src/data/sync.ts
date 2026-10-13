@@ -9,6 +9,7 @@ import { emptyData } from '@mambo/core/normalize';
 import type { AppData, SyncStatus } from '@mambo/core/types';
 import { isRetryable, SYNC_PUSH_MAX_OPS, type SyncOp } from '@mambo/contracts';
 import { ApiError, type Client } from '@mambo/sdk';
+import { flushAttachments } from './attachments';
 import { readSyncMark, writeBook, writeSyncMark } from './cache';
 import { apiForOrg } from './client';
 import { getDeviceId, openLocalDb, readCursor } from './localDb';
@@ -170,6 +171,8 @@ export const syncOnce = async (
   const client = apiForOrg(orgId);
 
   const flush = await flushQueue(deviceId, orgId, client);
+  // Ảnh đi hàng đợi riêng; lên trước hay sau op của phiếu đều được. Hỏng thì lượt sau thử lại.
+  await flushAttachments(orgId).catch(() => 0);
   const pendingIds = await pendingRecordIds(orgId);
 
   if (flush.error && flush.blocked) {
