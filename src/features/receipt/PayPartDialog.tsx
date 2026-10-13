@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
-import { formatVnd } from '@/core/format';
-import { parseNumber } from '@/core/parseNumber';
+import { formatVnd } from '@mambo/core/format';
+import { parseNumber } from '@mambo/core/parseNumber';
 import { L } from '@/i18n/labels';
 import { NumberField } from '../shared/NumberField';
 

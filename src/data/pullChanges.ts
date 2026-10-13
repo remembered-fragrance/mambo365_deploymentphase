@@ -9,7 +9,7 @@
  *   5. Hợp nhất qua nhiều trang, không bỏ payment chưa thấy phiếu cha
  */
 
-import type { AppData, Payment, Transaction } from '@/core/types';
+import type { AppData, Payment, Transaction } from '@mambo/core/types';
 import type {
   DraftRecord,
   NoteRecord,

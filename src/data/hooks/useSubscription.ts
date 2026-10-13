@@ -16,8 +16,8 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { FREE_RECEIPTS_PER_MONTH, GRACE_DAYS } from '@/config';
-import { quotaFor, type QuotaState } from '@/core/receiptQuota';
-import { planFor, type PaymentIntent, type PlanState, type Subscription } from '@/core/subscription';
+import { quotaFor, type QuotaState } from '@mambo/core/receiptQuota';
+import { planFor, type PaymentIntent, type PlanState, type Subscription } from '@mambo/core/subscription';
 import { createPaymentIntent } from '../billing';
 import { backendCapabilities } from '../capabilities';
 import { getSupabase } from '../client';

@@ -10,7 +10,7 @@
 
 import { useCallback } from 'react';
 import { MAX_ATTACHMENTS } from '@/config';
-import { newId } from '@/core/id';
+import { newId } from '@mambo/core/id';
 import { deleteLocalAttachment, putLocalAttachment } from '../attachments';
 import { FeatureUnavailableError } from '../capabilities';
 import { getSupabase } from '../client';

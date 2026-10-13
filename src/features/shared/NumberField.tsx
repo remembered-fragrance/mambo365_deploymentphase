@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { NumInput } from '@/components/ui/NumInput';
 import { Numpad } from '@/components/ui/Numpad';
-import { appendDigit, parseNumber } from '@/core/parseNumber';
-import { groupThousands } from '@/core/format';
-import { moneyToVietnameseWords } from '@/core/numberToWords';
+import { appendDigit, parseNumber } from '@mambo/core/parseNumber';
+import { groupThousands } from '@mambo/core/format';
+import { moneyToVietnameseWords } from '@mambo/core/numberToWords';
 import { L } from '@/i18n/labels';
 import { useCoarsePointer } from './useCoarsePointer';
 

@@ -16,7 +16,7 @@
  * đáng tiền là đồng bộ, mà cái đó máy chủ chặn bằng `has_active_sync()`.
  */
 
-import type { PaymentIntent, Subscription } from '@/core/subscription';
+import type { PaymentIntent, Subscription } from '@mambo/core/subscription';
 import { fetchSubscription } from './billing';
 import { getSupabase } from './client';
 

@@ -1,5 +1,5 @@
-import type { DraftReceipt, Note, Payment, PricingRule, Product, Supplier, Transaction } from '@/core/types';
-import { formulaFrom } from '@/core/normalizeTransaction';
+import type { DraftReceipt, Note, Payment, PricingRule, Product, Supplier, Transaction } from '@mambo/core/types';
+import { formulaFrom } from '@mambo/core/normalizeTransaction';
 import type { DraftRecord, NoteRecord, PartyRecord, PaymentRecord, PricingRuleRecord, ProductRecord, TransactionRecord } from '@mambo/contracts';
 import { partyIdFromWire } from './wireMappers';
 

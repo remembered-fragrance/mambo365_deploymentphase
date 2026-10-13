@@ -8,7 +8,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
 import { OfflineBanner, SyncBadge, type SyncTone } from '@/components/feedback/SyncBadge';
 import { MoonIcon, SearchIcon, SunIcon } from '@/components/ui/icons';
-import { overdueCount } from '@/core/debtSelectors';
+import { overdueCount } from '@mambo/core/debtSelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { PlanBanner } from '../billing/PlanBanner';

@@ -1,7 +1,7 @@
-import { lineTotals, transactionTotals } from '@/core/calc';
-import { formatDateTime, formatQuantity, formatVnd } from '@/core/format';
-import { numberToVietnameseWords } from '@/core/numberToWords';
-import type { Transaction } from '@/core/types';
+import { lineTotals, transactionTotals } from '@mambo/core/calc';
+import { formatDateTime, formatQuantity, formatVnd } from '@mambo/core/format';
+import { numberToVietnameseWords } from '@mambo/core/numberToWords';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 
 interface ReceiptVoucherProps {

@@ -1,6 +1,6 @@
-import type { Buyer, DraftReceipt, Note, Payment, PricingRule, Product, Supplier, Transaction } from '@/core/types';
-import { GUEST_BUYER_ID, GUEST_SUPPLIER_ID } from '@/core/normalizeTransaction';
-import { freezeLineTotals } from '@/core/calc';
+import type { Buyer, DraftReceipt, Note, Payment, PricingRule, Product, Supplier, Transaction } from '@mambo/core/types';
+import { GUEST_BUYER_ID, GUEST_SUPPLIER_ID } from '@mambo/core/normalizeTransaction';
+import { freezeLineTotals } from '@mambo/core/calc';
 
 export const partyIdToWire = (id: string | null | undefined): string | null =>
   !id || id === GUEST_SUPPLIER_ID || id === GUEST_BUYER_ID ? null : id;

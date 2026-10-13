@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import type { AppData } from '@/core/types';
+import type { AppData } from '@mambo/core/types';
 import { readBook } from '../cache';
 import { peekDeviceAccount } from '../deviceAccount';
 import { useStore } from '../useStore';

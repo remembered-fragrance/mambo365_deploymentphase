@@ -5,8 +5,8 @@
  * hoặc nổi lên `status.error` để người dùng thấy.
  */
 
-import { emptyData } from '@/core/normalize';
-import type { AppData, SyncStatus } from '@/core/types';
+import { emptyData } from '@mambo/core/normalize';
+import type { AppData, SyncStatus } from '@mambo/core/types';
 import { isRetryable, SYNC_PUSH_MAX_OPS, type SyncOp } from '@mambo/contracts';
 import { ApiError, type Client } from '@mambo/sdk';
 import { readSyncMark, writeBook, writeSyncMark } from './cache';

@@ -1,6 +1,6 @@
-import { computeReceiptTotal } from '@/core/calc';
-import { formatVndShort } from '@/core/format';
-import type { DraftReceipt } from '@/core/types';
+import { computeReceiptTotal } from '@mambo/core/calc';
+import { formatVndShort } from '@mambo/core/format';
+import type { DraftReceipt } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { PlusIcon } from '@/components/ui/icons';
 

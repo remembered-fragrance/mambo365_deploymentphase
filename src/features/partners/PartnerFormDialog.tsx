@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { TrashIcon } from '@/components/ui/icons';
-import type { PartyRole } from '@/core/partySelectors';
+import type { PartyRole } from '@mambo/core/partySelectors';
 import { L } from '@/i18n/labels';
 
 export interface PartyDraft {

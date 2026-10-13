@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/Button';
-import { formatVnd } from '@/core/format';
-import { numberToVietnameseWords } from '@/core/numberToWords';
+import { formatVnd } from '@mambo/core/format';
+import { numberToVietnameseWords } from '@mambo/core/numberToWords';
 import { L } from '@/i18n/labels';
 import type { SaveState } from './useDraftReceipt';
 

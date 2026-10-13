@@ -9,7 +9,7 @@ import type {
   PaymentIntent,
   Subscription,
   SubscriptionStatus,
-} from '@/core/subscription';
+} from '@mambo/core/subscription';
 import type { PlanSummary } from '@mambo/contracts';
 import { FeatureUnavailableError } from './capabilities';
 import { api } from './client';

@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { PencilIcon, PhoneIcon } from '@/components/ui/icons';
-import { transactionTotals } from '@/core/calc';
-import { formatDate, formatVnd } from '@/core/format';
-import type { PartySummary, PartyRole } from '@/core/partySelectors';
-import type { Transaction } from '@/core/types';
+import { transactionTotals } from '@mambo/core/calc';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import type { PartySummary, PartyRole } from '@mambo/core/partySelectors';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
 

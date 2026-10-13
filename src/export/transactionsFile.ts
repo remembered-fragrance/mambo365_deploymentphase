@@ -3,9 +3,9 @@
  * `xlsx` và `jspdf` chỉ nạp động.
  */
 
-import { lineTotals, transactionTotals } from '@/core/calc';
-import { formatDate, formatQuantity, formatVnd } from '@/core/format';
-import type { Transaction } from '@/core/types';
+import { lineTotals, transactionTotals } from '@mambo/core/calc';
+import { formatDate, formatQuantity, formatVnd } from '@mambo/core/format';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { captureInIsolatedFrame } from './receiptCapture';
 import { downloadBlob } from './downloadFile';

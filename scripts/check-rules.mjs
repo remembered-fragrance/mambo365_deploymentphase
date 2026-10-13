@@ -46,18 +46,6 @@ const scan = (files, rule, test, { skipComments = false } = {}) => {
 const main = async () => {
   const all = await walk('src');
   const inUi = all.filter((p) => p.startsWith('src/features/') || p.startsWith('src/components/'));
-  const inCore = all.filter((p) => p.startsWith('src/core/'));
-
-  // §3.1 — core/ không import gì ngoài chính nó (import có thể trải nhiều dòng)
-  for (const path of inCore) {
-    const source = read(path);
-    for (const match of source.matchAll(/^\s*import\b[\s\S]*?from\s+'([^']+)';/gm)) {
-      const spec = match[1] ?? '';
-      if (spec.startsWith('./') || spec.startsWith('@/core/')) continue;
-      const lineNo = source.slice(0, match.index).split(/\r?\n/).length;
-      report('core/ chỉ được import trong chính nó', path, lineNo, `from '${spec}'`);
-    }
-  }
 
   // §3.2 — không viết chuỗi tiếng Việt thẳng vào JSX
   scan(
@@ -83,7 +71,7 @@ const main = async () => {
   // §3.7 — parse tiền chỉ qua parseNumber()
   scan(
     inUi,
-    'parseFloat/Number() cho tiền — dùng parseNumber() của core/',
+    'parseFloat/Number() cho tiền — dùng parseNumber() của @mambo/core',
     (line) => /\bparseFloat\s*\(|\bNumber\s*\(/.test(line),
     { skipComments: true },
   );

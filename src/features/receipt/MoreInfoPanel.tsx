@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { newId } from '@/core/id';
-import { formatVnd } from '@/core/format';
-import type { PriceAdjustment } from '@/core/types';
+import { newId } from '@mambo/core/id';
+import { formatVnd } from '@mambo/core/format';
+import type { PriceAdjustment } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { NumberField } from '../shared/NumberField';
 import { AttachmentPicker } from './AttachmentPicker';
-import { parseNumber } from '@/core/parseNumber';
+import { parseNumber } from '@mambo/core/parseNumber';
 
 interface MoreInfoPanelProps {
   readonly adjustments: readonly PriceAdjustment[];

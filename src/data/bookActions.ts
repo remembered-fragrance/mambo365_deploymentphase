@@ -7,15 +7,15 @@
  * lo việc hiện lên màn hình, ghi xuống máy và xếp hàng đợi.
  */
 
-import * as drafts from '@/core/draftActions';
-import * as sheets from '@/core/importActions';
-import * as notes from '@/core/noteActions';
-import * as parties from '@/core/partyActions';
-import * as rules from '@/core/pricingRuleActions';
-import * as products from '@/core/productActions';
-import * as receipts from '@/core/receiptActions';
-import { emptyData, normalize } from '@/core/normalize';
-import type { AppData } from '@/core/types';
+import * as drafts from '@mambo/core/draftActions';
+import * as sheets from '@mambo/core/importActions';
+import * as notes from '@mambo/core/noteActions';
+import * as parties from '@mambo/core/partyActions';
+import * as rules from '@mambo/core/pricingRuleActions';
+import * as products from '@mambo/core/productActions';
+import * as receipts from '@mambo/core/receiptActions';
+import { emptyData, normalize } from '@mambo/core/normalize';
+import type { AppData } from '@mambo/core/types';
 import { derivedOps } from './derivedOps';
 import {
   draftToInsert,
