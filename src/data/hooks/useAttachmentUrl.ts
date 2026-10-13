@@ -6,8 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { getSupabase } from '../client';
-import { cacheRemoteAttachment, getLocalAttachment, signedAttachmentUrl } from '../attachments';
+import { fetchRemoteAttachment, getLocalAttachment } from '../attachments';
 import { useStore } from '../useStore';
 
 export type AttachmentStatus = 'loading' | 'ready' | 'missing' | 'unavailable';
@@ -18,7 +17,7 @@ export interface AttachmentUrl {
 }
 
 export function useAttachmentUrl(id: string | undefined): AttachmentUrl {
-  const { user } = useStore();
+  const { currentOrgId } = useStore();
   const [state, setState] = useState<AttachmentUrl>({ url: null, status: 'loading' });
 
   useEffect(() => {
@@ -43,23 +42,16 @@ export function useAttachmentUrl(id: string | undefined): AttachmentUrl {
         return;
       }
 
-      const supabase = getSupabase();
-      if (!supabase || !user) {
+      if (!currentOrgId) {
         setState({ url: null, status: 'missing' });
         return;
       }
 
-      // Tải hẳn về máy để lần sau xem được cả khi mất mạng.
-      const remote = await cacheRemoteAttachment(supabase, user.id, id);
+      // Tải hẳn về máy để lần sau xem được cả khi mất mạng; không tải được thì dùng URL có hạn.
+      const remote = await fetchRemoteAttachment(currentOrgId, id);
       if (cancelled) return;
-      if (remote) {
-        show(remote);
-        return;
-      }
-
-      const signed = await signedAttachmentUrl(supabase, user.id, id);
-      if (cancelled) return;
-      setState(signed ? { url: signed, status: 'ready' } : { url: null, status: 'missing' });
+      if (remote instanceof Blob) show(remote);
+      else setState(remote ? { url: remote, status: 'ready' } : { url: null, status: 'missing' });
     };
 
     setState({ url: null, status: 'loading' });
@@ -71,7 +63,7 @@ export function useAttachmentUrl(id: string | undefined): AttachmentUrl {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [id, user]);
+  }, [id, currentOrgId]);
 
   return state;
 }

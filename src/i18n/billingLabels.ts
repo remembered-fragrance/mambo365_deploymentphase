@@ -9,7 +9,6 @@
 
 export const BILLING_LABELS = {
   billingContact: 'Gói doanh nghiệp tính theo số chi nhánh và kích hoạt tay — nhắn Zalo hỗ trợ để được báo giá.',
-  attachmentsUnavailable: 'Ảnh chứng từ chưa khả dụng trên backend hiện tại.',
   // ─── Bậc gói ──────────────────────────────────────────────────────────────
   planTitle: 'Gói dịch vụ',
   planFree: 'Gói miễn phí',

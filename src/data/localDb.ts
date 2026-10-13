@@ -10,7 +10,7 @@ import type { SyncEntity, SyncOpKind } from '@mambo/contracts';
 import type { TableName } from './rows';
 
 const DB_NAME = 'thumua365';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 export type OpKind = SyncOpKind;
 
@@ -66,6 +66,8 @@ interface LocalDbSchema extends DBSchema {
   cursors: { key: string; value: string };
   /** Ảnh chứng từ. Khoá = attachmentId. */
   attachments: { key: string; value: Blob };
+  /** Ảnh chờ đẩy lên máy chủ — riêng với hàng đợi op sổ. Khoá = attachmentId, giá trị = orgId. */
+  attachmentQueue: { key: string; value: string };
   /** Mốc đồng bộ gần nhất theo tài khoản / tổ chức. */
   syncMarks: { key: string; value: string };
 }
@@ -77,6 +79,7 @@ export const openLocalDb = (): Promise<IDBPDatabase<LocalDbSchema>> => {
     upgrade(db, _oldVersion, _newVersion, transaction) {
       if (!db.objectStoreNames.contains('books')) db.createObjectStore('books');
       if (!db.objectStoreNames.contains('attachments')) db.createObjectStore('attachments');
+      if (!db.objectStoreNames.contains('attachmentQueue')) db.createObjectStore('attachmentQueue');
       if (!db.objectStoreNames.contains('syncMarks')) db.createObjectStore('syncMarks');
       if (!db.objectStoreNames.contains('cursors')) db.createObjectStore('cursors');
 
@@ -97,6 +100,11 @@ export const openLocalDb = (): Promise<IDBPDatabase<LocalDbSchema>> => {
           await migrate(await cursor.continue());
         }).catch(() => transaction.abort());
       }
+    },
+    // Tab khác vừa mở bản app mới (DB_VERSION tăng): nhường kết nối, không thì tab mới treo chờ nâng cấp.
+    blocking(_current, _blocked, event) {
+      (event.target as IDBDatabase).close();
+      dbPromise = null;
     },
   });
   return dbPromise;

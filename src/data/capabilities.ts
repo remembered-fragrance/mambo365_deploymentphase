@@ -1,7 +1,6 @@
 /** Endpoints unavailable in the installed backend SDK. */
 export const backendCapabilities = {
   deleteAccount: false,
-  attachments: false,
   updateProfile: false,
 } as const;
 
