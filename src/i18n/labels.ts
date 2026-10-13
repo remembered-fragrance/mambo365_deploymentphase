@@ -157,7 +157,7 @@ const BASE = {
   navBuyers: 'Người mua',
   navProducts: 'Mặt hàng',
   navInventory: 'Tồn kho',
-  navProfile: 'Hồ sơ vựa',
+  navProfile: 'Tài khoản',
   createPurchase: 'Tạo phiếu mua',
   createSale: 'Tạo phiếu bán',
   createReceipt: 'Tạo phiếu',
