@@ -8,13 +8,14 @@
  *
  * Luật: không viết chuỗi tiếng Việt thẳng vào JSX. Mọi chữ đi qua đây.
  *
- * `L` gộp từ sáu mảnh. Nơi dùng vẫn chỉ có một:
+ * `L` gộp từ bảy mảnh. Nơi dùng vẫn chỉ có một:
  * `import { L } from '@/i18n/labels'`.
  */
 
 import { BILLING_LABELS } from './billingLabels';
 import { LEGAL_LABELS } from './legalLabels';
 import { ONBOARDING_LABELS } from './onboardingLabels';
+import { ORDER_LABELS } from './orderLabels';
 import { ROLE_LABELS } from './roleLabels';
 import { SCREEN_LABELS } from './screenLabels';
 
@@ -255,6 +256,7 @@ export const L = {
   ...BILLING_LABELS,
   ...LEGAL_LABELS,
   ...ROLE_LABELS,
+  ...ORDER_LABELS,
 } as const;
 
 /** Phụ đề giải thích cho các thuật ngữ buộc phải giữ. */

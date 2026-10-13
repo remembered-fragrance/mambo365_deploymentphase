@@ -10,7 +10,7 @@ import { ApiError } from '@mambo/sdk';
 import { L } from '@/i18n/labels';
 import { api } from './client';
 
-/** Câu báo lỗi cho người dùng. `notFound` là câu riêng của từng việc (mã sai, người chưa lên máy chủ…). */
+/** Câu báo lỗi cho người dùng (kết nối, đơn, thông báo — mọi việc cần mạng). `notFound` là câu riêng của từng việc (mã sai, người chưa lên máy chủ…). */
 export const linkErrorMessage = (err: unknown, notFound: string = L.linkFailed): string => {
   if (err instanceof TypeError) return L.linkOffline;
   if (!(err instanceof ApiError)) return L.linkFailed;
@@ -23,6 +23,8 @@ export const linkErrorMessage = (err: unknown, notFound: string = L.linkFailed):
       return L.linkRateLimited;
     case 'LINK_REQUIRED':
       return L.linkRequired;
+    case 'ORDER_STATE_CHANGED':
+      return L.orderChanged;
     case 'FORBIDDEN':
       return L.noAccessTitle;
     default:
