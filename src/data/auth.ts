@@ -86,20 +86,8 @@ export const signIn = async (
 
   const kind = detectIdentifierKind(rawIdentifier);
 
-  // 1. Email: Supabase Auth dùng được trực tiếp, không cần hỏi backend.
-  if (kind === 'email') {
-    const user = await signInWithEmail(
-      supabase,
-      rawIdentifier.toLowerCase(),
-      password,
-    );
-
-    if (!user) throw new Error(SIGN_IN_ERROR);
-    return user;
-  }
-
-  // 2. Số điện thoại:
-  //    thử đúng email nội bộ được tạo bởi signUp() trước.
+  // 1. Số điện thoại:
+  //    thử trực tiếp email nội bộ được tạo bởi signUp().
   if (kind === 'phone') {
     const phone = normalizePhone(rawIdentifier);
     if (!phone) throw new Error(SIGN_IN_ERROR);
@@ -115,11 +103,8 @@ export const signIn = async (
     if (directUser) return directUser;
 
     /*
-     * Nếu lúc đăng ký người dùng có nhập email thật thì Supabase Auth có thể
-     * đang dùng email đó thay vì email nội bộ. Khi ấy mới nhờ backend tra cứu.
-     *
-     * Nếu backend chưa có mapping thì vẫn trả lỗi chung, không tiết lộ tài khoản
-     * có tồn tại hay không.
+     * Fallback cho tài khoản cũ (nếu lúc đăng ký từng dùng email thật thay vì email nội bộ):
+     * Nhờ backend tra cứu định danh.
      */
     try {
       const resolved = await api.resolveIdentifier({
@@ -140,6 +125,41 @@ export const signIn = async (
     } catch {
       // Giữ lỗi chung phía dưới.
     }
+
+    throw new Error(SIGN_IN_ERROR);
+  }
+
+  // 2. Email:
+  //    Email thật đóng vai trò recovery_email, khoá Supabase Auth là email nội bộ SĐT.
+  //    Resolve qua backend trước để lấy login email; nếu backend chưa kết nối thì fallback thử đăng nhập trực tiếp.
+  if (kind === 'email') {
+    try {
+      const resolved = await api.resolveIdentifier({
+        identifier: rawIdentifier,
+      });
+
+      const loginEmail = resolved?.email?.trim().toLowerCase();
+      if (loginEmail) {
+        const resolvedUser = await signInWithEmail(
+          supabase,
+          loginEmail,
+          password,
+        );
+
+        if (resolvedUser) return resolvedUser;
+      }
+    } catch {
+      // Tiếp tục fallback đăng nhập trực tiếp
+    }
+
+    // Fallback: hỗ trợ trường hợp tài khoản tạo trực tiếp bằng email thật trên Supabase Auth
+    const directUser = await signInWithEmail(
+      supabase,
+      rawIdentifier.toLowerCase(),
+      password,
+    );
+
+    if (directUser) return directUser;
 
     throw new Error(SIGN_IN_ERROR);
   }
@@ -183,11 +203,12 @@ export const signUp = async (
   }
 
   /*
-   * Giữ tương thích với dữ liệu hiện tại:
-   * - Có email thật: Supabase Auth dùng email thật.
-   * - Không có email: dùng email nội bộ sinh từ số điện thoại.
+   * Theo thiết kế hệ thống và Backend:
+   * SĐT là định danh số 1. Tài khoản Supabase Auth LUÔN LUÔN dùng email nội bộ
+   * sinh từ SĐT: 849xxx@id.thumua365.vn làm khoá xác thực duy nhất.
+   * Email thật (nếu người dùng nhập) sẽ lưu vào recoveryEmail để dùng khôi phục và resolve khi cần.
    */
-  const loginEmail = recoveryEmail ?? internalEmail(phone);
+  const loginEmail = internalEmail(phone);
 
   const { data, error } = await supabase.auth.signUp({
     email: loginEmail,
