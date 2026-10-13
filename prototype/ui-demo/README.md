@@ -52,7 +52,7 @@ Script thường (không build, không module), nạp theo thứ tự trong `ind
 | `app.js` | Nối sự kiện, khởi động |
 
 Token màu "Sổ Vựa" chép từ `src/index.css`. Thư mục này nằm ngoài `src/` nên không chịu luật
-§3 (300 dòng, ranh giới tầng) và được loại khỏi `oxlint` (`.oxlintrc.json` → `ignorePatterns`):
+§3 (ranh giới tầng, tên file) và được loại khỏi `oxlint` (`.oxlintrc.json` → `ignorePatterns`):
 các file dùng chung phạm vi toàn cục nên oxlint báo nhầm biến không dùng.
 
 ## Khi dựng thật

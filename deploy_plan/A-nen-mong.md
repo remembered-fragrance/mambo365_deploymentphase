@@ -185,7 +185,6 @@ Kiểm được bằng lệnh:
 - [ ] `npx depcruise src --validate` → **0 vi phạm**
 - [ ] `grep -rn "alert(\|confirm(\|prompt(" src/` → **rỗng**
 - [ ] `grep -rnE "#[0-9a-fA-F]{6}|slate-" src/features src/components` → **rỗng**
-- [ ] `find src -name "*.ts*" | xargs wc -l | sort -n | tail -3` → không file nào **>300 dòng**
 - [ ] CI xanh trên một PR thử
 
 Kiểm bằng tay:

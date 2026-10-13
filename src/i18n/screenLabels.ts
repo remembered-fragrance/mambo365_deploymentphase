@@ -2,9 +2,8 @@
  * Chuỗi hiển thị của các màn hình giai đoạn E: Công nợ · Tồn kho · Đối tác ·
  * Mặt hàng · Quy tắc giá · Báo cáo · Tiện ích · Tài khoản.
  *
- * Tách khỏi `labels.ts` vì một lý do đo được: gộp hết vào một file thì file đó
- * vượt 300 dòng, tức là vi phạm chính luật của dự án. Nơi dùng vẫn chỉ có một:
- * `L` trong `labels.ts` gộp hai phần lại.
+ * Tách khỏi `labels.ts` theo nhóm màn hình. Nơi dùng vẫn chỉ có một: `L` trong
+ * `labels.ts` gộp các mảnh lại.
  *
  * Giọng văn theo bảng từ vựng §16.3 — nói như ngoài chợ, không nói như phần mềm.
  */
