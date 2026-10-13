@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { LEGAL_LINKS } from '@/config';
 import { useStore } from '@/data/useStore';
 import { useBackend } from '@/data/hooks/useBackend';
 import { L } from '@/i18n/labels';
@@ -26,10 +27,22 @@ export function AuthPage() {
   const [name, setName] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [password, setPassword] = useState('');
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  // Lỗi riêng, không dùng chung `error`: lời nhắc phải nằm ngay dưới ô đồng ý.
+  // Hiện nó dưới ô mật khẩu là chỉ sai chỗ cần sửa.
+  const [consentMissing, setConsentMissing] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
+    // 🔴 Không tick sẵn, và không tick thì không đăng ký được (G §3.5). Đồng ý
+    // mặc định không phải là đồng ý — app lưu tên và số điện thoại của NGƯỜI
+    // THỨ BA do người dùng nhập vào, nên chỗ này phải là một hành động thật.
+    if (mode === 'signUp' && !consent) {
+      setConsentMissing(true);
+      return;
+    }
+
     setBusy(true);
     setError(undefined);
     try {
@@ -96,6 +109,46 @@ export function AuthPage() {
               />
             )}
 
+            {mode === 'signUp' && (
+              <label className="flex min-h-11 items-start gap-3 text-sm text-ink-2">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => {
+                    setConsent(e.target.checked);
+                    if (e.target.checked) setConsentMissing(false);
+                  }}
+                  className="mt-1 h-5 w-5 shrink-0 accent-brand"
+                />
+                <span>
+                  {L.consentPrefix}{' '}
+                  <a
+                    href={LEGAL_LINKS.terms}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-brand underline"
+                  >
+                    {L.legalTerms}
+                  </a>{' '}
+                  {L.consentAnd}{' '}
+                  <a
+                    href={LEGAL_LINKS.privacy}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-brand underline"
+                  >
+                    {L.legalPrivacy}
+                  </a>
+                </span>
+              </label>
+            )}
+
+            {consentMissing && (
+              <p role="alert" className="text-sm font-medium text-alert">
+                {L.consentRequired}
+              </p>
+            )}
+
             <Button tone="primary" size="lg" block disabled={busy} onClick={submit}>
               {busy ? L.authWorking : mode === 'signIn' ? L.authSignIn : L.authSignUp}
             </Button>
@@ -105,6 +158,7 @@ export function AuthPage() {
               onClick={() => {
                 setMode(mode === 'signIn' ? 'signUp' : 'signIn');
                 setError(undefined);
+                setConsentMissing(false);
               }}
               className="min-h-11 text-sm font-semibold text-brand"
             >

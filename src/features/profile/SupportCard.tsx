@@ -23,6 +23,10 @@ export function SupportCard() {
           {L.supportZalo}: {SUPPORT_ZALO}
         </a>
 
+        {/* Nói giờ trực THẬT. Hứa 24/7 khi chỉ có một người là mất uy tín ngay
+            từ khách đầu tiên gọi lúc 10 giờ đêm. */}
+        <p className="text-sm text-ink-2">{L.supportHours}</p>
+
         <p className="num text-sm text-ink-3">
           {L.appVersion} {APP_VERSION}
         </p>

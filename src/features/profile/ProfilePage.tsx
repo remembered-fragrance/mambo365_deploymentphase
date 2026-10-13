@@ -6,6 +6,8 @@ import { ReferralCard } from '../billing/ReferralCard';
 import { HelpButton } from '../help/HelpButton';
 import { AccountCard } from './AccountCard';
 import { DataCard } from './DataCard';
+import { DeleteAccountCard } from './DeleteAccountCard';
+import { LegalCard } from './LegalCard';
 import { PasswordCard } from './PasswordCard';
 import { PreferencesCard } from './PreferencesCard';
 import { SupportCard } from './SupportCard';
@@ -14,7 +16,8 @@ import { SupportCard } from './SupportCard';
  * Tài khoản & cài đặt.
  *
  * Thứ tự có chủ ý: hồ sơ trước (thứ hay sửa nhất), dữ liệu ở giữa (thứ quan
- * trọng nhất), đăng xuất cuối cùng (thứ nguy hiểm nhất, để xa tay).
+ * trọng nhất), rồi mới tới đăng xuất và xoá tài khoản (hai thứ nguy hiểm nhất,
+ * để xa tay). Đường xuống nút xoá đi ngang qua nút "Lưu ra file".
  */
 export function ProfilePage() {
   return (
@@ -28,7 +31,9 @@ export function ProfilePage() {
         <PasswordCard />
         <DataCard />
         <ReferralCard />
+        <LegalCard />
         <SupportCard />
+        <DeleteAccountCard />
       </div>
     </PageContainer>
   );

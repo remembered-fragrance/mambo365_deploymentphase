@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { emptyData } from '@/core/normalize';
 import type { AppData, SyncStatus, UserProfile } from '@/core/types';
+import { deleteAccount } from './account';
 import * as auth from './auth';
 import { createBookActions } from './bookActions';
 import { clearUserCache, readBook, writeBook } from './cache';
@@ -162,6 +163,14 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         const supabase = getSupabase();
         if (!supabase) throw new Error('Chưa cấu hình máy chủ');
         await auth.changePassword(supabase, password);
+      },
+
+      deleteAccount: async () => {
+        const supabase = getSupabase();
+        if (!supabase || !userId) throw new Error('Chưa cấu hình máy chủ');
+        await deleteAccount(supabase, userId);
+        setUser(null);
+        show(emptyData());
       },
 
       syncNow: kickSync,
