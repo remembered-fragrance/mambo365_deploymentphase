@@ -3,7 +3,7 @@
  * `jspdf` chỉ nạp động — không nằm trong JS khởi tạo.
  */
 
-import type { Transaction } from '@/core/types';
+import type { Transaction } from '@mambo/core/types';
 import { captureReceipt } from './receiptCapture';
 import { shareOrDownload, type ShareResult } from './downloadFile';
 

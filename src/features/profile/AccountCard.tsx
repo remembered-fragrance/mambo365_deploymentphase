@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { OrgType } from '@mambo/contracts';
-import { formatPhoneVn } from '@/core/identifier';
+import { formatPhoneVn } from '@mambo/core/identifier';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';

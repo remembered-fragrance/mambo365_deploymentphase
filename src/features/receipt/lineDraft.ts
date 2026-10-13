@@ -6,9 +6,9 @@
  * số ở đúng một chỗ — `toLine()`.
  */
 
-import { newId } from '@/core/id';
-import { parseNumber } from '@/core/parseNumber';
-import type { CropType, Product, ProductFormulaType, TransactionLine } from '@/core/types';
+import { newId } from '@mambo/core/id';
+import { parseNumber } from '@mambo/core/parseNumber';
+import type { CropType, Product, ProductFormulaType, TransactionLine } from '@mambo/core/types';
 
 export interface LineDraft {
   readonly id: string;

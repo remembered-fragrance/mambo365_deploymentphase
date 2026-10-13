@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { TrashIcon } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toast';
-import { formatDate } from '@/core/format';
+import { formatDate } from '@mambo/core/format';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 

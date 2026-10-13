@@ -5,8 +5,8 @@
  * Cache tách theo `orgId` (hoặc `userId` khi chạy tài khoản máy): hai tổ chức không lẫn sổ của nhau.
  */
 
-import type { AppData } from '@/core/types';
-import { normalize } from '@/core/normalize';
+import type { AppData } from '@mambo/core/types';
+import { normalize } from '@mambo/core/normalize';
 import { clearCursor, openLocalDb } from './localDb';
 
 export const readBook = async (key: string): Promise<AppData | null> => {

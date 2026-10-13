@@ -5,8 +5,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { mergeChanges } from '@/data/pullChanges';
-import { emptyData } from '@/core/normalize';
-import type { AppData, Transaction } from '@/core/types';
+import { emptyData } from '@mambo/core/normalize';
+import type { AppData, Transaction } from '@mambo/core/types';
 import type { PartyRow, PaymentRow, TransactionRow } from '@/data/rows';
 
 const USER = '11111111-1111-4111-8111-111111111111';

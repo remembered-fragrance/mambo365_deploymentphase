@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { LEGAL_LINKS } from '@/config';
-import { detectIdentifierKind, normalizePhone } from '@/core/identifier';
+import { detectIdentifierKind, normalizePhone } from '@mambo/core/identifier';
 import { useStore } from '@/data/useStore';
 import { useBackend } from '@/data/hooks/useBackend';
 import { L } from '@/i18n/labels';

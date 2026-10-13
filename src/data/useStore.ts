@@ -6,10 +6,10 @@
  */
 
 import { createContext, useContext } from 'react';
-import type { DraftInput } from '@/core/draftActions';
-import type { NewProduct } from '@/core/productActions';
-import type { NewTransaction } from '@/core/receiptActions';
-import type { ReceiptImport, SupplierImport } from '@/core/sheetImport';
+import type { DraftInput } from '@mambo/core/draftActions';
+import type { NewProduct } from '@mambo/core/productActions';
+import type { NewTransaction } from '@mambo/core/receiptActions';
+import type { ReceiptImport, SupplierImport } from '@mambo/core/sheetImport';
 import type {
   AppData,
   AppSettings,
@@ -23,7 +23,7 @@ import type {
   SyncStatus,
   Transaction,
   UserProfile,
-} from '@/core/types';
+} from '@mambo/core/types';
 import type {
   Feature,
   Me,

@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { computeReceiptTotal } from '@/core/calc';
-import { formatDateTime, formatVnd } from '@/core/format';
-import type { DraftReceipt } from '@/core/types';
+import { computeReceiptTotal } from '@mambo/core/calc';
+import { formatDateTime, formatVnd } from '@mambo/core/format';
+import type { DraftReceipt } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
 

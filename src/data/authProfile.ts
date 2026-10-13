@@ -2,7 +2,7 @@
 
 import type { User } from '@supabase/supabase-js';
 import type { Me, MeProfile } from '@mambo/contracts';
-import type { UserProfile } from '@/core/types';
+import type { UserProfile } from '@mambo/core/types';
 import type { ProfileRow } from './rows';
 
 export const profileFromRow = (row: ProfileRow, loginEmail: string): UserProfile => ({

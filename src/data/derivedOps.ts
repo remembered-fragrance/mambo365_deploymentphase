@@ -4,7 +4,7 @@
  * File này so hai bản sổ trước/sau để tìm những thay đổi kéo theo đó.
  */
 
-import type { AppData } from '@/core/types';
+import type { AppData } from '@mambo/core/types';
 import { partyToInsert, productToInsert, productToPatch } from './mappers';
 import { opInsert, opUpdate, type NewOp } from './queue';
 

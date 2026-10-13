@@ -5,8 +5,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { applyProduct, emptyLine, fromLine, isUsable, toLine } from '@/features/receipt/lineDraft';
-import { lineTotals } from '@/core/calc';
-import type { Product } from '@/core/types';
+import { lineTotals } from '@mambo/core/calc';
+import type { Product } from '@mambo/core/types';
 
 const rubber: Product = {
   id: 'prod-rubber',

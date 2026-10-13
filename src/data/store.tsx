@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
-import { emptyData } from '@/core/normalize';
-import type { AppData, SyncStatus, UserProfile } from '@/core/types';
+import { emptyData } from '@mambo/core/normalize';
+import type { AppData, SyncStatus, UserProfile } from '@mambo/core/types';
 import { hasBook, type Feature, type Me, type MeBootstrapInput, type MeMembership } from '@mambo/contracts';
 import type { MemberRole, OrgType, Permission, PlanSummary } from '@mambo/contracts';
 import { deleteAccount } from './account';

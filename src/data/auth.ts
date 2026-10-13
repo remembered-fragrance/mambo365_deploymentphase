@@ -22,8 +22,8 @@
 
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type { Me, MeBootstrapInput, MeProfile, MeProfilePatch } from '@mambo/contracts';
-import { detectIdentifierKind, normalizePhone } from '@/core/identifier';
-import type { UserProfile } from '@/core/types';
+import { detectIdentifierKind, normalizePhone } from '@mambo/core/identifier';
+import type { UserProfile } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { FeatureUnavailableError } from './capabilities';
 import { api, setCurrentOrg } from './client';

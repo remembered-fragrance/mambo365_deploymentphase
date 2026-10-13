@@ -10,7 +10,7 @@
  */
 
 import { useSyncExternalStore } from 'react';
-import { demoBook } from '@/core/demoSeed';
+import { demoBook } from '@mambo/core/demoSeed';
 import { isDemoActive, setDemoActive, subscribeDemo } from '../demoMode';
 import { useStore } from '../useStore';
 

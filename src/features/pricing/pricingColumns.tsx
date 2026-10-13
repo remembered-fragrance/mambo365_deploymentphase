@@ -1,9 +1,9 @@
 import { Badge } from '@/components/ui/Badge';
 import type { Column } from '@/components/data/dataViewModel';
 import { PencilIcon } from '@/components/ui/icons';
-import { formatVnd, formatWeight } from '@/core/format';
-import { previewRule } from '@/core/pricingPreview';
-import type { PricingRule, Product } from '@/core/types';
+import { formatVnd, formatWeight } from '@mambo/core/format';
+import { previewRule } from '@mambo/core/pricingPreview';
+import type { PricingRule, Product } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 
 const KIND_LABEL: Record<PricingRule['kind'], string> = {

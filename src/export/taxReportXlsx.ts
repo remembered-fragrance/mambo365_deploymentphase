@@ -3,10 +3,10 @@
  * Số liệu do `core/taxReport.ts` tính; file này chỉ lo việc ghi file.
  */
 
-import { transactionTotals } from '@/core/calc';
-import { formatDate } from '@/core/format';
-import { buildTaxReport, isInRange, type TaxReportRange } from '@/core/taxReport';
-import type { AppData, Transaction } from '@/core/types';
+import { transactionTotals } from '@mambo/core/calc';
+import { formatDate } from '@mambo/core/format';
+import { buildTaxReport, isInRange, type TaxReportRange } from '@mambo/core/taxReport';
+import type { AppData, Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 
 const detailRows = (

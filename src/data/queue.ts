@@ -9,7 +9,7 @@
  * mạng chậm không được thành hai phiếu.
  */
 
-import { newId } from '@/core/id';
+import { newId } from '@mambo/core/id';
 import type { SyncEntity, SyncOpKind } from '@mambo/contracts';
 import { isScopedOp, nextSeq, openLocalDb, type QueuedOp } from './localDb';
 import type { TableName } from './rows';
