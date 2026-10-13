@@ -24,6 +24,14 @@ export const ORG_LABELS = {
   memberAlreadyIn: 'Người này đã ở trong tổ chức',
   membersEmpty: 'Chưa có ai ngoài bác',
 
+  orgRename: 'Đổi tên',
+  orgRenamed: 'Đã đổi tên',
+  orgName: 'Tên tổ chức',
+  orgLeave: 'Rời tổ chức',
+  orgLeaveConsequence: 'Rời rồi bác mất quyền vào sổ của tổ chức này ngay, sổ trên máy này cũng được dọn. Muốn quay lại thì nhờ chủ thêm lại.',
+  orgLeft: 'Đã rời tổ chức',
+  orgLeavePending: 'Còn thao tác chưa gửi lên máy chủ — đợi có mạng gửi xong rồi mới rời được, không thì mất phiếu:',
+
   branchAdd: 'Thêm chi nhánh',
   branchName: 'Tên chi nhánh',
   branchAddress: 'Địa chỉ',

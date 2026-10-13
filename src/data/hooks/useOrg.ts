@@ -10,9 +10,11 @@ import { useLoad, type Loaded } from './useLinked';
 export {
   createBranch,
   createMember,
+  leaveOrg,
   monthRange,
   orgErrorMessage,
   removeMember,
+  renameOrg,
   updateBranch,
   updateMember,
 } from '../org';
