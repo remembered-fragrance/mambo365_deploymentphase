@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PERMISSIONS_BY } from '@mambo/contracts';
 import { ApiError } from '@mambo/sdk';
-import { monthRange, orgErrorMessage } from '@/data/org';
+import { monthRange, orgErrorMessage, todayRange } from '@/data/org';
 import { allows } from '@/features/shared/access';
 import { ROUTE_GATES, ROUTES } from '@/features/shared/navItems';
 import { L } from '@/i18n/labels';
@@ -46,5 +46,16 @@ describe('ai thấy màn Nhân viên / Chi nhánh / Báo cáo tổng', () => {
     expect([ROUTES.members, ROUTES.branches, ROUTES.orgReport].map((r) => sees(as('enterprise', 'owner'), r))).toEqual([true, true, true]);
     expect([ROUTES.members, ROUTES.branches, ROUTES.orgReport].map((r) => sees(as('enterprise', 'manager'), r))).toEqual([false, false, true]);
     expect([ROUTES.members, ROUTES.branches, ROUTES.orgReport].map((r) => sees(as('enterprise', 'staff'), r))).toEqual([false, false, false]);
+  });
+});
+
+describe('todayRange — hôm nay theo giờ Việt Nam', () => {
+  it('23:30 giờ VN vẫn là hôm đó; 00:30 giờ VN đã sang ngày mới', () => {
+    expect(todayRange(Date.parse('2026-10-14T16:30:00Z'))).toEqual({ from: '2026-10-14T00:00:00+07:00', to: '2026-10-15T00:00:00+07:00' });
+    expect(todayRange(Date.parse('2026-10-14T17:30:00Z'))).toEqual({ from: '2026-10-15T00:00:00+07:00', to: '2026-10-16T00:00:00+07:00' });
+  });
+
+  it('qua tháng, qua năm', () => {
+    expect(todayRange(Date.parse('2026-12-31T05:00:00Z')).to).toBe('2027-01-01T00:00:00+07:00');
   });
 });

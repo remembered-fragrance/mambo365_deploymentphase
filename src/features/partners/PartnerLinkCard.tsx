@@ -1,25 +1,30 @@
 import { useEffect, useState } from 'react';
 import { formatDate } from '@mambo/core/format';
-import type { LinkInviteCode, PartnerKind } from '@mambo/contracts';
+import type { LinkSummary, PartnerKind } from '@mambo/contracts';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { formatLinkCode, inviteLink, linkErrorMessage, useLinks } from '@/data/hooks/useLinked';
+import { formatLinkCode, inviteLink, linkErrorMessage, type Loaded } from '@/data/hooks/useLinked';
 import { L } from '@/i18n/labels';
 import { linkUrl, qrImage } from './linkQr';
+import { linkStateOf } from './linkState';
+
+interface PartnerLinkCardProps {
+  readonly partnerKind: PartnerKind;
+  readonly partnerId: string;
+  /** Danh sách kết nối của màn danh bạ — dùng chung để ô trong danh sách và thẻ này cùng thấy mã mới. */
+  readonly links: Loaded<readonly LinkSummary[]>;
+}
 
 /**
  * Phía vựa / doanh nghiệp: mời một dòng danh bạ kết nối bằng MÃ KẾT NỐI (FRONTEND §5.6).
  * Gọi lại `invite` khi mã còn hạn trả đúng mã cũ, nên bấm nhiều lần không sinh nhiều mã.
  */
-export function PartnerLinkCard({ partnerKind, partnerId }: { readonly partnerKind: PartnerKind; readonly partnerId: string }) {
-  const links = useLinks();
-  const [fresh, setFresh] = useState<LinkInviteCode | null>(null);
+export function PartnerLinkCard({ partnerKind, partnerId, links }: PartnerLinkCardProps) {
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
 
-  const mine = links.data?.filter((l) => l.side === 'owner' && l.partner.id === partnerId && l.status !== 'revoked');
-  const active = mine?.find((l) => l.status === 'active');
-  const invite = fresh ?? mine?.find((l) => l.status === 'pending')?.inviteCode ?? null;
+  const state = linkStateOf(links.data ?? [], partnerId);
+  const invite = state.kind === 'pending' ? state.code : null;
   const code = invite?.code;
   const [qr, setQr] = useState<string | null>(null);
 
@@ -37,8 +42,8 @@ export function PartnerLinkCard({ partnerKind, partnerId }: { readonly partnerKi
     setBusy(true);
     setError(undefined);
     try {
-      const link = await inviteLink(partnerKind, partnerId);
-      setFresh(link.inviteCode);
+      await inviteLink(partnerKind, partnerId);
+      links.reload();
     } catch (err) {
       setError(linkErrorMessage(err, L.partnerNotSynced));
     } finally {
@@ -50,9 +55,9 @@ export function PartnerLinkCard({ partnerKind, partnerId }: { readonly partnerKi
 
   return (
     <Card title={L.partnerLinkTitle}>
-      {active ? (
+      {state.kind === 'linked' ? (
         <p className="text-base font-bold text-ink">
-          {L.partnerLinked} {active.counterpart?.name ?? ''}
+          {L.partnerLinked} {state.name}
         </p>
       ) : invite ? (
         <div className="flex flex-col gap-2">

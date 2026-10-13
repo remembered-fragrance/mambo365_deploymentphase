@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import type { LinkSummary } from '@mambo/contracts';
+import type { Loaded } from '@/data/hooks/useLinked';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { PencilIcon, PhoneIcon } from '@/components/ui/icons';
@@ -16,12 +18,12 @@ interface PartnerDetailProps {
   readonly transactions: readonly Transaction[];
   /** Vắng = không có `partner:manage` (người cân): không có nút sửa. */
   readonly onEdit?: () => void;
-  /** Có tổ chức trên máy chủ và quyền `partner:manage`: hiện thẻ mời kết nối. */
-  readonly linkable?: boolean;
+  /** Có tổ chức trên máy chủ và quyền `partner:manage`: danh sách kết nối — hiện thẻ mời kết nối. */
+  readonly links?: Loaded<readonly LinkSummary[]>;
 }
 
 /** Một đối tác: liên lạc, tổng kết, và những phiếu gần đây của họ. */
-export function PartnerDetail({ party, role, transactions, onEdit, linkable }: PartnerDetailProps) {
+export function PartnerDetail({ party, role, transactions, onEdit, links }: PartnerDetailProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="card p-4">
@@ -74,7 +76,7 @@ export function PartnerDetail({ party, role, transactions, onEdit, linkable }: P
         </dl>
       </div>
 
-      {linkable && party.hasProfile && <PartnerLinkCard partnerKind={role} partnerId={party.id} />}
+      {links && party.hasProfile && <PartnerLinkCard partnerKind={role} partnerId={party.id} links={links} />}
 
       <section>
         <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-ink-3">

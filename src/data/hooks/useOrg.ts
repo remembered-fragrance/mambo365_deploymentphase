@@ -2,8 +2,8 @@
  * Nhân viên, chi nhánh, báo cáo tổng — cửa cho màn hình. Hỏi lại khi đổi tổ chức.
  */
 
-import type { OrgBranchesList, OrgMember, ReportSummary } from '@mambo/contracts';
-import { listBranches, listMembers, reportSummary } from '../org';
+import type { MemberActivityReport, OrgBranchesList, OrgMember, ReportSummary } from '@mambo/contracts';
+import { listBranches, listMembers, memberActivity, reportSummary } from '../org';
 import { useStore } from '../useStore';
 import { useLoad, type Loaded } from './useLinked';
 
@@ -15,6 +15,8 @@ export {
   orgErrorMessage,
   removeMember,
   renameOrg,
+  thisMonth,
+  todayRange,
   updateBranch,
   updateMember,
 } from '../org';
@@ -36,4 +38,10 @@ export const useReportSummary = (from: string, to: string, branchId?: string): L
     currentOrgId ? () => reportSummary(from, to, branchId) : null,
     `${currentOrgId ?? ''}:${from}:${to}:${branchId ?? ''}`,
   );
+};
+
+/** Việc của từng người trong khoảng — chỉ chủ (`staff:manage`); `enabled` = có quyền đó. */
+export const useMemberActivity = (from: string, to: string, enabled = true): Loaded<MemberActivityReport> => {
+  const { currentOrgId } = useStore();
+  return useLoad(currentOrgId && enabled ? () => memberActivity(from, to) : null, `${currentOrgId ?? ''}:${from}:${to}`);
 };

@@ -472,6 +472,25 @@ theo trách nhiệm của file.
 
 ---
 
+## Logo · mã kết nối dễ thấy · màn Nhân viên dạng dashboard · 14/10/2026
+
+Cần `@mambo/*` **0.13.0** (`api.reports.members`). `package.json` còn trỏ 0.11.2 — đổi URL sau khi BE gắn tag `v0.13.0`.
+
+- **Logo**: `public/logo.svg` (bản gốc `Logo/logo.svg` ngoài repo, thêm `viewBox` để co giãn), `favicon.svg` là
+  cùng file. PNG dựng lại từ SVG: `icon-192`, `icon-512` (nền trong), `icon-512-maskable` (nền trắng, logo
+  trong vùng an toàn 70%), `apple-touch-icon` (180px, nền trắng — iOS tô đen nền trong). Manifest tách `any` /
+  `maskable` thay vì một icon `any maskable`. `<Logo>` ở sidebar, màn đăng nhập, trang pháp lý.
+- **Mã kết nối**: vẫn mỗi nông hộ một mã (không có mã chung của vựa — nhóm chọn giữ mô hình cũ). Cột "Kết nối"
+  trên danh sách Nông hộ / Người mua: đã kết nối · mã đang chờ · nút "Lấy mã". Thẻ "Mã kết nối cho nông hộ"
+  trên Tổng quan. Danh sách và thẻ chi tiết dùng chung một `useLinks` nên lấy mã ở đâu cũng thấy ngay.
+- **Nhân viên**: chọn tháng, lọc chi nhánh, bốn số tổng, mỗi người số phiếu / tiền mua / lần ghi trả / lần làm
+  gần nhất. Thêm người chuyển vào hộp thoại. Thẻ "Nhân viên hôm nay" trên Tổng quan của chủ.
+- **Người làm không tự rời** (BE 0.13.0): app không có nút rời; chủ gỡ ra ở màn Nhân viên.
+- Còn treo: `data/account.ts` `deleteAccount` vẫn là stub (`backendCapabilities.deleteAccount: false`) — chưa
+  gọi `api.account.delete()`. Khi nối, bắt `STILL_MEMBER` → "Nhờ chủ gỡ bác ra trước".
+
+---
+
 ## Ba số phải giữ trong tầm
 
 Đo lúc kết thúc mỗi giai đoạn.

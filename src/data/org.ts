@@ -3,6 +3,7 @@
  */
 
 import type {
+  MemberActivityReport,
   OrgBranch,
   OrgBranchCreateInput,
   OrgBranchesList,
@@ -46,6 +47,8 @@ export const updateBranch = (id: string, patch: OrgBranchPatch): Promise<OrgBran
 export const reportSummary = (from: string, to: string, branchId?: string): Promise<ReportSummary> =>
   api.reports.summary({ from, to, branchId });
 
+export const memberActivity = (from: string, to: string): Promise<MemberActivityReport> => api.reports.members({ from, to });
+
 /** Câu báo lỗi cho màn Nhân viên / Chi nhánh — rẽ theo `details.reason`, rồi theo `code`. */
 export const orgErrorMessage = (err: unknown): string => {
   if (err instanceof ApiError) {
@@ -60,6 +63,16 @@ export const orgErrorMessage = (err: unknown): string => {
     }
   }
   return linkErrorMessage(err);
+};
+
+/** Tháng hiện tại theo giờ Việt Nam, dạng `2026-10`. */
+export const thisMonth = (): string => new Date(Date.now() + 7 * 3_600_000).toISOString().slice(0, 7);
+
+/** Hôm nay theo giờ Việt Nam: đầu ngày và đầu ngày mai (`to` không gồm). */
+export const todayRange = (now = Date.now()): { from: string; to: string } => {
+  const day = new Date(now + 7 * 3_600_000).toISOString().slice(0, 10);
+  const next = new Date(Date.parse(`${day}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  return { from: `${day}T00:00:00+07:00`, to: `${next}T00:00:00+07:00` };
 };
 
 /** `2026-10` → đầu tháng và đầu tháng sau theo giờ Việt Nam (`to` không gồm). */
