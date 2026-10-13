@@ -474,7 +474,7 @@ theo trách nhiệm của file.
 
 ## Logo · mã kết nối dễ thấy · màn Nhân viên dạng dashboard · 14/10/2026
 
-Cần `@mambo/*` **0.13.0** (`api.reports.members`). `package.json` còn trỏ 0.11.2 — đổi URL sau khi BE gắn tag `v0.13.0`.
+Cần `@mambo/*` **0.13.0** (`api.reports.members`) — `package.json` đã trỏ release `v0.13.0`.
 
 - **Logo**: `public/logo.svg` (bản gốc `Logo/logo.svg` ngoài repo, thêm `viewBox` để co giãn), `favicon.svg` là
   cùng file. PNG dựng lại từ SVG: `icon-192`, `icon-512` (nền trong), `icon-512-maskable` (nền trắng, logo
@@ -485,9 +485,8 @@ Cần `@mambo/*` **0.13.0** (`api.reports.members`). `package.json` còn trỏ 0
   trên Tổng quan. Danh sách và thẻ chi tiết dùng chung một `useLinks` nên lấy mã ở đâu cũng thấy ngay.
 - **Nhân viên**: chọn tháng, lọc chi nhánh, bốn số tổng, mỗi người số phiếu / tiền mua / lần ghi trả / lần làm
   gần nhất. Thêm người chuyển vào hộp thoại. Thẻ "Nhân viên hôm nay" trên Tổng quan của chủ.
-- **Người làm không tự rời** (BE 0.13.0): app không có nút rời; chủ gỡ ra ở màn Nhân viên.
-- Còn treo: `data/account.ts` `deleteAccount` vẫn là stub (`backendCapabilities.deleteAccount: false`) — chưa
-  gọi `api.account.delete()`. Khi nối, bắt `STILL_MEMBER` → "Nhờ chủ gỡ bạn ra trước".
+- **Người làm không tự rời** (BE 0.13.0): bỏ nút "Rời tổ chức" của thẻ Tổ chức (#26 thêm theo BE 0.12.0) và
+  `leaveOrg`; thẻ chỉ nhắc "nhờ chủ gỡ bạn ra". `deleteAccount` bắt `STILL_MEMBER` → `L.deleteAccountStillMember`.
 
 ---
 
