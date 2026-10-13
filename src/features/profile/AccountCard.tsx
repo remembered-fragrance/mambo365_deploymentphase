@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { formatPhoneVn } from '@/core/identifier';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useEmailReminder } from '@/data/hooks/useEmailReminder';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { changedProfileFields } from './profilePatch';
 
 type Field = 'name' | 'username' | 'recoveryEmail';
 type FieldErrors = Partial<Record<Field, string>>;
@@ -31,21 +32,44 @@ const fieldErrorsOf = (e: unknown): FieldErrors => {
 export function AccountCard() {
   const { user, currentOrg, updateProfile } = useStore();
   const toast = useToast();
-  const [name, setName] = useState(user?.name ?? '');
-  const [username, setUsername] = useState(user?.username ?? '');
-  const [email, setEmail] = useState(user?.email ?? '');
+  const savedName = user?.name ?? '';
+  const savedUsername = user?.username ?? '';
+  const savedEmail = user?.email ?? '';
+  const [name, setName] = useState(savedName);
+  const [username, setUsername] = useState(savedUsername);
+  const [email, setEmail] = useState(savedEmail);
+  const [edited, setEdited] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const reminder = useEmailReminder(Boolean(user?.email));
   const businessName = currentOrg?.organization.name ?? user?.businessName ?? '';
 
+  // Tên đăng nhập / email khôi phục về SAU khi màn đã mở (GET /v1/me/profile chạy nền):
+  // chưa gõ gì thì nhận giá trị mới, không thì giữ chữ người dùng đang sửa.
+  useEffect(() => {
+    if (edited) return;
+    setName(savedName);
+    setUsername(savedUsername);
+    setEmail(savedEmail);
+  }, [edited, savedName, savedUsername, savedEmail]);
+
   const save = async () => {
+    const patch = changedProfileFields(
+      { name: savedName, username: savedUsername, email: savedEmail },
+      { name, username, email },
+    );
     setErrors({});
     setFormError(undefined);
+    if (Object.keys(patch).length === 0) {
+      setEdited(false);
+      toast({ message: L.profileSaved });
+      return;
+    }
     setBusy(true);
     try {
-      await updateProfile({ name, username, email });
+      await updateProfile(patch);
+      setEdited(false);
       toast({ message: L.profileSaved });
     } catch (e) {
       const fields = fieldErrorsOf(e);
@@ -78,7 +102,10 @@ export function AccountCard() {
           error={errors.name}
           maxLength={80}
           autoComplete="name"
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            setEdited(true);
+          }}
         />
         <Input
           label={L.profileUsername}
@@ -88,7 +115,10 @@ export function AccountCard() {
           maxLength={32}
           autoCapitalize="none"
           autoComplete="username"
-          onChange={(e) => setUsername(e.target.value)}
+          onChange={(e) => {
+            setUsername(e.target.value);
+            setEdited(true);
+          }}
         />
         <Input
           label={L.profileEmail}
@@ -98,7 +128,10 @@ export function AccountCard() {
           error={errors.recoveryEmail}
           inputMode="email"
           autoComplete="email"
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setEdited(true);
+          }}
         />
         <Input
           label={L.profilePhone}
