@@ -21,14 +21,13 @@
  */
 
 import type { SupabaseClient, User } from '@supabase/supabase-js';
-import type { Me, MeBootstrapInput } from '@mambo/contracts';
+import type { Me, MeBootstrapInput, MeProfile, MeProfilePatch } from '@mambo/contracts';
 import { detectIdentifierKind, normalizePhone } from '@/core/identifier';
 import type { UserProfile } from '@/core/types';
 import { L } from '@/i18n/labels';
 import { FeatureUnavailableError } from './capabilities';
 import { api, setCurrentOrg } from './client';
 import { profileFromMe, profileFromRow } from './authProfile';
-import { patchMyProfile, type MeProfile, type MeProfilePatch } from './profileApi';
 
 export { profileFromMe, profileFromRow };
 
@@ -246,7 +245,7 @@ export const updateProfile = async (
     ...(patch.username !== undefined ? { username: patch.username.trim().toLowerCase() || null } : {}),
     ...(patch.email !== undefined ? { recoveryEmail: patch.email.trim().toLowerCase() || null } : {}),
   };
-  const saved = await patchMyProfile(body);
+  const saved = await api.account.updateProfile(body);
   await supabase.auth.updateUser({
     data: {
       name: saved.name,

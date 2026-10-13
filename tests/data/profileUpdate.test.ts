@@ -1,14 +1,18 @@
 /** Sửa hồ sơ đi qua PATCH /v1/me/profile, rồi chép tên + email khôi phục sang user_metadata. */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-const getSession = vi.fn(async () => ({ data: { session: { access_token: 'tok' } } }));
-vi.mock('@/data/client', () => ({
-  api: {},
-  setCurrentOrg: vi.fn(),
-  getSupabase: () => ({ auth: { getSession } }),
-}));
+const fetchMock = vi.hoisted(() => vi.fn());
+
+// SDK thật trên fetch giả: kiểm đúng đường, token và cách SDK đọc lỗi `{ error }`.
+vi.mock('@/data/client', async () => {
+  const { createClient } = await import('@mambo/sdk');
+  return {
+    api: createClient({ baseUrl: 'http://api.test', getAccessToken: () => 'tok', getOrganizationId: () => null, fetch: (...args) => fetchMock(...args) }),
+    setCurrentOrg: vi.fn(),
+  };
+});
 
 const { updateProfile } = await import('@/data/auth');
 
@@ -21,19 +25,12 @@ const saved = {
   referred: false,
 };
 
-const fetchMock = vi.fn();
 const updateUser = vi.fn(async () => ({ data: {}, error: null }));
 const supabase = { auth: { updateUser } } as unknown as SupabaseClient;
 
 beforeEach(() => {
-  vi.stubEnv('VITE_API_URL', 'http://api.test');
-  vi.stubGlobal('fetch', fetchMock);
   fetchMock.mockReset();
   updateUser.mockClear();
-});
-afterEach(() => {
-  vi.unstubAllEnvs();
-  vi.unstubAllGlobals();
 });
 
 describe('updateProfile', () => {

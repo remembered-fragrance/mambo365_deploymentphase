@@ -1,9 +1,8 @@
 /** Dựng `UserProfile` hiển thị từ hàng `profiles` hoặc từ `/v1/me` + phiên Supabase. */
 
 import type { User } from '@supabase/supabase-js';
-import type { Me } from '@mambo/contracts';
+import type { Me, MeProfile } from '@mambo/contracts';
 import type { UserProfile } from '@/core/types';
-import type { MeProfile } from './profileApi';
 import type { ProfileRow } from './rows';
 
 export const profileFromRow = (row: ProfileRow, loginEmail: string): UserProfile => ({

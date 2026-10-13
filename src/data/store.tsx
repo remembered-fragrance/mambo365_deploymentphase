@@ -7,10 +7,9 @@ import type { MemberRole, OrgType, Permission, PlanSummary } from '@mambo/contra
 import { deleteAccount } from './account';
 import * as auth from './auth';
 import { mergeProfile } from './authProfile';
-import { getMyProfile } from './profileApi';
 import { createBookActions } from './bookActions';
 import { clearOrgCache, clearUserCache, readBook, writeBook } from './cache';
-import { getCurrentOrgId, getSupabase, hasBackend, setCurrentOrg } from './client';
+import { api, getCurrentOrgId, getSupabase, hasBackend, setCurrentOrg } from './client';
 import { deviceAccount } from './deviceAccount';
 import { enqueue, legacyQueueCount, pendingCount, type NewOp } from './queue';
 import { forgetSubscription } from './subscriptionStore';
@@ -122,7 +121,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       if (epoch !== sessionEpoch.current) return null;
       applyMe(result);
       // Tên đăng nhập / email khôi phục nằm ở `profiles`; lỗi (chưa bootstrap, API cũ) ⇒ giữ bản /v1/me.
-      if (result.memberships.length > 0) void getMyProfile().then((profile) => {
+      if (result.memberships.length > 0) void api.account.profile().then((profile) => {
         if (epoch === sessionEpoch.current) setUser((u) => (u ? mergeProfile(u, profile) : u));
       }).catch(() => undefined);
       return result;
