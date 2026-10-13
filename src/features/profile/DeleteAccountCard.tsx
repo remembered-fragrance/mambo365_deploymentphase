@@ -19,7 +19,7 @@ import { L } from '@/i18n/labels';
  * đường ra khỏi đây đi ngang qua nút "Lưu ra file".
  */
 export function DeleteAccountCard() {
-  const { user, deleteAccount } = useStore();
+  const { user, data, deleteAccount } = useStore();
   const online = useBackend();
   const toast = useToast();
 
@@ -71,6 +71,10 @@ export function DeleteAccountCard() {
         onClose={() => setOpen(false)}
       >
         <div className="flex flex-col gap-3">
+          {/* Hậu quả nói bằng SỐ (FRONTEND §5.10), không chỉ bằng lời. */}
+          <p className="text-base font-bold text-alert">
+            {L.deleteAccountReceipts} <span className="num">{data.transactions.length}</span>
+          </p>
           <Input
             label={L.deleteAccountTypeName}
             hint={phrase}
