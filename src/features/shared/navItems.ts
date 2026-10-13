@@ -51,6 +51,9 @@ export const ROUTES = {
   orderCreate: '/don-hang/tao',
   orderDetail: (id: string) => `/don-hang/${id}`,
   notifications: '/thong-bao',
+  members: '/nhan-vien',
+  branches: '/chi-nhanh',
+  orgReport: '/bao-cao-tong',
   linked: '/vua',
   linkedTrader: (orgId: string) => `/vua/${orgId}`,
   more: '/them',
@@ -82,6 +85,9 @@ export const ROUTE_GATES: Readonly<Record<string, Gate>> = {
   [ROUTES.orders]: { org: true },
   [ROUTES.orderCreate]: { org: true, permission: 'order:create' },
   [ROUTES.notifications]: { org: true },
+  [ROUTES.members]: { org: true, permission: 'staff:manage' },
+  [ROUTES.branches]: { org: true, enterprise: true, permission: 'branch:manage' },
+  [ROUTES.orgReport]: { org: true, enterprise: true, permission: 'report:view' },
 };
 
 const visible = (access: Access) => (item: NavItem): boolean => allows(access, ROUTE_GATES[item.to]);
@@ -131,6 +137,9 @@ const allSecondary = (): NavItem[] => [
   { id: 'reports', label: L.navReports, to: ROUTES.reports, Icon: ChartIcon },
   { id: 'utilities', label: L.navUtilities, to: ROUTES.utilities, Icon: ToolIcon },
   { id: 'profile', label: L.navProfile, to: ROUTES.profile, Icon: UserIcon },
+  { id: 'members', label: L.navMembers, to: ROUTES.members, Icon: PeopleIcon },
+  { id: 'branches', label: L.navBranches, to: ROUTES.branches, Icon: HomeIcon },
+  { id: 'orgReport', label: L.navOrgReport, to: ROUTES.orgReport, Icon: ChartIcon },
   { id: 'plans', label: L.planTitle, to: ROUTES.plans, Icon: CardIcon },
   { id: 'importData', label: L.importTitle, to: ROUTES.importData, Icon: UploadIcon },
 ];
@@ -150,11 +159,11 @@ export const navGroups = (counts: NavCounts, access: Access): NavGroup[] => {
     },
     { id: 'partners', label: L.groupPartners, items: pick(rest, ['suppliers', 'buyers']) },
     { id: 'goods', label: L.groupGoods, items: pick(rest, ['products', 'inventory', 'pricing']) },
-    { id: 'reports', label: L.groupReports, items: pick(rest, ['reports', 'utilities']) },
+    { id: 'reports', label: L.groupReports, items: pick(rest, ['orgReport', 'reports', 'utilities']) },
     {
       id: 'account',
       label: L.groupAccount,
-      items: pick(rest, ['profile', 'plans', 'importData']),
+      items: pick(rest, ['profile', 'members', 'branches', 'plans', 'importData']),
     },
   ];
   // Nhóm rỗng (người cân không có Đối tác/Hàng hoá đầy đủ, nông dân) thì bỏ hẳn tiêu đề.

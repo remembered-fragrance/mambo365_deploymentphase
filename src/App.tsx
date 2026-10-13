@@ -34,6 +34,9 @@ const OrderDetailPage = lazy(() =>
 const NotificationsPage = lazy(() =>
   import('@/features/notifications/NotificationsPage').then((m) => ({ default: m.NotificationsPage })),
 );
+const MembersPage = lazy(() => import('@/features/org/MembersPage').then((m) => ({ default: m.MembersPage })));
+const BranchesPage = lazy(() => import('@/features/org/BranchesPage').then((m) => ({ default: m.BranchesPage })));
+const OrgReportPage = lazy(() => import('@/features/org/OrgReportPage').then((m) => ({ default: m.OrgReportPage })));
 const ReceiptsPage = lazy(() =>
   import('@/features/receipts/ReceiptsPage').then((m) => ({ default: m.ReceiptsPage })),
 );
@@ -135,6 +138,9 @@ export function App() {
                         <Route path={ROUTES.orderCreate} element={<Gated route={ROUTES.orderCreate}><OrderCreatePage /></Gated>} />
                         <Route path="/don-hang/:id" element={<Gated route={ROUTES.orders}><OrderDetailPage /></Gated>} />
                         <Route path={ROUTES.notifications} element={<Gated route={ROUTES.notifications}><NotificationsPage /></Gated>} />
+                        <Route path={ROUTES.members} element={<Gated route={ROUTES.members}><MembersPage /></Gated>} />
+                        <Route path={ROUTES.branches} element={<Gated route={ROUTES.branches}><BranchesPage /></Gated>} />
+                        <Route path={ROUTES.orgReport} element={<Gated route={ROUTES.orgReport}><OrgReportPage /></Gated>} />
                         <Route path={ROUTES.more} element={<MorePage />} />
                         <Route path="*" element={<NotFoundPage />} />
                       </Routes>

@@ -50,6 +50,9 @@ const PAGE_TITLE: Record<string, string> = {
   [ROUTES.more]: L.navMore,
   [ROUTES.orders]: L.navOrders,
   [ROUTES.notifications]: L.navNotifications,
+  [ROUTES.members]: L.navMembers,
+  [ROUTES.branches]: L.navBranches,
+  [ROUTES.orgReport]: L.navOrgReport,
 };
 
 export function AppLayout({ children }: { readonly children: ReactNode }) {

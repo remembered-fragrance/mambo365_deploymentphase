@@ -21,6 +21,8 @@ export interface Gate {
   readonly book?: true;
   /** Cần tổ chức trên máy chủ (đơn, thông báo, kết nối) — sổ của máy này không có. */
   readonly org?: true;
+  /** Chỉ vỏ Doanh nghiệp (chi nhánh, báo cáo tổng). */
+  readonly enterprise?: true;
   readonly permission?: Permission;
 }
 
@@ -28,6 +30,7 @@ export const allows = (access: Access, gate: Gate | undefined): boolean => {
   if (!gate) return true;
   if (!access.orgType) return !gate.org;
   if (gate.book && !hasBook(access.orgType)) return false;
+  if (gate.enterprise && access.orgType !== 'enterprise') return false;
   if (gate.permission && !access.permissions.includes(gate.permission)) return false;
   return true;
 };
