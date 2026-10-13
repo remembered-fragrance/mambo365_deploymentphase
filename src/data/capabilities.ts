@@ -2,8 +2,6 @@
 export const backendCapabilities = {
   deleteAccount: false,
   attachments: false,
-  billingIntents: false,
-  referral: false,
   updateProfile: false,
 } as const;
 

@@ -2,9 +2,8 @@ import { expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { deleteAccount } from '@/data/account';
 import { uploadAttachment, removeAttachment, signedAttachmentUrl, cacheRemoteAttachment } from '@/data/attachments';
-import { createPaymentIntent, fetchPaymentIntents, claimReferral } from '@/data/billing';
 
-it('reports unavailable features without deleting local/account data or inventing billing results', async () => {
+it('reports unavailable features without deleting local/account data', async () => {
   const signOut = vi.fn();
   const auth = { auth: { signOut } } as unknown as SupabaseClient;
   const operations = [
@@ -13,9 +12,6 @@ it('reports unavailable features without deleting local/account data or inventin
     removeAttachment(auth, 'user', 'id'),
     signedAttachmentUrl(auth, 'user', 'id'),
     cacheRemoteAttachment(auth, 'user', 'id'),
-    createPaymentIntent(auth, 'user', null, 100),
-    fetchPaymentIntents(auth, 'user'),
-    claimReferral(auth, 'CODE'),
   ];
   for (const operation of operations) {
     await expect(operation).rejects.toMatchObject({ code: 'FEATURE_UNAVAILABLE' });
