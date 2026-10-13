@@ -18,7 +18,7 @@ export interface Loaded<T> {
   readonly reload: () => void;
 }
 
-function useLoad<T>(load: (() => Promise<T>) | null, key: string): Loaded<T> {
+export function useLoad<T>(load: (() => Promise<T>) | null, key: string): Loaded<T> {
   const [state, setState] = useState<{ data: T | null; error: string | null; loading: boolean }>({
     data: null,
     error: null,

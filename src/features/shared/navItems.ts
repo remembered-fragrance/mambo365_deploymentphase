@@ -18,6 +18,7 @@ import {
   DebtIcon,
   HomeIcon,
   MoreIcon,
+  PackageIcon,
   PeopleIcon,
   PercentIcon,
   PhoneIcon,
@@ -46,6 +47,10 @@ export const ROUTES = {
   profile: '/tai-khoan',
   plans: '/goi-dich-vu',
   importData: '/nhap-du-lieu',
+  orders: '/don-hang',
+  orderCreate: '/don-hang/tao',
+  orderDetail: (id: string) => `/don-hang/${id}`,
+  notifications: '/thong-bao',
   linked: '/vua',
   linkedTrader: (orgId: string) => `/vua/${orgId}`,
   more: '/them',
@@ -73,7 +78,10 @@ export const ROUTE_GATES: Readonly<Record<string, Gate>> = {
   [ROUTES.utilities]: BOOK,
   [ROUTES.plans]: { book: true, permission: 'billing:manage' },
   [ROUTES.importData]: { book: true, permission: 'partner:manage' },
-  [ROUTES.linked]: { permission: 'linked:read' },
+  [ROUTES.linked]: { org: true, permission: 'linked:read' },
+  [ROUTES.orders]: { org: true },
+  [ROUTES.orderCreate]: { org: true, permission: 'order:create' },
+  [ROUTES.notifications]: { org: true },
 };
 
 const visible = (access: Access) => (item: NavItem): boolean => allows(access, ROUTE_GATES[item.to]);
@@ -85,10 +93,11 @@ export interface NavCounts {
 }
 
 export const navItems = (counts: NavCounts, access: Access): NavItem[] => {
-  // Vỏ Nông dân: không có sổ ⇒ thanh dưới chỉ còn Trang chủ và Tài khoản.
+  // Vỏ Nông dân: không có sổ ⇒ thanh dưới chỉ có Trang chủ, Đơn hàng, Tài khoản.
   if (isFarmer(access)) {
     return [
       { id: 'dashboard', label: L.navDashboard, to: ROUTES.dashboard, Icon: HomeIcon, bar: 1 },
+      { id: 'orders', label: L.navOrders, to: ROUTES.orders, Icon: PackageIcon, bar: 2 },
       { id: 'profile', label: L.navProfile, to: ROUTES.profile, Icon: UserIcon, bar: 4 },
     ];
   }
@@ -113,6 +122,7 @@ const bookBar = ({ drafts, overdue }: NavCounts): NavItem[] => [
 export const secondaryItems = (access: Access): NavItem[] => allSecondary().filter(visible(access));
 
 const allSecondary = (): NavItem[] => [
+  { id: 'orders', label: L.navOrders, to: ROUTES.orders, Icon: PackageIcon },
   { id: 'suppliers', label: L.navSuppliers, to: ROUTES.suppliers, Icon: PhoneIcon },
   { id: 'buyers', label: L.navBuyers, to: ROUTES.buyers, Icon: PeopleIcon },
   { id: 'products', label: L.navProducts, to: ROUTES.products, Icon: TagIcon },
@@ -133,7 +143,11 @@ export const navGroups = (counts: NavCounts, access: Access): NavGroup[] => {
   const rest = secondaryItems(access);
 
   const groups: NavGroup[] = [
-    { id: 'daily', label: L.groupDaily, items: pick(bar, ['dashboard', 'receipts', 'debts']) },
+    {
+      id: 'daily',
+      label: L.groupDaily,
+      items: [...pick(bar, ['dashboard', 'receipts', 'debts']), ...pick(rest, ['orders'])],
+    },
     { id: 'partners', label: L.groupPartners, items: pick(rest, ['suppliers', 'buyers']) },
     { id: 'goods', label: L.groupGoods, items: pick(rest, ['products', 'inventory', 'pricing']) },
     { id: 'reports', label: L.groupReports, items: pick(rest, ['reports', 'utilities']) },
