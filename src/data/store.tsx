@@ -8,7 +8,7 @@ import { deleteAccount } from './account';
 import * as auth from './auth';
 import { mergeProfile } from './authProfile';
 import { createBookActions } from './bookActions';
-import { clearOrgCache, clearUserCache, readBook, writeBook } from './cache';
+import { clearUserCache, readBook, writeBook } from './cache';
 import { api, getCurrentOrgId, getSupabase, hasBackend, setCurrentOrg } from './client';
 import { deviceAccount } from './deviceAccount';
 import { enqueue, legacyQueueCount, pendingCount, type NewOp } from './queue';
@@ -287,15 +287,11 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         await auth.changePassword(supabase, password);
       },
       deleteAccount: async () => {
-        const supabase = getSupabase();
-        if (!supabase || !userId) throw new Error('Chưa cấu hình máy chủ');
-        await deleteAccount(supabase, userId);
-        if (currentOrgId) await clearOrgCache(currentOrgId);
-        setCurrentOrg(null);
-        setCurrentOrgIdState(null);
-        setUser(null);
-        setMe(null);
-        show(emptyData());
+        if (!getSupabase() || !userId) throw new Error('Chưa cấu hình máy chủ');
+        // Ghi dở phải xong trước — không thì một lần ghi sổ đang chờ dựng lại đúng cái sổ vừa dọn.
+        await persistence.current;
+        await deleteAccount(memberships.current.map((m) => m.organization.id));
+        await value.signOut();
       },
       syncNow: kickSync,
     }),
