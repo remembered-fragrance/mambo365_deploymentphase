@@ -124,9 +124,11 @@ export const SCREEN_LABELS = {
   noNotesHint: 'Ghi giá thoả thuận, số xe, lời hẹn — thứ hay quên nhất.',
 
   // ─── Tài khoản ────────────────────────────────────────────────────────────
-  profileOwner: 'Tên của bác',
+  profileOwner: 'Tên hiển thị',
   profileBusiness: 'Tên vựa',
-  profileBusinessHint: 'Tên vựa / doanh nghiệp chưa sửa được trong app — cần đổi thì nhắn Zalo hỗ trợ.',
+  profileBusinessFarmer: 'Tên hộ',
+  profileBusinessEnterprise: 'Tên doanh nghiệp',
+  profileBusinessHint: 'Tên này chưa sửa được trong app — cần đổi thì nhắn Zalo hỗ trợ.',
   profileUsername: 'Tên đăng nhập (không bắt buộc)',
   profilePhone: 'Số điện thoại',
   profilePhoneHint: 'Số điện thoại là tài khoản của bác — không đổi ở đây.',

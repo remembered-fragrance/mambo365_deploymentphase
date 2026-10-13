@@ -19,7 +19,7 @@ describe('L4 — một ô đăng nhập, tự nhận dạng', () => {
     expect(detectIdentifierKind('0905-112-233')).toBe('phone');
   });
 
-  it('còn lại là tên tài khoản', () => {
+  it('còn lại là tên đăng nhập', () => {
     expect(detectIdentifierKind('comai')).toBe('username');
     expect(isPhoneLike('comai')).toBe(false);
   });
@@ -56,7 +56,7 @@ describe('khoá tra cứu tài khoản', () => {
     expect(normalizeIdentifier('  Co.Mai@Gmail.COM ')).toBe('co.mai@gmail.com');
   });
 
-  it('tên tài khoản không phân biệt hoa thường', () => {
+  it('tên đăng nhập không phân biệt hoa thường', () => {
     expect(normalizeIdentifier('CoMai')).toBe('comai');
   });
 });

@@ -268,7 +268,7 @@ export interface AppData {
 
 /**
  * L4 — email là TUỲ CHỌN. Tệp người dùng mục tiêu phần lớn không có email;
- * họ đăng nhập bằng số điện thoại hoặc tên tài khoản.
+ * họ đăng nhập bằng số điện thoại hoặc tên đăng nhập.
  * `identifier` là khoá tra cứu đã chuẩn hoá (xem `core/identifier.ts`).
  */
 export interface UserProfile {

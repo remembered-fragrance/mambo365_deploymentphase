@@ -5,6 +5,12 @@ import { Input } from '@/components/ui/Input';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { ORG_TYPE_TEXT } from '../shared/roleText';
+import { asksOrgName, orgNameFor } from './setupOrg';
+
+const ORG_NAME_TEXT = {
+  trader: { label: L.setupOrgNameTrader, hint: L.setupOrgNameTraderHint },
+  enterprise: { label: L.setupOrgNameEnterprise, hint: L.setupOrgNameEnterpriseHint },
+} as const;
 
 type Field = 'orgType' | 'orgName' | 'name' | 'username';
 type FieldErrors = Partial<Record<Field, string>>;
@@ -42,18 +48,28 @@ export function SetupOrgPage() {
       setErrors({ orgType: L.setupPickType });
       return;
     }
+    // Nông dân: tên hộ lấy từ tên hiển thị ⇒ tên trống thì báo ngay ở ô tên.
+    if (!asksOrgName(orgType) && !name.trim()) {
+      setErrors({ name: L.nameRequired });
+      return;
+    }
     setBusy(true);
     setErrors({});
     setFormError(undefined);
     try {
       await bootstrap({
         orgType,
-        orgName: orgName.trim(),
+        orgName: orgNameFor(orgType, orgName, name),
         name: name.trim(),
         ...(username.trim() ? { username: username.trim().toLowerCase() } : {}),
       });
     } catch (e) {
       const fields = fieldErrorsOf(e);
+      // Nông dân không thấy ô tên hộ: lỗi của nó (vd. quá dài) hiện ở ô tên hiển thị.
+      if (!asksOrgName(orgType) && fields.orgName) {
+        fields.name ??= fields.orgName;
+        delete fields.orgName;
+      }
       setErrors(fields);
       if (Object.keys(fields).length === 0) setFormError(e instanceof Error ? e.message : L.setupFailed);
     } finally {
@@ -97,14 +113,16 @@ export function SetupOrgPage() {
         </div>
 
         <div className="mt-4 flex flex-col gap-3">
-          <Input
-            label={L.setupOrgName}
-            value={orgName}
-            hint={L.setupOrgNameHint}
-            error={errors.orgName}
-            maxLength={120}
-            onChange={(e) => setOrgName(e.target.value)}
-          />
+          {asksOrgName(orgType) && (
+            <Input
+              label={ORG_NAME_TEXT[orgType].label}
+              value={orgName}
+              hint={ORG_NAME_TEXT[orgType].hint}
+              error={errors.orgName}
+              maxLength={120}
+              onChange={(e) => setOrgName(e.target.value)}
+            />
+          )}
           <Input
             label={L.setupName}
             value={name}

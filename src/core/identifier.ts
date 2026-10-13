@@ -1,7 +1,7 @@
 /**
  * Định danh đăng nhập — MỘT ô duy nhất (lỗi chặn L4).
  *
- * Người dùng gõ tên tài khoản, số điện thoại hoặc email vào cùng một ô.
+ * Người dùng gõ tên đăng nhập, số điện thoại hoặc email vào cùng một ô.
  * Tầng dữ liệu tra cứu bằng `normalizeIdentifier()`, không bằng chuỗi thô —
  * nhờ vậy `0905112233`, `0905 112 233`, `+84 905 112 233` là CÙNG một tài khoản.
  */
@@ -49,7 +49,7 @@ export const formatPhoneVn = (e164: string): string => {
 /**
  * Khoá tra cứu tài khoản. Mọi so sánh định danh phải đi qua hàm này.
  * - điện thoại → `+84…`
- * - email / tên tài khoản → chữ thường, bỏ khoảng trắng thừa
+ * - email / tên đăng nhập → chữ thường, bỏ khoảng trắng thừa
  */
 export const normalizeIdentifier = (raw: string): string => {
   const kind = detectIdentifierKind(raw);

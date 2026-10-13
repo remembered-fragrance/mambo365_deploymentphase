@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { OrgType } from '@mambo/contracts';
 import { formatPhoneVn } from '@/core/identifier';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -9,6 +10,13 @@ import { useEmailReminder } from '@/data/hooks/useEmailReminder';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { changedProfileFields } from './profilePatch';
+
+/** Nhãn tên tổ chức theo vai — chưa biết vai thì không hiện ô, không đoán. */
+const BUSINESS_LABEL: Readonly<Record<OrgType, string>> = {
+  farmer: L.profileBusinessFarmer,
+  trader: L.profileBusiness,
+  enterprise: L.profileBusinessEnterprise,
+};
 
 type Field = 'name' | 'username' | 'recoveryEmail';
 type FieldErrors = Partial<Record<Field, string>>;
@@ -27,7 +35,7 @@ const fieldErrorsOf = (e: unknown): FieldErrors => {
 
 /**
  * Hồ sơ người dùng: tên, tên đăng nhập, email khôi phục (`PATCH /v1/me/profile`).
- * Số điện thoại là khoá đăng nhập; tên vựa là của tổ chức — cả hai chỉ để xem.
+ * Số điện thoại là khoá đăng nhập; tên hộ / vựa / doanh nghiệp là của tổ chức — cả hai chỉ để xem.
  */
 export function AccountCard() {
   const { user, currentOrg, updateProfile } = useStore();
@@ -43,7 +51,7 @@ export function AccountCard() {
   const [formError, setFormError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const reminder = useEmailReminder(Boolean(user?.email));
-  const businessName = currentOrg?.organization.name ?? user?.businessName ?? '';
+  const org = currentOrg?.organization;
 
   // Tên đăng nhập / email khôi phục về SAU khi màn đã mở (GET /v1/me/profile chạy nền):
   // chưa gõ gì thì nhận giá trị mới, không thì giữ chữ người dùng đang sửa.
@@ -139,8 +147,13 @@ export function AccountCard() {
           hint={L.profilePhoneHint}
           readOnly
         />
-        {businessName && (
-          <Input label={L.profileBusiness} value={businessName} hint={L.profileBusinessHint} readOnly />
+        {org?.name && (
+          <Input
+            label={BUSINESS_LABEL[org.type]}
+            value={org.name}
+            hint={L.profileBusinessHint}
+            readOnly
+          />
         )}
 
         {formError && (

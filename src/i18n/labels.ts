@@ -28,8 +28,8 @@ const BASE = {
 
   // ─── Đăng nhập / đăng ký ───────────────────────────────────────────────────
   // Đăng nhập vẫn dùng MỘT ô chung. Frontend tự nhận biết người dùng nhập
-  // số điện thoại, email hay tên tài khoản.
-  authLoginIdentifier: 'Số điện thoại, email hoặc tên tài khoản',
+  // số điện thoại, email hay tên đăng nhập.
+  authLoginIdentifier: 'Số điện thoại, email hoặc tên đăng nhập',
   authLoginIdentifierHint: 'Nhập thông tin bác đã dùng để đăng nhập.',
 
   // Đăng ký tách riêng số điện thoại và email để không nhầm hai loại dữ liệu.

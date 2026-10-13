@@ -12,7 +12,7 @@
  *   (tài khoản cũ đăng ký bằng email thật).
  * - Email: thử thẳng (tài khoản cũ); không được thì hỏi resolveIdentifier
  *   (email khôi phục → email nội bộ).
- * - Tên tài khoản: resolve qua API rồi mới đăng nhập Supabase.
+ * - Tên đăng nhập: resolve qua API rồi mới đăng nhập Supabase.
  *
  * 🔴 Lỗi đăng nhập luôn dùng cùng một câu:
  * "Tài khoản hoặc mật khẩu không đúng".
@@ -137,7 +137,7 @@ export const signIn = async (
     throw new Error(SIGN_IN_ERROR);
   }
 
-  // 3. Tên tài khoản: backend là nơi duy nhất biết username thuộc email nào.
+  // 3. Tên đăng nhập: backend là nơi duy nhất biết username thuộc email nào.
   try {
     const resolved = await api.resolveIdentifier({
       identifier: rawIdentifier,

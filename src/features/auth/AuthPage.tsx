@@ -28,7 +28,7 @@ const isPhoneError = (message: string): boolean =>
  * Đăng nhập / đăng ký.
  *
  * Đăng nhập:
- * - Một ô nhận số điện thoại, email hoặc tên tài khoản.
+ * - Một ô nhận số điện thoại, email hoặc tên đăng nhập.
  *
  * Đăng ký:
  * - Tách số điện thoại và email thành hai ô riêng.
