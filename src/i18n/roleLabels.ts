@@ -80,6 +80,7 @@ export const ROLE_LABELS = {
   partnerInviteCode: 'Mã kết nối',
   partnerInviteExpires: 'Hết hạn',
   partnerInviteShare: 'Gửi mã',
+  partnerInviteQrAlt: 'Mã QR kết nối — quét bằng camera điện thoại',
   partnerInviteShareText: 'Mời bác dùng THUMUA365 để xem phiếu cân và tiền còn nợ. Mã kết nối của bác:',
   partnerLinked: 'Đã kết nối với',
   partnerNotSynced: 'Người này chưa lên máy chủ — đợi đồng bộ xong rồi mời lại',
