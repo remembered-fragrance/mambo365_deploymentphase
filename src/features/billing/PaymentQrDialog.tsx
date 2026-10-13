@@ -16,9 +16,9 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { CheckIcon } from '@/components/ui/icons';
 import { BANK_ACCOUNT_NAME, BANK_ACCOUNT_NUMBER, BANK_NAME, SUPPORT_ZALO } from '@/config';
-import { formatVnd } from '@/core/format';
-import type { PaymentIntent } from '@/core/subscription';
-import { transferContent } from '@/core/transferCode';
+import { formatVnd } from '@mambo/core/format';
+import type { PaymentIntent } from '@mambo/core/subscription';
+import { transferContent } from '@mambo/core/transferCode';
 import { L } from '@/i18n/labels';
 import { vietQrImageUrl } from './vietQr';
 

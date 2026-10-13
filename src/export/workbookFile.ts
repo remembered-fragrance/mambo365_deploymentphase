@@ -9,7 +9,7 @@
  * ngày đọc ra là số thứ tự của Excel, và mọi phiếu cũ rơi về năm 1900.
  */
 
-import type { Cell, ImportKind, SheetMatrix } from '@/core/sheetImport';
+import type { Cell, ImportKind, SheetMatrix } from '@mambo/core/sheetImport';
 import { downloadBlob } from './downloadFile';
 
 export const readSheetMatrix = async (file: File): Promise<SheetMatrix> => {

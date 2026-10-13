@@ -6,10 +6,10 @@
  * Giá trị hex bám theo bảng token "Sổ Vựa" trong `src/index.css`.
  */
 
-import { lineTotals, transactionTotals } from '@/core/calc';
-import { formatDateTime, formatQuantity, formatVnd } from '@/core/format';
-import { cropMeta } from '@/core/catalog';
-import type { CropType, Transaction } from '@/core/types';
+import { lineTotals, transactionTotals } from '@mambo/core/calc';
+import { formatDateTime, formatQuantity, formatVnd } from '@mambo/core/format';
+import { cropMeta } from '@mambo/core/catalog';
+import type { CropType, Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 
 const INK = '#1A1714';

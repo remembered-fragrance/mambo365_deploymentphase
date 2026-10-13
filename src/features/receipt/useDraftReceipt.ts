@@ -8,8 +8,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AUTOSAVE_MS } from '@/config';
-import { computeReceiptTotal, totalAdjustments } from '@/core/calc';
-import type { PriceAdjustment, Transaction, TransactionKind } from '@/core/types';
+import { computeReceiptTotal, totalAdjustments } from '@mambo/core/calc';
+import type { PriceAdjustment, Transaction, TransactionKind } from '@mambo/core/types';
 import { useStore } from '@/data/useStore';
 import { emptyLine, fromLine, isUsable, toLine, type LineDraft } from './lineDraft';
 

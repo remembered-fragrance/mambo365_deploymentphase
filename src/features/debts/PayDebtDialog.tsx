@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { transactionTotals } from '@/core/calc';
-import type { DebtSide } from '@/core/debtSelectors';
-import { formatDate, formatVnd } from '@/core/format';
-import { parseNumber } from '@/core/parseNumber';
-import type { Transaction } from '@/core/types';
+import { transactionTotals } from '@mambo/core/calc';
+import type { DebtSide } from '@mambo/core/debtSelectors';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import { parseNumber } from '@mambo/core/parseNumber';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { NumberField } from '../shared/NumberField';
 

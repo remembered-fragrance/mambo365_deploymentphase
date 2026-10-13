@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import type { Product, ProductFormulaType } from '@/core/types';
+import type { Product, ProductFormulaType } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 
 export interface ProductDraft {

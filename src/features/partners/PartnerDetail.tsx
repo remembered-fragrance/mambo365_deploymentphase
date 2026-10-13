@@ -2,12 +2,13 @@ import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { PencilIcon, PhoneIcon } from '@/components/ui/icons';
-import { transactionTotals } from '@/core/calc';
-import { formatDate, formatVnd } from '@/core/format';
-import type { PartySummary, PartyRole } from '@/core/partySelectors';
-import type { Transaction } from '@/core/types';
+import { transactionTotals } from '@mambo/core/calc';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import type { PartySummary, PartyRole } from '@mambo/core/partySelectors';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
+import { PartnerLinkCard } from './PartnerLinkCard';
 
 interface PartnerDetailProps {
   readonly party: PartySummary;
@@ -15,10 +16,12 @@ interface PartnerDetailProps {
   readonly transactions: readonly Transaction[];
   /** Vắng = không có `partner:manage` (người cân): không có nút sửa. */
   readonly onEdit?: () => void;
+  /** Có tổ chức trên máy chủ và quyền `partner:manage`: hiện thẻ mời kết nối. */
+  readonly linkable?: boolean;
 }
 
 /** Một đối tác: liên lạc, tổng kết, và những phiếu gần đây của họ. */
-export function PartnerDetail({ party, role, transactions, onEdit }: PartnerDetailProps) {
+export function PartnerDetail({ party, role, transactions, onEdit, linkable }: PartnerDetailProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="card p-4">
@@ -70,6 +73,8 @@ export function PartnerDetail({ party, role, transactions, onEdit }: PartnerDeta
           </div>
         </dl>
       </div>
+
+      {linkable && party.hasProfile && <PartnerLinkCard partnerKind={role} partnerId={party.id} />}
 
       <section>
         <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-ink-3">

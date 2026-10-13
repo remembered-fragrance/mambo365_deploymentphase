@@ -7,9 +7,9 @@
  */
 
 import { useToast } from '@/components/ui/Toast';
-import { formatVnd } from '@/core/format';
-import type { Transaction } from '@/core/types';
-import type { DebtSide } from '@/core/debtSelectors';
+import { formatVnd } from '@mambo/core/format';
+import type { Transaction } from '@mambo/core/types';
+import type { DebtSide } from '@mambo/core/debtSelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { useAccess } from '../shared/useAccess';

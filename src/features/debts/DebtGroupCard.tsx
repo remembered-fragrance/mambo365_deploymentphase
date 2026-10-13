@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ChevronRightIcon } from '@/components/ui/icons';
-import { transactionTotals } from '@/core/calc';
-import type { DebtGroup, DebtSide } from '@/core/debtSelectors';
-import { dueDateOf, isOverdue } from '@/core/debtSelectors';
-import { formatDate, formatVnd } from '@/core/format';
-import type { Transaction } from '@/core/types';
+import { transactionTotals } from '@mambo/core/calc';
+import type { DebtGroup, DebtSide } from '@mambo/core/debtSelectors';
+import { dueDateOf, isOverdue } from '@mambo/core/debtSelectors';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 
 interface DebtGroupCardProps {

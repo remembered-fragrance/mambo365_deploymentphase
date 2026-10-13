@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { formatDate, formatVnd } from '@/core/format';
-import type { PaymentIntentStatus } from '@/core/subscription';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import type { PaymentIntentStatus } from '@mambo/core/subscription';
 import { useSubscription } from '@/data/hooks/useSubscription';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';

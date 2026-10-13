@@ -11,8 +11,8 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PlusIcon } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toast';
-import { formatVnd } from '@/core/format';
-import { partySummaries, partyTransactions, type PartyRole, type PartySummary } from '@/core/partySelectors';
+import { formatVnd } from '@mambo/core/format';
+import { partySummaries, partyTransactions, type PartyRole, type PartySummary } from '@mambo/core/partySelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { HelpButton } from '../help/HelpButton';
@@ -30,7 +30,7 @@ import { partnerColumns } from './partnerColumns';
  */
 export function PartnerListPage({ role }: { readonly role: PartyRole }) {
   const { can } = useAccess();
-  const { data, addSupplier, updateSupplier, deleteSupplier, addBuyer, updateBuyer, deleteBuyer } =
+  const { data, currentOrgId, addSupplier, updateSupplier, deleteSupplier, addBuyer, updateBuyer, deleteBuyer } =
     useStore();
   const [params, setParams] = useSearchParams();
   const toast = useToast();
@@ -121,6 +121,7 @@ export function PartnerListPage({ role }: { readonly role: PartyRole }) {
       role={role}
       transactions={partyTransactions(data, selected.id)}
       onEdit={can('partner:manage') ? () => openEdit(selected) : undefined}
+      linkable={Boolean(currentOrgId) && can('partner:manage')}
     />
   ) : undefined;
 

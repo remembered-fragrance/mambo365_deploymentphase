@@ -6,8 +6,8 @@
  * lại giữa hai dạng nằm gọn ở đây để form chỉ lo phần hiển thị.
  */
 
-import { parseNumber } from '@/core/parseNumber';
-import type { PricingRule, PricingRuleKind } from '@/core/types';
+import { parseNumber } from '@mambo/core/parseNumber';
+import type { PricingRule, PricingRuleKind } from '@mambo/core/types';
 
 export type RuleDirection = 'add' | 'subtract';
 export type RuleTransport = 'both' | 'pickup' | 'bring';

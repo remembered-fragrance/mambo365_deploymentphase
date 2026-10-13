@@ -8,10 +8,12 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
 import { OfflineBanner, SyncBadge, type SyncTone } from '@/components/feedback/SyncBadge';
 import { MoonIcon, SearchIcon, SunIcon } from '@/components/ui/icons';
-import { overdueCount } from '@/core/debtSelectors';
+import { overdueCount } from '@mambo/core/debtSelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { PlanBanner } from '../billing/PlanBanner';
+import { NotificationBell } from '../notifications/NotificationBell';
+import { NotificationsProvider } from '../notifications/NotificationsContext';
 import { DemoBanner } from '../onboarding/DemoBanner';
 import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
@@ -46,6 +48,8 @@ const PAGE_TITLE: Record<string, string> = {
   [ROUTES.utilities]: L.navUtilities,
   [ROUTES.profile]: L.navProfile,
   [ROUTES.more]: L.navMore,
+  [ROUTES.orders]: L.navOrders,
+  [ROUTES.notifications]: L.navNotifications,
 };
 
 export function AppLayout({ children }: { readonly children: ReactNode }) {
@@ -110,9 +114,11 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
   );
 
   const badge = <SyncBadge tone={tone} label={SYNC_LABEL[tone]} />;
+  // Thông báo là của tổ chức trên máy chủ — sổ của máy này không có.
+  const bell = access.orgType && <NotificationBell />;
 
   return (
-    <>
+    <NotificationsProvider>
       <AppShell
         sidebar={
           <SidebarNav
@@ -137,6 +143,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
           <AppTopbar
             actions={
               <>
+                {bell}
                 {searchButton}
                 {themeToggle}
               </>
@@ -148,7 +155,12 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
           <MobileHeader
             title={PAGE_TITLE[pathname] ?? L.appName}
             themeToggle={themeToggle}
-            actions={searchButton}
+            actions={
+              <>
+                {bell}
+                {searchButton}
+              </>
+            }
             syncBadge={badge}
           />
         }
@@ -201,6 +213,6 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
       </BottomSheet>
 
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
-    </>
+    </NotificationsProvider>
   );
 }

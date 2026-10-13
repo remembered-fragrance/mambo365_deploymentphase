@@ -13,20 +13,28 @@ interface DialogProps {
 
 export function Dialog({ open, title, description, onClose, children }: DialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  // Nơi gọi hay truyền `onClose={() => …}` — hàm mới mỗi lần render. Đưa vào deps thì
+  // mỗi chữ gõ trong ô nhập chạy lại effect, `focus()` kéo focus về khung và iOS đóng
+  // bàn phím. Giữ bản mới nhất trong ref; effect chỉ chạy khi mở / đóng.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
-    panelRef.current?.focus();
+    // Ô có `autoFocus` đã nhận focus trước effect này — đừng giành lại.
+    if (!panelRef.current?.contains(document.activeElement)) panelRef.current?.focus();
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

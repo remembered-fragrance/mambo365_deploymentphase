@@ -13,12 +13,20 @@ describe('điều hướng theo mô hình ba vai trò', () => {
     expect(ids(none)).toEqual(expect.arrayContaining(['receipts', 'debts', 'pricing', 'plans', 'importData']));
   });
 
-  it('nông dân → chỉ Trang chủ và Tài khoản, không có màn nào của sổ', () => {
+  it('nông dân → Trang chủ, Đơn hàng, Tài khoản; không có màn nào của sổ', () => {
     const farmer = access('farmer', 'owner');
-    expect(navItems(counts, farmer).map((i) => i.id)).toEqual(['dashboard', 'profile']);
+    expect(navItems(counts, farmer).map((i) => i.id)).toEqual(['dashboard', 'orders', 'profile']);
     expect(allows(farmer, ROUTE_GATES[ROUTES.receipts])).toBe(false);
     expect(allows(farmer, ROUTE_GATES[ROUTES.plans])).toBe(false);
     expect(navGroups(counts, farmer).every((g) => g.items.length > 0)).toBe(true);
+  });
+
+  it('sổ của máy này (chưa có tổ chức): không vào Đơn hàng / Thông báo / Vựa đã kết nối', () => {
+    const local = { orgType: null, permissions: [] };
+    expect(allows(local, ROUTE_GATES[ROUTES.orders])).toBe(false);
+    expect(allows(local, ROUTE_GATES[ROUTES.notifications])).toBe(false);
+    expect(allows(local, ROUTE_GATES[ROUTES.linked])).toBe(false);
+    expect(allows(local, ROUTE_GATES[ROUTES.receipts])).toBe(true);
   });
 
   it('chủ vựa → đủ mọi màn của sổ, kể cả Gói', () => {

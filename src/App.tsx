@@ -21,6 +21,19 @@ const DashboardPage = lazy(() =>
 const FarmerHomePage = lazy(() =>
   import('@/features/farmer/FarmerHomePage').then((m) => ({ default: m.FarmerHomePage })),
 );
+const LinkedTraderPage = lazy(() =>
+  import('@/features/farmer/LinkedTraderPage').then((m) => ({ default: m.LinkedTraderPage })),
+);
+const OrdersPage = lazy(() => import('@/features/orders/OrdersPage').then((m) => ({ default: m.OrdersPage })));
+const OrderCreatePage = lazy(() =>
+  import('@/features/orders/OrderCreatePage').then((m) => ({ default: m.OrderCreatePage })),
+);
+const OrderDetailPage = lazy(() =>
+  import('@/features/orders/OrderDetailPage').then((m) => ({ default: m.OrderDetailPage })),
+);
+const NotificationsPage = lazy(() =>
+  import('@/features/notifications/NotificationsPage').then((m) => ({ default: m.NotificationsPage })),
+);
 const ReceiptsPage = lazy(() =>
   import('@/features/receipts/ReceiptsPage').then((m) => ({ default: m.ReceiptsPage })),
 );
@@ -117,6 +130,11 @@ export function App() {
                         <Route path={ROUTES.profile} element={<ProfilePage />} />
                         <Route path={ROUTES.plans} element={<Gated route={ROUTES.plans}><PlansPage /></Gated>} />
                         <Route path={ROUTES.importData} element={<Gated route={ROUTES.importData}><ImportDataPage /></Gated>} />
+                        <Route path="/vua/:orgId" element={<Gated route={ROUTES.linked}><LinkedTraderPage /></Gated>} />
+                        <Route path={ROUTES.orders} element={<Gated route={ROUTES.orders}><OrdersPage /></Gated>} />
+                        <Route path={ROUTES.orderCreate} element={<Gated route={ROUTES.orderCreate}><OrderCreatePage /></Gated>} />
+                        <Route path="/don-hang/:id" element={<Gated route={ROUTES.orders}><OrderDetailPage /></Gated>} />
+                        <Route path={ROUTES.notifications} element={<Gated route={ROUTES.notifications}><NotificationsPage /></Gated>} />
                         <Route path={ROUTES.more} element={<MorePage />} />
                         <Route path="*" element={<NotFoundPage />} />
                       </Routes>

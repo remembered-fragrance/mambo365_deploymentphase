@@ -5,7 +5,7 @@
  */
 
 import type { BadgeTone } from '@/components/ui/Badge';
-import type { PlanState, PlanTier } from '@/core/subscription';
+import type { PlanState, PlanTier } from '@mambo/core/subscription';
 import { L } from '@/i18n/labels';
 
 const TIER_LABEL: Record<PlanTier, string> = {

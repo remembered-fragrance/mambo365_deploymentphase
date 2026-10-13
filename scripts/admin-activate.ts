@@ -26,7 +26,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { MONTHS_PER_PRICE } from '../src/config';
-import { extendPeriod } from '../src/core/subscription';
+import { extendPeriod } from '@mambo/core/subscription';
 
 const url = process.env.SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

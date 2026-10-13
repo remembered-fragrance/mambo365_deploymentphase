@@ -1,8 +1,8 @@
 import { Badge } from '@/components/ui/Badge';
 import type { Column } from '@/components/data/dataViewModel';
 import { PencilIcon, PhoneIcon } from '@/components/ui/icons';
-import { formatDate, formatVnd } from '@/core/format';
-import type { PartySummary, PartyRole } from '@/core/partySelectors';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import type { PartySummary, PartyRole } from '@mambo/core/partySelectors';
 import { L } from '@/i18n/labels';
 
 /**

@@ -70,11 +70,10 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'node',
       include: ['tests/**/*.test.ts'],
+      // Phủ test của nghiệp vụ tính tiền đo ở repo BE (packages/core ≥ 80%).
       coverage: {
         provider: 'v8',
-        include: ['src/core/**'],
         reporter: ['text', 'json-summary'],
-        thresholds: { lines: 80, functions: 80, statements: 80 },
       },
     },
   };
