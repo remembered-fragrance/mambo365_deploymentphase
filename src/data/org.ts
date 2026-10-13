@@ -14,6 +14,7 @@ import type {
 } from '@mambo/contracts';
 import { ApiError } from '@mambo/sdk';
 import { L } from '@/i18n/labels';
+import { wipeOrgFromDevice } from './account';
 import { api } from './client';
 import { linkErrorMessage } from './links';
 import { track } from './track';
@@ -26,6 +27,17 @@ export const createMember = async (input: OrgMemberCreateInput): Promise<OrgMemb
 };
 export const updateMember = (id: string, patch: OrgMemberPatch): Promise<OrgMember> => api.org.members.update(id, patch);
 export const removeMember = (id: string): Promise<OrgMember> => api.org.members.remove(id);
+
+/** Chỉ chủ (máy chủ kiểm). */
+export const renameOrg = async (name: string): Promise<void> => {
+  await api.org.update({ name });
+};
+
+/** Người không phải chủ tự rời tổ chức đang làm việc — mất quyền ngay; dọn sổ của tổ chức đó khỏi máy. */
+export const leaveOrg = async (orgId: string): Promise<void> => {
+  await api.org.leave();
+  await wipeOrgFromDevice(orgId);
+};
 
 export const listBranches = (): Promise<OrgBranchesList> => api.org.branches.list();
 export const createBranch = (input: OrgBranchCreateInput): Promise<OrgBranch> => api.org.branches.create(input);
