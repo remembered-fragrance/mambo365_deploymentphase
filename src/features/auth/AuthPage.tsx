@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Logo } from '@/components/ui/Logo';
 import { LEGAL_LINKS } from '@/config';
 import { detectIdentifierKind, normalizePhone } from '@mambo/core/identifier';
 import { useStore } from '@/data/useStore';
@@ -104,12 +105,18 @@ export function AuthPage() {
     <div className="mx-auto flex min-h-dvh w-full max-w-5xl items-center px-4 py-8">
       <div className="grid w-full gap-8 lg:grid-cols-2 lg:items-center">
         <div className="hidden lg:block">
-          <p className="text-3xl font-extrabold tracking-tight text-brand">{L.appName}</p>
+          <div className="flex items-center gap-3">
+            <Logo className="h-14 w-14" />
+            <p className="text-3xl font-extrabold tracking-tight text-brand">{L.appName}</p>
+          </div>
           <p className="mt-3 max-w-sm text-lg text-ink-2">{L.authTagline}</p>
         </div>
 
         <div className="card p-5">
-          <h1 className="text-xl font-extrabold text-ink lg:hidden">{L.appName}</h1>
+          <h1 className="flex items-center gap-2 text-xl font-extrabold text-ink lg:hidden">
+            <Logo />
+            {L.appName}
+          </h1>
           <h2 className="mt-1 text-lg font-bold text-ink">
             {mode === 'signIn' ? L.authSignIn : L.authSignUp}
           </h2>

@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['icon-192.png', 'icon-512.png'],
+        includeAssets: ['favicon.svg', 'logo.svg', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png'],
         manifest: {
           name: 'THUMUA365 — Sổ vựa',
           short_name: 'THUMUA365',
@@ -50,7 +50,9 @@ export default defineConfig(({ mode }) => {
           start_url: '/',
           icons: [
             { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
-            { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+            { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+            // Nền trắng, logo trong vùng an toàn 70% — Android cắt icon thành tròn / bo góc.
+            { src: 'icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
           ],
         },
         workbox: {

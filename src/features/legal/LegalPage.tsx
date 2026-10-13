@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Logo } from '@/components/ui/Logo';
 import { LEGAL_LINKS, SUPPORT_ZALO } from '@/config';
 import { L } from '@/i18n/labels';
 import { GUIDE } from '@/i18n/legal/guide';
@@ -84,7 +85,10 @@ export function LegalPage({ kind }: { readonly kind: LegalKind }) {
     <div className="min-h-dvh bg-paper">
       <header className="sticky top-0 z-10 border-b border-rule bg-card">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
-          <span className="text-base font-extrabold text-brand">{L.appName}</span>
+          <span className="flex items-center gap-2 text-base font-extrabold text-brand">
+            <Logo className="h-7 w-7" />
+            {L.appName}
+          </span>
           <Link to="/" className="inline-flex min-h-11 items-center font-semibold text-brand underline">
             {L.legalBackToApp}
           </Link>
