@@ -33,7 +33,7 @@ export const LEGAL_LABELS = {
     'Xoá hẳn tài khoản và toàn bộ phiếu, nông hộ, ảnh chứng từ trên máy chủ. Không lấy lại được.',
   deleteAccountSaveFirst: 'Nên bấm "Lưu ra file" ở trên trước khi xoá.',
   deleteAccountButton: 'Xoá tài khoản và toàn bộ dữ liệu',
-  deleteAccountTypeName: 'Gõ lại tên vựa để xác nhận',
+  deleteAccountTypeName: 'Gõ lại đúng tên bên dưới để xác nhận',
   deleteAccountMismatch: 'Chưa khớp tên vựa',
   deleteAccountWorking: 'Đang xoá…',
   deleteAccountDone: 'Đã xoá tài khoản',
