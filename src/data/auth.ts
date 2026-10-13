@@ -24,6 +24,7 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type { Me, MeBootstrapInput } from '@mambo/contracts';
 import { detectIdentifierKind, normalizePhone } from '@/core/identifier';
 import type { UserProfile } from '@/core/types';
+import { L } from '@/i18n/labels';
 import { FeatureUnavailableError } from './capabilities';
 import { api, setCurrentOrg } from './client';
 import { profileFromMe, profileFromRow } from './authProfile';
@@ -35,7 +36,7 @@ const INTERNAL_EMAIL_DOMAIN = 'id.thumua365.vn';
 
 export const SIGN_IN_ERROR = 'Tài khoản hoặc mật khẩu không đúng';
 
-const PHONE_TAKEN = 'Số điện thoại này đã có tài khoản — bác đăng nhập bằng số này nhé';
+const PHONE_TAKEN = L.authPhoneTaken;
 
 const signUpErrorMessage = (message: string | undefined): string =>
   message && /already|registered|exists/i.test(message) ? PHONE_TAKEN : message ?? 'Không tạo được tài khoản';
@@ -162,7 +163,7 @@ export const signUp = async (
   input: SignUpInput,
 ): Promise<User> => {
   const phone = normalizePhone(input.phone);
-  if (!phone) throw new Error('Số điện thoại chưa đúng');
+  if (!phone) throw new Error(L.authPhoneInvalid);
 
   const recoveryEmail =
     input.email && detectIdentifierKind(input.email.trim()) === 'email'
