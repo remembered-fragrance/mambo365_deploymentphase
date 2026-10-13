@@ -28,6 +28,7 @@ import { L } from '@/i18n/labels';
 import { FeatureUnavailableError } from './capabilities';
 import { api, setCurrentOrg } from './client';
 import { profileFromMe, profileFromRow } from './authProfile';
+import { patchMyProfile, type MeProfile, type MeProfilePatch } from './profileApi';
 
 export { profileFromMe, profileFromRow };
 
@@ -223,20 +224,36 @@ export const signOut = async (supabase: SupabaseClient): Promise<void> => {
 
 export interface ProfilePatch {
   readonly name?: string;
-  readonly businessName?: string;
+  /** Rỗng = bỏ tên đăng nhập. */
+  readonly username?: string;
+  /** Email khôi phục; rỗng = bỏ. */
   readonly email?: string;
 }
 
 /**
- * Backend chưa hỗ trợ cập nhật hồ sơ.
- * Không fallback sang `supabase.from('profiles')`.
+ * Sửa hồ sơ: `PATCH /v1/me/profile` trước (server kiểm trùng tên đăng nhập / email
+ * khôi phục, ghi bảng `profiles` mà đăng nhập bằng email / tên tra vào), rồi chép tên +
+ * email sang `user_metadata` — `/v1/me` đọc hai thứ đó từ Supabase, không đồng bộ thì
+ * tải lại trang sẽ hiện giá trị cũ.
  */
 export const updateProfile = async (
-  _supabase: SupabaseClient,
+  supabase: SupabaseClient,
   _userId: string,
-  _patch: ProfilePatch,
-): Promise<void> => {
-  throw new FeatureUnavailableError('Profile update');
+  patch: ProfilePatch,
+): Promise<MeProfile> => {
+  const body: MeProfilePatch = {
+    ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
+    ...(patch.username !== undefined ? { username: patch.username.trim().toLowerCase() || null } : {}),
+    ...(patch.email !== undefined ? { recoveryEmail: patch.email.trim().toLowerCase() || null } : {}),
+  };
+  const saved = await patchMyProfile(body);
+  await supabase.auth.updateUser({
+    data: {
+      name: saved.name,
+      ...(body.recoveryEmail !== undefined ? { recoveryEmail: saved.recoveryEmail } : {}),
+    },
+  });
+  return saved;
 };
 
 export const changePassword = async (

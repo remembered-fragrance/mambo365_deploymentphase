@@ -3,6 +3,7 @@
 import type { User } from '@supabase/supabase-js';
 import type { Me } from '@mambo/contracts';
 import type { UserProfile } from '@/core/types';
+import type { MeProfile } from './profileApi';
 import type { ProfileRow } from './rows';
 
 export const profileFromRow = (row: ProfileRow, loginEmail: string): UserProfile => ({
@@ -44,3 +45,13 @@ export const profileFromMe = (me: Me, account?: User | null): UserProfile => {
     businessName: me.memberships[0]?.organization.name ?? undefined,
   };
 };
+
+/** Phủ tên, tên đăng nhập, email khôi phục, mã mời từ `/v1/me/profile` lên hồ sơ đang hiện. */
+export const mergeProfile = (current: UserProfile, profile: MeProfile): UserProfile => ({
+  ...current,
+  name: profile.name || current.name,
+  username: profile.username ?? undefined,
+  email: profile.recoveryEmail ?? undefined,
+  phone: profile.phone ?? current.phone,
+  referralCode: profile.referralCode ?? current.referralCode,
+});

@@ -2,19 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { User } from '@supabase/supabase-js';
 import { emptyData } from '@/core/normalize';
 import type { AppData, SyncStatus, UserProfile } from '@/core/types';
-import {
-  hasBook,
-  type Feature,
-  type Me,
-  type MeBootstrapInput,
-  type MeMembership,
-  type MemberRole,
-  type OrgType,
-  type Permission,
-  type PlanSummary,
-} from '@mambo/contracts';
+import { hasBook, type Feature, type Me, type MeBootstrapInput, type MeMembership } from '@mambo/contracts';
+import type { MemberRole, OrgType, Permission, PlanSummary } from '@mambo/contracts';
 import { deleteAccount } from './account';
 import * as auth from './auth';
+import { mergeProfile } from './authProfile';
+import { getMyProfile } from './profileApi';
 import { createBookActions } from './bookActions';
 import { clearOrgCache, clearUserCache, readBook, writeBook } from './cache';
 import { getCurrentOrgId, getSupabase, hasBackend, setCurrentOrg } from './client';
@@ -128,6 +121,10 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       const result = await auth.getMe();
       if (epoch !== sessionEpoch.current) return null;
       applyMe(result);
+      // Tên đăng nhập / email khôi phục nằm ở `profiles`; lỗi (chưa bootstrap, API cũ) ⇒ giữ bản /v1/me.
+      if (result.memberships.length > 0) void getMyProfile().then((profile) => {
+        if (epoch === sessionEpoch.current) setUser((u) => (u ? mergeProfile(u, profile) : u));
+      }).catch(() => undefined);
       return result;
     } catch (error) {
       if (epoch !== sessionEpoch.current) return null;
@@ -268,8 +265,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       updateProfile: async (patch) => {
         const supabase = getSupabase();
         if (!supabase || !userId) throw new Error('Chưa cấu hình máy chủ');
-        await auth.updateProfile(supabase, userId, patch);
-        setUser((current) => (current ? { ...current, ...patch } : current));
+        const saved = await auth.updateProfile(supabase, userId, patch);
+        setUser((current) => (current ? mergeProfile(current, saved) : current));
       },
       changePassword: async (password) => {
         const supabase = getSupabase();
