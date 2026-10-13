@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { formatDate } from '@mambo/core/format';
 import type { LinkInviteCode, PartnerKind } from '@mambo/contracts';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { formatLinkCode, inviteLink, linkErrorMessage, useLinks } from '@/data/hooks/useLinked';
 import { L } from '@/i18n/labels';
+import { linkUrl, qrImage } from './linkQr';
 
 /**
  * Phía vựa / doanh nghiệp: mời một dòng danh bạ kết nối bằng MÃ KẾT NỐI (FRONTEND §5.6).
@@ -19,6 +20,18 @@ export function PartnerLinkCard({ partnerKind, partnerId }: { readonly partnerKi
   const mine = links.data?.filter((l) => l.side === 'owner' && l.partner.id === partnerId && l.status !== 'revoked');
   const active = mine?.find((l) => l.status === 'active');
   const invite = fresh ?? mine?.find((l) => l.status === 'pending')?.inviteCode ?? null;
+  const code = invite?.code;
+  const [qr, setQr] = useState<string | null>(null);
+
+  useEffect(() => {
+    setQr(null);
+    if (!code) return;
+    let live = true;
+    void qrImage(linkUrl(code)).then((src) => live && setQr(src));
+    return () => {
+      live = false;
+    };
+  }, [code]);
 
   const ask = async () => {
     setBusy(true);
@@ -48,10 +61,15 @@ export function PartnerLinkCard({ partnerKind, partnerId }: { readonly partnerKi
           <p className="num text-sm text-ink-3">
             {L.partnerInviteExpires} {formatDate(invite.expiresAt)}
           </p>
+          {qr && (
+            <img src={qr} alt={L.partnerInviteQrAlt} width={200} height={200} className="h-auto w-full max-w-[200px] rounded-lg" />
+          )}
           {typeof navigator !== 'undefined' && 'share' in navigator && (
             <Button
               onClick={() =>
-                void navigator.share({ text: `${L.partnerInviteShareText} ${formatLinkCode(invite.code)}` }).catch(() => {})
+                void navigator
+                  .share({ text: `${L.partnerInviteShareText} ${formatLinkCode(invite.code)}`, url: linkUrl(invite.code) })
+                  .catch(() => {})
               }
             >
               {L.partnerInviteShare}

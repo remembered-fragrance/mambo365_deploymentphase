@@ -11,9 +11,16 @@ import { L } from '@/i18n/labels';
  * Ô "Nhập mã kết nối". Nhập đúng mã vựa đưa chính là bấm đồng ý — kết nối `active` ngay.
  * Gõ kiểu gì cũng được (`k7m2-qx9p`); máy chủ chuẩn hoá và báo nếu sai hình dạng.
  */
-export function ClaimCodeCard({ onClaimed }: { readonly onClaimed: () => void }) {
+export function ClaimCodeCard({
+  onClaimed,
+  initialCode = '',
+}: {
+  readonly onClaimed: () => void;
+  /** Mã đọc từ QR (`/ket-noi?ma=…`): điền sẵn, người dùng vẫn tự bấm "Kết nối". */
+  readonly initialCode?: string;
+}) {
   const toast = useToast();
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(initialCode.toUpperCase());
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
 

@@ -37,6 +37,7 @@ const NotificationsPage = lazy(() =>
 const MembersPage = lazy(() => import('@/features/org/MembersPage').then((m) => ({ default: m.MembersPage })));
 const BranchesPage = lazy(() => import('@/features/org/BranchesPage').then((m) => ({ default: m.BranchesPage })));
 const OrgReportPage = lazy(() => import('@/features/org/OrgReportPage').then((m) => ({ default: m.OrgReportPage })));
+const ConnectPage = lazy(() => import('@/features/farmer/ConnectPage').then((m) => ({ default: m.ConnectPage })));
 const ReceiptsPage = lazy(() =>
   import('@/features/receipts/ReceiptsPage').then((m) => ({ default: m.ReceiptsPage })),
 );
@@ -141,6 +142,7 @@ export function App() {
                         <Route path={ROUTES.members} element={<Gated route={ROUTES.members}><MembersPage /></Gated>} />
                         <Route path={ROUTES.branches} element={<Gated route={ROUTES.branches}><BranchesPage /></Gated>} />
                         <Route path={ROUTES.orgReport} element={<Gated route={ROUTES.orgReport}><OrgReportPage /></Gated>} />
+                        <Route path={ROUTES.connect} element={<Gated route={ROUTES.connect}><ConnectPage /></Gated>} />
                         <Route path={ROUTES.more} element={<MorePage />} />
                         <Route path="*" element={<NotFoundPage />} />
                       </Routes>
