@@ -67,6 +67,7 @@ export const ROLE_LABELS = {
   linkClaimed: 'Đã kết nối với',
   linkCodeInvalid: 'Mã không đúng hoặc đã hết hạn, xin vựa mã mới',
   linkCodeShape: 'Mã gồm 8 chữ và số, không có số 0, 1 và chữ O, I, L',
+  linkCodeOwn: 'Đây là mã do chính sổ của bác cấp — đưa mã này cho người được mời nhập, bác không nhập.',
   linkRateLimited: 'Thử sai nhiều quá, đợi một phút rồi nhập lại',
   linkRequired: 'Cần kết nối trước',
   linkOffline: 'Chưa có mạng — việc này cần mạng',

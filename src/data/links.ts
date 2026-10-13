@@ -5,7 +5,7 @@
  * rẽ nhánh theo `code`, không theo `message` của máy chủ.
  */
 
-import type { LinkedBalanceItem, LinkedReceiptsResult, LinkSummary, PartnerKind } from '@mambo/contracts';
+import { LINK_CODE_ALPHABET, LINK_CODE_LENGTH, type LinkedBalanceItem, type LinkedReceiptsResult, type LinkSummary, type PartnerKind } from '@mambo/contracts';
 import { ApiError } from '@mambo/sdk';
 import { L } from '@/i18n/labels';
 import { api } from './client';
@@ -31,6 +31,17 @@ export const linkErrorMessage = (err: unknown, notFound: string = L.linkFailed):
       return err.requestId ? `${L.linkFailed} (id: ${err.requestId})` : L.linkFailed;
   }
 };
+
+const CODE_SHAPE = new RegExp(`^[${LINK_CODE_ALPHABET}]{${LINK_CODE_LENGTH}}$`);
+
+/**
+ * Lỗi khi nhập mã kết nối. Máy chủ báo sai hình dạng và "mã của chính sổ này" bằng cùng một lỗi
+ * (`fields.code`) — không rẽ theo `message`: mã đúng hình dạng mà vẫn bị báo thì chỉ còn lý do thứ hai.
+ */
+export const claimErrorMessage = (err: unknown, code: string): string =>
+  err instanceof ApiError && err.code === 'VALIDATION_FAILED' && CODE_SHAPE.test(code.toUpperCase().replace(/[\s-]/g, ''))
+    ? L.linkCodeOwn
+    : linkErrorMessage(err, L.linkCodeInvalid);
 
 export const listLinks = async (): Promise<readonly LinkSummary[]> => (await api.links.list()).links;
 

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
-import { claimLinkCode, linkErrorMessage } from '@/data/hooks/useLinked';
+import { claimErrorMessage, claimLinkCode } from '@/data/hooks/useLinked';
 import { LINK_CODE_LENGTH } from '@mambo/contracts';
 import { L } from '@/i18n/labels';
 
@@ -35,7 +35,7 @@ export function ClaimCodeCard({
       toast({ message: `${L.linkClaimed} ${link.counterpart?.name ?? ''}`.trim() });
       onClaimed();
     } catch (err) {
-      setError(linkErrorMessage(err, L.linkCodeInvalid));
+      setError(claimErrorMessage(err, compact));
     } finally {
       setBusy(false);
     }
