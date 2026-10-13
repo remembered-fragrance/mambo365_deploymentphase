@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { Permission } from '@mambo/contracts';
+import type { OrderSummary, Permission } from '@mambo/contracts';
 import { orderActions } from '@/features/orders/orderActions';
+import { pickableOrders } from '@/features/receipt/OrderPicker';
 
 const all = () => true;
 const only = (...ps: Permission[]) => (p: Permission) => ps.includes(p);
@@ -39,5 +40,26 @@ describe('orderActions — bảng "Ai làm gì" FRONTEND §5.8', () => {
   it('DN staff (không có order:respond): không nhận, không huỷ đơn người khác gửi tới', () => {
     const a = orderActions({ status: 'submitted', role: 'buyer', createdByMe: false }, only('order:create'));
     expect(a).toEqual({ accept: false, reject: false, schedule: false, cancel: false });
+  });
+});
+
+describe('pickableOrders — ô "Theo đơn"', () => {
+  const order = (status: OrderSummary['status'], role: OrderSummary['role']) =>
+    ({ id: `${status}-${role}`, status, role }) as OrderSummary;
+  const orders = [
+    order('submitted', 'buyer'),
+    order('accepted', 'buyer'),
+    order('scheduled', 'buyer'),
+    order('scheduled', 'seller'),
+    order('fulfilled', 'buyer'),
+    order('cancelled', 'buyer'),
+  ];
+
+  it('phiếu mua chỉ gắn đơn mình MUA đã nhận / đã hẹn', () => {
+    expect(pickableOrders(orders, 'purchase').map((o) => o.id)).toEqual(['accepted-buyer', 'scheduled-buyer']);
+  });
+
+  it('phiếu bán chỉ gắn đơn mình BÁN', () => {
+    expect(pickableOrders(orders, 'sale').map((o) => o.id)).toEqual(['scheduled-seller']);
   });
 });

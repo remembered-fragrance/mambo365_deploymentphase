@@ -24,6 +24,8 @@ export interface DraftReceiptState {
   readonly adjustments: readonly PriceAdjustment[];
   readonly note: string;
   readonly attachmentIds: readonly string[];
+  /** Phiếu lập theo đơn (BE5): đồng bộ lên thì đơn tự sang "Đã cân xong". */
+  readonly orderId?: string;
   readonly linesTotal: number;
   readonly adjustmentTotal: number;
   readonly finalTotal: number;
@@ -37,6 +39,7 @@ export interface DraftReceiptState {
   setAdjustments: (next: readonly PriceAdjustment[]) => void;
   setNote: (note: string) => void;
   setAttachmentIds: (ids: readonly string[]) => void;
+  setOrderId: (orderId: string | undefined) => void;
   /** `dueDate` chỉ có nghĩa khi phiếu còn nợ — xem `PayPartDialog`. */
   finish: (amountPaid: number, dueDate?: string) => Transaction | null;
   discard: () => void;
@@ -58,6 +61,7 @@ export function useDraftReceipt(
   const [adjustments, setAdjustments] = useState<readonly PriceAdjustment[]>([]);
   const [note, setNote] = useState(stored?.note ?? '');
   const [attachmentIds, setAttachmentIds] = useState<readonly string[]>(stored?.attachmentIds ?? []);
+  const [orderId, setOrderId] = useState(stored?.orderId);
   const [saveState, setSaveState] = useState<SaveState>('idle');
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -90,6 +94,7 @@ export function useDraftReceipt(
         amountPaid: 0,
         note: note || undefined,
         attachmentIds: [...attachmentIds],
+        orderId,
       });
       setId(saved.id);
       setSaveState('saved');
@@ -100,7 +105,7 @@ export function useDraftReceipt(
     };
     // `upsertDraft` đổi tham chiếu mỗi lần sổ đổi; đưa vào đây sẽ tự lưu vòng lặp.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, kind, counterpartyId, partyName, lines, note, attachmentIds]);
+  }, [id, kind, counterpartyId, partyName, lines, note, attachmentIds, orderId]);
 
   const mark = useCallback(<T,>(setter: (value: T) => void) => {
     return (value: T) => {
@@ -134,6 +139,7 @@ export function useDraftReceipt(
             : undefined,
         note: note || undefined,
         attachmentIds: attachmentIds.length > 0 ? [...attachmentIds] : undefined,
+        orderId,
       });
 
       if (id) deleteDraft(id);
@@ -150,6 +156,7 @@ export function useDraftReceipt(
       linesTotal,
       note,
       attachmentIds,
+      orderId,
       id,
       deleteDraft,
     ],
@@ -164,6 +171,7 @@ export function useDraftReceipt(
     adjustments,
     note,
     attachmentIds,
+    orderId,
     linesTotal,
     adjustmentTotal,
     finalTotal: linesTotal + adjustmentTotal,
@@ -190,6 +198,7 @@ export function useDraftReceipt(
     setAdjustments: mark(setAdjustments),
     setNote: mark(setNote),
     setAttachmentIds: mark(setAttachmentIds),
+    setOrderId: mark(setOrderId),
     finish,
     discard: () => {
       if (id) deleteDraft(id);

@@ -18,6 +18,7 @@ import { ROUTES } from '../shared/navItems';
 import { CounterpartyPicker } from './CounterpartyPicker';
 import { LineEditor } from './LineEditor';
 import { MoreInfoPanel } from './MoreInfoPanel';
+import { OrderPicker } from './OrderPicker';
 import { PayPartDialog } from './PayPartDialog';
 import { ReceiptSummary } from './ReceiptSummary';
 import { SessionRail } from './SessionRail';
@@ -122,6 +123,14 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
         </aside>
 
         <div className="flex flex-col gap-4 lg:col-span-6">
+          <OrderPicker
+            data={data}
+            kind={kind}
+            orderId={receipt.orderId}
+            onPick={receipt.setOrderId}
+            onCounterparty={receipt.setCounterparty}
+          />
+
           <CounterpartyPicker
             data={data}
             kind={kind}
