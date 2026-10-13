@@ -17,6 +17,7 @@ import * as receipts from '@mambo/core/receiptActions';
 import { emptyData, normalize } from '@mambo/core/normalize';
 import type { AppData } from '@mambo/core/types';
 import { derivedOps } from './derivedOps';
+import { track } from './track';
 import {
   draftToInsert,
   draftToPatch,
@@ -82,6 +83,7 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
       opInsert('transaction', tx.id, transactionToInsert(tx)),
       ...tx.payments.map((p) => opInsert('payment', p.id, paymentToInsert(p, tx.id))),
     ]);
+    track('receipt_created', { kind: tx.kind, lines: tx.lines.length, offline: !navigator.onLine, fromOrder: Boolean(tx.orderId) });
     return tx;
   },
 
@@ -166,6 +168,7 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
     commit(result.data, [
       opInsert('payment', result.payment.id, paymentToInsert(result.payment, txId)),
     ]);
+    track('debt_payment_recorded', { offline: !navigator.onLine });
     return result.payment;
   },
 
@@ -227,6 +230,7 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
     const before = book();
     const result = sheets.importSuppliers(before, rows);
     commit(result.data, derivedOps(before, result.data, uid));
+    track('import_completed', { kind: 'partners', rows: result.added.length });
     return result.added.length;
   },
 
@@ -240,6 +244,7 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
         ...tx.payments.map((p) => opInsert('payment', p.id, paymentToInsert(p, tx.id))),
       ]),
     ]);
+    track('import_completed', { kind: 'receipts', rows: result.added.length });
     return result.added.length;
   },
 });

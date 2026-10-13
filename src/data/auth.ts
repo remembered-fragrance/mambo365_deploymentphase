@@ -25,9 +25,10 @@ import type { Me, MeBootstrapInput, MeProfile, MeProfilePatch } from '@mambo/con
 import { detectIdentifierKind, normalizePhone } from '@mambo/core/identifier';
 import type { UserProfile } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
-import { FeatureUnavailableError } from './capabilities';
 import { api, setCurrentOrg } from './client';
 import { profileFromMe, profileFromRow } from './authProfile';
+import { claimReferral } from './billing';
+import { track } from './track';
 
 export { profileFromMe, profileFromRow };
 
@@ -89,7 +90,19 @@ const signInViaBackend = async (
   }
 };
 
-export const signIn = async (
+export const signIn = async (supabase: SupabaseClient, identifier: string, password: string): Promise<User> => {
+  try {
+    const user = await signInOnce(supabase, identifier, password);
+    track('login_succeeded', { method: detectIdentifierKind(identifier.trim()) });
+    return user;
+  } catch (err) {
+    const reason = err instanceof TypeError ? 'network' : err instanceof Error && err.message === SIGN_IN_ERROR ? 'wrong_credentials' : 'other';
+    track('login_failed', { reason });
+    throw err;
+  }
+};
+
+const signInOnce = async (
   supabase: SupabaseClient,
   identifier: string,
   password: string,
@@ -170,10 +183,6 @@ export const signUp = async (
       ? input.email.trim().toLowerCase()
       : undefined;
 
-  if (input.referralCode?.trim()) {
-    throw new FeatureUnavailableError('Referral');
-  }
-
   /*
    * SĐT là khoá đăng nhập duy nhất ⇒ mỗi số đúng một tài khoản; số đã đăng ký
    * thì Supabase báo trùng. Email thật chỉ đi vào user_metadata.recoveryEmail,
@@ -205,11 +214,17 @@ export const signUp = async (
     throw new Error(PHONE_TAKEN);
   }
 
+  // Mã giới thiệu ghi nhận SAU khi có tài khoản; mã không dùng được thì thôi, không chặn đăng ký.
+  const referral = input.referralCode?.trim();
+  if (referral) await claimReferral(referral).catch(() => false);
+
   return data.user;
 };
 
 export const bootstrap = async (input: MeBootstrapInput): Promise<Me> => {
-  return api.meBootstrap(input);
+  const me = await api.meBootstrap(input);
+  track('sign_up_completed', { orgType: input.orgType });
+  return me;
 };
 
 export const getMe = async (): Promise<Me> => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -8,6 +8,7 @@ import { PRICE_MONTHLY, PRICE_YEARLY, SUPPORT_ZALO } from '@/config';
 import { formatDate, formatVnd } from '@mambo/core/format';
 import type { PaymentIntent } from '@mambo/core/subscription';
 import { useSubscription } from '@/data/hooks/useSubscription';
+import { track } from '@/data/hooks/useTrack';
 import { L } from '@/i18n/labels';
 import { PaymentQrDialog } from './PaymentQrDialog';
 import { PlanComparison } from './PlanComparison';
@@ -24,6 +25,8 @@ export function PlansPage() {
   const [intent, setIntent] = useState<PaymentIntent | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => track('plans_viewed', {}), []);
 
   const paid = intent !== null && intents.some((i) => i.id === intent.id && i.status === 'paid');
 

@@ -10,7 +10,11 @@ const resolveIdentifier = vi.fn();
 vi.mock('@/data/client', () => ({
   api: { resolveIdentifier: (input: unknown) => resolveIdentifier(input) },
   setCurrentOrg: vi.fn(),
+  hasBackend: () => false,
 }));
+
+const claimReferral = vi.hoisted(() => vi.fn());
+vi.mock('@/data/billing', () => ({ claimReferral }));
 
 const { signIn, signUp, SIGN_IN_ERROR } = await import('@/data/auth');
 
@@ -35,6 +39,15 @@ const fakeSupabase = (accounts: Record<string, string>) => {
 beforeEach(() => resolveIdentifier.mockReset());
 
 describe('signUp', () => {
+  it('có mã giới thiệu: vẫn đăng ký được, mã ghi nhận sau; mã hỏng không chặn đăng ký', async () => {
+    claimReferral.mockRejectedValueOnce(new Error('mạng'));
+    const supa = fakeSupabase({});
+    await expect(
+      signUp(supa.client, { name: 'Hùng', phone: '0912345678', password: 'secret12', referralCode: ' ABC123 ' }),
+    ).resolves.toMatchObject({ id: INTERNAL });
+    expect(claimReferral).toHaveBeenCalledWith('ABC123');
+  });
+
   it('có cả SĐT và email → khoá vẫn là email nội bộ, email thật vào user_metadata.recoveryEmail', async () => {
     const supa = fakeSupabase({});
     await signUp(supa.client, { name: 'Hùng', phone: '0912 345 678', email: 'Hung@Gmail.com', password: 'secret12' });

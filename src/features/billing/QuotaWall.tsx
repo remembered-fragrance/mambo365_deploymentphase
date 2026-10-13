@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Card } from '@/components/ui/Card';
+import { track } from '@/data/hooks/useTrack';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
 import { PlanComparison } from './PlanComparison';
@@ -22,6 +24,7 @@ interface Props {
  * đang lo: phiếu đang cân dở không mất, và sang tháng là đếm lại từ đầu.
  */
 export function QuotaWall({ used, limit }: Props) {
+  useEffect(() => track('quota_wall_shown', { feature: 'other' }), []);
   return (
     <PageContainer width="content">
       <Card title={L.quotaWallTitle}>

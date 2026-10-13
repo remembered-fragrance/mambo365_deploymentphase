@@ -77,7 +77,7 @@ export const LEGAL_LINKS = {
 } as const;
 
 /** Phiên bản và ngày áp dụng của Điều khoản + Chính sách — đổi nội dung thì đổi cả hai. */
-export const LEGAL_VERSION = '2.0';
+export const LEGAL_VERSION = '2.1';
 export const LEGAL_EFFECTIVE_DATE = '13/10/2026';
 
 /**

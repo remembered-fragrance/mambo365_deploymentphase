@@ -12,6 +12,7 @@ import type {
 } from '@mambo/core/subscription';
 import type { PlanPrice, PlanSummary } from '@mambo/contracts';
 import { api } from './client';
+import { track } from './track';
 
 export const subscriptionFromPlan = (plan: PlanSummary | null): Subscription | null => {
   if (!plan) return null;
@@ -54,8 +55,10 @@ export const fetchPaymentIntents = async (): Promise<PaymentIntent[]> => (await 
  * Tạo ý định thanh toán — mã đối soát do MÁY CHỦ sinh. Bấm lại trong 24 giờ với cùng số tháng
  * trả đúng ý định cũ, không sinh thêm mã.
  */
-export const createPaymentIntent = (months: 1 | 12): Promise<PaymentIntent> =>
-  api.billing.createIntent({ months });
+export const createPaymentIntent = async (months: 1 | 12): Promise<PaymentIntent> => {
+  track('checkout_started', { months });
+  return api.billing.createIntent({ months });
+};
 
 /** Nhập mã người mời (một lần). `false` = không dùng được — máy chủ không nói vì sao. */
 export const claimReferral = async (code: string): Promise<boolean> =>
