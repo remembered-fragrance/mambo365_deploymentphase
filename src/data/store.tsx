@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { User } from '@supabase/supabase-js';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { emptyData } from '@/core/normalize';
 import type { AppData, SyncStatus, UserProfile } from '@/core/types';
 import { hasBook, type Feature, type Me, type MeBootstrapInput, type MeMembership } from '@mambo/contracts';
@@ -142,6 +142,17 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     if (selected.current === orgId) return;
     activateOrg(orgId);
   }, [activateOrg]);
+  /**
+   * Vào phiên vừa có (mở app, đăng nhập, đăng ký). `/v1/me` lỗi — Render đang khởi động,
+   * mất mạng — vẫn phải có `user` từ phiên Supabase, không thì cổng giữ nguyên màn đăng
+   * nhập mà không báo gì ("đăng nhập không chuyển trang"); lỗi hiện ở thanh đồng bộ.
+   */
+  const enterSession = useCallback(async (supabase: SupabaseClient, account: User): Promise<void> => {
+    const epoch = sessionEpoch.current;
+    if (await refreshMe()) return;
+    const profile = await auth.loadProfile(supabase, account);
+    if (epoch === sessionEpoch.current) setUser(profile);
+  }, [refreshMe]);
   const bootstrap = useCallback(async (input: MeBootstrapInput): Promise<Me> => {
     const epoch = sessionEpoch.current;
     const result = await auth.bootstrap(input);
@@ -167,13 +178,9 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         return;
       }
       authUser.current = session.user;
-      const meData = await refreshMe();
-      if (!meData) {
-        const profile = await auth.loadProfile(supabase, session.user);
-        if (epoch === sessionEpoch.current) setUser(profile);
-      }
+      await enterSession(supabase, session.user);
     });
-  }, [refreshMe]);
+  }, [enterSession]);
   useEffect(() => {
     if (!activeKey) {
       show(emptyData());
@@ -239,7 +246,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         memberships.current = [];
         setMe(null);
         authUser.current = await auth.signIn(supabase, identifier, password);
-        await refreshMe();
+        await enterSession(supabase, authUser.current);
       },
       signUp: async (input) => {
         const supabase = getSupabase();
@@ -249,7 +256,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         memberships.current = [];
         setMe(null);
         authUser.current = await auth.signUp(supabase, input);
-        await refreshMe();
+        await enterSession(supabase, authUser.current);
       },
       signOut: async () => {
         sessionEpoch.current++;
@@ -296,7 +303,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     [
       activateOrg, data, status, user, me, currentOrgId, currentOrg, orgType,
       userRole, permissions, features, plan, needsBootstrap, bootstrap,
-      selectOrg, refreshMe, activeKey, commit, kickSync, userId, show,
+      selectOrg, refreshMe, enterSession, activeKey, commit, kickSync, userId, show,
     ],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
