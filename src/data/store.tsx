@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { emptyData } from '@/core/normalize';
 import type { AppData, SyncStatus, UserProfile } from '@/core/types';
 import {
@@ -33,6 +34,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const [data, setData] = useState<AppData>(emptyData);
   const [status, setStatus] = useState<SyncStatus>({ loading: true, pendingCount: 0 });
   const latest = useRef(data);
+  /** Tài khoản Supabase của phiên — bù SĐT / email khôi phục mà `/v1/me` chưa trả. */
+  const authUser = useRef<User | null>(null);
   const syncing = useRef(false);
   const selected = useRef<string | null>(null);
   const readyKey = useRef<string | null>(null);
@@ -111,7 +114,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const applyMe = useCallback((result: Me) => {
     memberships.current = result.memberships;
     setMe(result);
-    setUser(auth.profileFromMe(result));
+    setUser(auth.profileFromMe(result, authUser.current));
     const stored = getCurrentOrgId();
     const target = result.memberships.find((m) => m.organization.id === stored) ?? result.memberships[0];
     const orgId = target?.organization.id ?? null;
@@ -164,6 +167,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         setStatus(IDLE_STATUS);
         return;
       }
+      authUser.current = session.user;
       const meData = await refreshMe();
       if (!meData) {
         const profile = await auth.loadProfile(supabase, session.user);
@@ -230,7 +234,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         activateOrg(null);
         memberships.current = [];
         setMe(null);
-        await auth.signIn(supabase, identifier, password);
+        authUser.current = await auth.signIn(supabase, identifier, password);
         await refreshMe();
       },
       signUp: async (input) => {
@@ -240,11 +244,12 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         activateOrg(null);
         memberships.current = [];
         setMe(null);
-        await auth.signUp(supabase, input);
+        authUser.current = await auth.signUp(supabase, input);
         await refreshMe();
       },
       signOut: async () => {
         sessionEpoch.current++;
+        authUser.current = null;
         activateOrg(null);
         memberships.current = [];
         await persistence.current;
