@@ -20,18 +20,22 @@ import { daysLeftText, planLabel, planTone } from './planText';
  * vựa có tiền vào mùa và quen trả một lần cho xong (F §3.1).
  */
 export function PlansPage() {
-  const { plan, intents, loading, startPayment, refresh, billingAvailable } = useSubscription();
+  const { plan, intents, loading, startPayment, refresh, billingAvailable, offer } = useSubscription();
   const [intent, setIntent] = useState<PaymentIntent | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
 
   const paid = intent !== null && intents.some((i) => i.id === intent.id && i.status === 'paid');
 
-  const buy = async (amount: number) => {
+  // Giá máy chủ giữ (đúng số tiền của ý định); config chỉ để vẽ trước khi tải xong.
+  const price = (months: 1 | 12, fallback: number) =>
+    offer?.prices.find((p) => p.months === months)?.amount ?? fallback;
+
+  const buy = async (months: 1 | 12) => {
     setBusy(true);
     setError(undefined);
     try {
-      setIntent(await startPayment(amount));
+      setIntent(await startPayment(months));
     } catch (e) {
       setError(e instanceof Error ? e.message : L.errorTitle);
     } finally {
@@ -54,11 +58,15 @@ export function PlansPage() {
 
         <Card title={L.planUpgrade}>
           <div className="flex flex-col gap-3">
-            {!billingAvailable && <p role="status" className="text-sm text-ink-2">{L.billingUnavailable}</p>}
+            {offer && !offer.selfServe && (
+              <p role="status" className="text-sm text-ink-2">
+                {L.billingContact} {L.supportZalo}: {SUPPORT_ZALO}
+              </p>
+            )}
             <div className="rounded-xl border border-brand p-4">
               <p className="text-sm font-semibold text-ink-2">{L.priceYearly}</p>
               <p className="text-2xl font-extrabold text-ink">
-                {formatVnd(PRICE_YEARLY)}{' '}
+                {formatVnd(price(12, PRICE_YEARLY))}{' '}
                 <span className="text-base font-semibold text-ink-3">{L.pricePerYear}</span>
               </p>
               <p className="mt-1 text-sm text-ink-2">{L.priceYearlyHint}</p>
@@ -68,7 +76,7 @@ export function PlansPage() {
                 block
                 className="mt-3"
                 disabled={!billingAvailable || busy || loading}
-                onClick={() => void buy(PRICE_YEARLY)}
+                onClick={() => void buy(12)}
               >
                 {L.planUpgrade}
               </Button>
@@ -77,14 +85,14 @@ export function PlansPage() {
             <div className="rounded-xl border border-rule p-4">
               <p className="text-sm font-semibold text-ink-2">{L.priceMonthly}</p>
               <p className="text-xl font-bold text-ink">
-                {formatVnd(PRICE_MONTHLY)}{' '}
+                {formatVnd(price(1, PRICE_MONTHLY))}{' '}
                 <span className="text-base font-semibold text-ink-3">{L.pricePerMonth}</span>
               </p>
               <Button
                 block
                 className="mt-3"
                 disabled={!billingAvailable || busy || loading}
-                onClick={() => void buy(PRICE_MONTHLY)}
+                onClick={() => void buy(1)}
               >
                 {L.planUpgrade}
               </Button>

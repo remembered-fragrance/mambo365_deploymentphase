@@ -8,8 +8,7 @@
  */
 
 export const BILLING_LABELS = {
-  billingUnavailable: 'Thanh toán chưa khả dụng trên backend hiện tại.',
-  billingHistoryUnavailable: 'Lịch sử thanh toán chưa khả dụng trên backend hiện tại.',
+  billingContact: 'Gói doanh nghiệp tính theo số chi nhánh và kích hoạt tay — nhắn Zalo hỗ trợ để được báo giá.',
   attachmentsUnavailable: 'Ảnh chứng từ chưa khả dụng trên backend hiện tại.',
   // ─── Bậc gói ──────────────────────────────────────────────────────────────
   planTitle: 'Gói dịch vụ',

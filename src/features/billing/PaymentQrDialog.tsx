@@ -8,7 +8,7 @@
  *
  * Hỏi lại máy chủ theo nhịp thay vì mở kênh realtime: người dùng đang nhìn màn
  * này chờ, mà mở realtime chỉ cho một màn thì phải nuôi thêm một đường kết nối
- * cho cả app. Kéo 5 giây một lần trong lúc mở màn là đủ và bỏ đi thì không sót gì.
+ * cho cả app. Hỏi 10 giây một lần trong lúc mở màn (FRONTEND §5.10: 10–15 giây) là đủ.
  */
 
 import { useEffect, useState } from 'react';
@@ -22,7 +22,7 @@ import { transferContent } from '@mambo/core/transferCode';
 import { L } from '@/i18n/labels';
 import { vietQrImageUrl } from './vietQr';
 
-const POLL_MS = 5_000;
+const POLL_MS = 10_000;
 
 interface Props {
   readonly intent: PaymentIntent | null;

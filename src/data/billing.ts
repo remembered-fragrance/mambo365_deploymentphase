@@ -10,8 +10,7 @@ import type {
   Subscription,
   SubscriptionStatus,
 } from '@mambo/core/subscription';
-import type { PlanSummary } from '@mambo/contracts';
-import { FeatureUnavailableError } from './capabilities';
+import type { PlanPrice, PlanSummary } from '@mambo/contracts';
 import { api } from './client';
 
 export const subscriptionFromPlan = (plan: PlanSummary | null): Subscription | null => {
@@ -36,34 +35,28 @@ export const fetchSubscription = async (
 
 };
 
-/** Lịch sử thanh toán hiện trong màn Tài khoản. BE6 sẽ cung cấp endpoint GET /v1/billing/intents. */
-export const fetchPaymentIntents = async (
-  _supabaseClient: unknown,
-  _userId: string,
-  _limit = 12,
-): Promise<PaymentIntent[]> => {
-  throw new FeatureUnavailableError('Billing history');
+/** Vựa tự mua qua chuyển khoản (`selfServe`) hay doanh nghiệp liên hệ kích hoạt; bảng giá do máy chủ giữ. */
+export interface BillingOffer {
+  readonly selfServe: boolean;
+  readonly prices: readonly PlanPrice[];
+}
+
+/** Cần `billing:manage`. */
+export const fetchBillingOffer = async (): Promise<BillingOffer> => {
+  const { selfServe, prices } = await api.billing.subscription();
+  return { selfServe, prices };
 };
 
-/**
- * Tạo ý định thanh toán và sinh mã đối soát.
- * BE6 sẽ cung cấp endpoint POST /v1/billing/intents.
- */
-export const createPaymentIntent = async (
-  _supabaseClient: unknown,
-  _userId: string,
-  _subscriptionId: string | null,
-  _amount: number,
-): Promise<PaymentIntent> => {
-  throw new FeatureUnavailableError('Billing intents');
-};
+/** Lịch sử chuyển khoản, mới nhất trước (tối đa 12). Cần `billing:manage`. */
+export const fetchPaymentIntents = async (): Promise<PaymentIntent[]> => (await api.billing.intents()).intents;
 
 /**
- * Ghi nhận người mời. BE6 sẽ cung cấp endpoint POST /v1/referrals/claim.
+ * Tạo ý định thanh toán — mã đối soát do MÁY CHỦ sinh. Bấm lại trong 24 giờ với cùng số tháng
+ * trả đúng ý định cũ, không sinh thêm mã.
  */
-export const claimReferral = async (
-  _supabaseClient: unknown,
-  _code: string,
-): Promise<boolean> => {
-  throw new FeatureUnavailableError('Referral');
-};
+export const createPaymentIntent = (months: 1 | 12): Promise<PaymentIntent> =>
+  api.billing.createIntent({ months });
+
+/** Nhập mã người mời (một lần). `false` = không dùng được — máy chủ không nói vì sao. */
+export const claimReferral = async (code: string): Promise<boolean> =>
+  (await api.account.claimReferral({ code })).claimed;
