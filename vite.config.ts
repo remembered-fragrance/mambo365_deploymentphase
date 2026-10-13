@@ -34,6 +34,11 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  server: {
+    // Git Bash trên Windows crash thì để lại `bash.exe.stackdump` ở thư mục đang đứng, file
+    // còn bị khoá ⇒ watcher của Vite gặp EBUSY và tắt cả dev server.
+    watch: { ignored: ['**/*.stackdump'] },
+  },
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts'],
