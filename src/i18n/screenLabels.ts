@@ -124,10 +124,15 @@ export const SCREEN_LABELS = {
   noNotesHint: 'Ghi giá thoả thuận, số xe, lời hẹn — thứ hay quên nhất.',
 
   // ─── Tài khoản ────────────────────────────────────────────────────────────
-  profileOwner: 'Tên chủ vựa',
+  profileOwner: 'Tên của bác',
   profileBusiness: 'Tên vựa',
+  profileBusinessHint: 'Tên vựa / doanh nghiệp chưa sửa được trong app — cần đổi thì nhắn Zalo hỗ trợ.',
+  profileUsername: 'Tên đăng nhập (không bắt buộc)',
   profilePhone: 'Số điện thoại',
-  profileEmail: 'Email',
+  profilePhoneHint: 'Số điện thoại là tài khoản của bác — không đổi ở đây.',
+  profileEmail: 'Email khôi phục',
+  profileEmailHint: 'Đăng nhập bằng email này cũng vào đúng tài khoản. Để trống = bỏ email.',
+  profileSaved: 'Đã lưu hồ sơ',
   emailMissingTitle: 'Chưa có email',
   emailMissingBody: 'Không có email thì mất mật khẩu phải nhờ hỗ trợ. Thêm bây giờ cho chắc.',
   emailMissingLater: 'Để sau',

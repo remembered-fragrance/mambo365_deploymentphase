@@ -66,16 +66,37 @@ export const APP_VERSION = '1.0.0';
 export const SUPPORT_ZALO = '0912345678';
 
 /**
- * Site giới thiệu và pháp lý — deploy riêng từ thư mục `site/`, không phải một
- * route của app. App ở `app.thumua365.vn`, site ở đây.
+ * Ba trang pháp lý & hướng dẫn là route CÔNG KHAI của chính app (đọc được khi
+ * chưa đăng nhập, vừa xoá tài khoản, hay mở từ ô đồng ý lúc đăng ký) — không
+ * phụ thuộc site `thumua365.vn` chưa có. Nội dung: `src/i18n/legal/`.
  */
-export const SITE_URL = 'https://thumua365.vn';
-
 export const LEGAL_LINKS = {
-  terms: `${SITE_URL}/dieu-khoan.html`,
-  privacy: `${SITE_URL}/quyen-rieng-tu.html`,
-  guide: `${SITE_URL}/huong-dan.html`,
+  terms: '/dieu-khoan',
+  privacy: '/quyen-rieng-tu',
+  guide: '/huong-dan',
 } as const;
+
+/** Phiên bản và ngày áp dụng của Điều khoản + Chính sách — đổi nội dung thì đổi cả hai. */
+export const LEGAL_VERSION = '2.0';
+export const LEGAL_EFFECTIVE_DATE = '13/10/2026';
+
+/**
+ * Thông tin chủ thể vận hành — Luật BVDLCN 2025 và Luật TMĐT 2025 bắt buộc công khai.
+ * 🔴 Chỗ điền: thay bằng thông tin thật (Nguyên) trước khi mở cho người dùng thật.
+ * Để `null` thì trang hiện "đang cập nhật" thay vì bịa.
+ */
+export const LEGAL_OPERATOR: {
+  readonly name: string | null;
+  readonly address: string | null;
+  readonly email: string | null;
+} = {
+  name: null,
+  address: null,
+  email: null,
+};
+
+/** Vùng máy chủ của project Supabase (Tài xác nhận). `null` ⇒ "đang cập nhật". */
+export const DATA_REGION: string | null = null;
 
 /** Cách bao nhiêu ngày thì nhắc lại việc bổ sung email lấy lại mật khẩu. */
 export const EMAIL_REMINDER_DAYS = 7;

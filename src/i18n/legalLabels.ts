@@ -1,5 +1,6 @@
 /**
- * Chuỗi của phần pháp lý: đồng ý điều khoản, liên kết ra site, xoá tài khoản.
+ * Chuỗi của phần pháp lý: đồng ý điều khoản, trang pháp lý, xoá tài khoản.
+ * Nội dung dài của Điều khoản / Quyền riêng tư / Hướng dẫn nằm ở `./legal/`.
  *
  * Giọng văn ở đây phải **đúng trước khi hay**. Mỗi câu là một lời hứa đối chiếu
  * được với hệ thống thật: "xoá là xoá hẳn" thì `delete_own_account()` phải xoá
@@ -8,11 +9,15 @@
  */
 
 export const LEGAL_LABELS = {
-  // ─── Liên kết ra site ─────────────────────────────────────────────────────
+  // ─── Trang pháp lý trong app ────────────────────────────────────────────────────
   legalTitle: 'Điều khoản & quyền riêng tư',
   legalTerms: 'Điều khoản sử dụng',
   legalPrivacy: 'Chính sách quyền riêng tư',
   legalGuide: 'Hướng dẫn dùng',
+  legalBackToApp: 'Về app',
+  legalContents: 'Nội dung',
+  legalOtherPages: 'Trang khác',
+  legalSupportZalo: 'Zalo hỗ trợ',
 
   // ─── Đồng ý khi đăng ký ───────────────────────────────────────────────────
   consentPrefix: 'Tôi đồng ý với',

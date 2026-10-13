@@ -2,11 +2,27 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { LEGAL_LINKS } from '@/config';
+import { detectIdentifierKind, normalizePhone } from '@/core/identifier';
 import { useStore } from '@/data/useStore';
 import { useBackend } from '@/data/hooks/useBackend';
 import { L } from '@/i18n/labels';
 
 type Mode = 'signIn' | 'signUp';
+
+/** Lỗi của ô SĐT / email lúc đăng ký — hiện ngay dưới đúng ô đó, không dồn xuống ô mật khẩu. */
+interface SignUpErrors {
+  readonly phone?: string;
+  readonly email?: string;
+}
+
+const validateSignUp = (phone: string, email: string): SignUpErrors => ({
+  phone: !phone.trim() ? L.authPhoneRequired : normalizePhone(phone) ? undefined : L.authPhoneInvalid,
+  email: email.trim() && detectIdentifierKind(email.trim()) !== 'email' ? L.authEmailInvalid : undefined,
+});
+
+/** Lỗi từ tầng dữ liệu nói về SĐT (trùng số, sai số) thì cũng thuộc về ô SĐT. */
+const isPhoneError = (message: string): boolean =>
+  message === L.authPhoneTaken || message === L.authPhoneInvalid;
 
 /**
  * Đăng nhập / đăng ký.
@@ -37,10 +53,16 @@ export function AuthPage() {
   const [password, setPassword] = useState('');
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<SignUpErrors>({});
   const [consentMissing, setConsentMissing] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
+    if (mode === 'signUp') {
+      const invalid = validateSignUp(phone, email);
+      setFieldErrors(invalid);
+      if (invalid.phone || invalid.email) return;
+    }
     if (mode === 'signUp' && !consent) {
       setConsentMissing(true);
       return;
@@ -62,7 +84,9 @@ export function AuthPage() {
         });
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : L.authFailed);
+      const message = e instanceof Error ? e.message : L.authFailed;
+      if (mode === 'signUp' && isPhoneError(message)) setFieldErrors({ phone: message });
+      else setError(message);
     } finally {
       setBusy(false);
     }
@@ -71,6 +95,7 @@ export function AuthPage() {
   const switchMode = () => {
     setMode((current) => (current === 'signIn' ? 'signUp' : 'signIn'));
     setError(undefined);
+    setFieldErrors({});
     setConsentMissing(false);
     setPassword('');
   };
@@ -112,22 +137,31 @@ export function AuthPage() {
             ) : (
               <>
                 <Input
-                  label="Số điện thoại"
+                  label={L.authPhone}
                   value={phone}
-                  hint="Dùng số điện thoại này để đăng nhập."
+                  hint={L.authPhoneHint}
+                  error={fieldErrors.phone}
+                  required
                   inputMode="tel"
                   autoComplete="tel"
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, phone: undefined }));
+                  }}
                 />
 
                 <Input
-                  label="Email (không bắt buộc)"
+                  label={L.authEmailOptional}
                   type="email"
                   value={email}
-                  hint="Có thể dùng email để đăng nhập nếu bác muốn thêm."
+                  hint={L.authEmailOptionalHint}
+                  error={fieldErrors.email}
                   inputMode="email"
                   autoComplete="email"
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                  }}
                 />
               </>
             )}

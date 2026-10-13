@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { formatPhoneVn } from '@/core/identifier';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -7,24 +8,75 @@ import { useToast } from '@/components/ui/Toast';
 import { useEmailReminder } from '@/data/hooks/useEmailReminder';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { changedProfileFields } from './profilePatch';
 
-/** Hồ sơ vựa. Số điện thoại chỉ để xem — nó là khoá đăng nhập, không sửa ở đây. */
+type Field = 'name' | 'username' | 'recoveryEmail';
+type FieldErrors = Partial<Record<Field, string>>;
+
+/** `VALIDATION_FAILED` của API mang `details.fields` = { tên trường: câu lỗi }. */
+const fieldErrorsOf = (e: unknown): FieldErrors => {
+  const fields = (e as { details?: { fields?: unknown } } | null)?.details?.fields;
+  if (!fields || typeof fields !== 'object') return {};
+  const out: FieldErrors = {};
+  for (const key of ['name', 'username', 'recoveryEmail'] as const) {
+    const msg = (fields as Record<string, unknown>)[key];
+    if (typeof msg === 'string') out[key] = msg;
+  }
+  return out;
+};
+
+/**
+ * Hồ sơ người dùng: tên, tên đăng nhập, email khôi phục (`PATCH /v1/me/profile`).
+ * Số điện thoại là khoá đăng nhập; tên vựa là của tổ chức — cả hai chỉ để xem.
+ */
 export function AccountCard() {
-  const { user, updateProfile } = useStore();
+  const { user, currentOrg, updateProfile } = useStore();
   const toast = useToast();
-  const [name, setName] = useState(user?.name ?? '');
-  const [businessName, setBusinessName] = useState(user?.businessName ?? '');
-  const [email, setEmail] = useState(user?.email ?? '');
-  const [error, setError] = useState<string | undefined>();
+  const savedName = user?.name ?? '';
+  const savedUsername = user?.username ?? '';
+  const savedEmail = user?.email ?? '';
+  const [name, setName] = useState(savedName);
+  const [username, setUsername] = useState(savedUsername);
+  const [email, setEmail] = useState(savedEmail);
+  const [edited, setEdited] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState<string | undefined>();
+  const [busy, setBusy] = useState(false);
   const reminder = useEmailReminder(Boolean(user?.email));
+  const businessName = currentOrg?.organization.name ?? user?.businessName ?? '';
+
+  // Tên đăng nhập / email khôi phục về SAU khi màn đã mở (GET /v1/me/profile chạy nền):
+  // chưa gõ gì thì nhận giá trị mới, không thì giữ chữ người dùng đang sửa.
+  useEffect(() => {
+    if (edited) return;
+    setName(savedName);
+    setUsername(savedUsername);
+    setEmail(savedEmail);
+  }, [edited, savedName, savedUsername, savedEmail]);
 
   const save = async () => {
-    setError(undefined);
+    const patch = changedProfileFields(
+      { name: savedName, username: savedUsername, email: savedEmail },
+      { name, username, email },
+    );
+    setErrors({});
+    setFormError(undefined);
+    if (Object.keys(patch).length === 0) {
+      setEdited(false);
+      toast({ message: L.profileSaved });
+      return;
+    }
+    setBusy(true);
     try {
-      await updateProfile({ name, businessName, email });
-      toast({ message: L.save });
+      await updateProfile(patch);
+      setEdited(false);
+      toast({ message: L.profileSaved });
     } catch (e) {
-      setError(e instanceof Error ? e.message : L.errorTitle);
+      const fields = fieldErrorsOf(e);
+      setErrors(fields);
+      if (Object.keys(fields).length === 0) setFormError(e instanceof Error ? e.message : L.errorTitle);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -44,23 +96,61 @@ export function AccountCard() {
           </div>
         )}
 
-        <Input label={L.profileOwner} value={name} onChange={(e) => setName(e.target.value)} />
         <Input
-          label={L.profileBusiness}
-          value={businessName}
-          onChange={(e) => setBusinessName(e.target.value)}
+          label={L.profileOwner}
+          value={name}
+          error={errors.name}
+          maxLength={80}
+          autoComplete="name"
+          onChange={(e) => {
+            setName(e.target.value);
+            setEdited(true);
+          }}
+        />
+        <Input
+          label={L.profileUsername}
+          value={username}
+          hint={L.setupUsernameHint}
+          error={errors.username}
+          maxLength={32}
+          autoCapitalize="none"
+          autoComplete="username"
+          onChange={(e) => {
+            setUsername(e.target.value);
+            setEdited(true);
+          }}
         />
         <Input
           label={L.profileEmail}
+          type="email"
           value={email}
+          hint={L.profileEmailHint}
+          error={errors.recoveryEmail}
           inputMode="email"
-          error={error}
-          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setEdited(true);
+          }}
         />
-        <Input label={L.profilePhone} value={user?.phone ?? '—'} readOnly />
+        <Input
+          label={L.profilePhone}
+          value={user?.phone ? formatPhoneVn(user.phone) : '—'}
+          hint={L.profilePhoneHint}
+          readOnly
+        />
+        {businessName && (
+          <Input label={L.profileBusiness} value={businessName} hint={L.profileBusinessHint} readOnly />
+        )}
 
-        <Button tone="primary" block onClick={save}>
-          {L.save}
+        {formError && (
+          <p role="alert" className="text-sm font-medium text-alert">
+            {formError}
+          </p>
+        )}
+
+        <Button tone="primary" block disabled={busy} onClick={save}>
+          {busy ? L.setupWorking : L.save}
         </Button>
       </div>
     </Card>

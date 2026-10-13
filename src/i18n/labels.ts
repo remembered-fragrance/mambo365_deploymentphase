@@ -8,13 +8,14 @@
  *
  * Luật: không viết chuỗi tiếng Việt thẳng vào JSX. Mọi chữ đi qua đây.
  *
- * `L` gộp từ năm mảnh — một file duy nhất sẽ vượt 300 dòng, mà đó cũng là luật
+ * `L` gộp từ sáu mảnh — một file duy nhất sẽ vượt 300 dòng, mà đó cũng là luật
  * của dự án. Nơi dùng vẫn chỉ có một: `import { L } from '@/i18n/labels'`.
  */
 
 import { BILLING_LABELS } from './billingLabels';
 import { LEGAL_LABELS } from './legalLabels';
 import { ONBOARDING_LABELS } from './onboardingLabels';
+import { ROLE_LABELS } from './roleLabels';
 import { SCREEN_LABELS } from './screenLabels';
 
 const BASE = {
@@ -32,10 +33,14 @@ const BASE = {
   authLoginIdentifierHint: 'Nhập thông tin bác đã dùng để đăng nhập.',
 
   // Đăng ký tách riêng số điện thoại và email để không nhầm hai loại dữ liệu.
-  authPhone: 'Số điện thoại',
-  authPhoneHint: 'Dùng số này để đăng nhập.',
+  authPhone: 'Số điện thoại (bắt buộc)',
+  authPhoneHint: 'Số này là tài khoản của bác — dùng để đăng nhập.',
+  authPhoneRequired: 'Cần số điện thoại để đăng ký. Email chỉ là thêm, không thay được số điện thoại.',
+  authPhoneInvalid: 'Số điện thoại chưa đúng — ví dụ 0912 345 678.',
+  authPhoneTaken: 'Số điện thoại này đã có tài khoản — bác đăng nhập bằng số này nhé',
   authEmailOptional: 'Email (không bắt buộc)',
-  authEmailOptionalHint: 'Thêm email nếu bác muốn đăng nhập bằng email.',
+  authEmailOptionalHint: 'Thêm email để có thêm một cách đăng nhập — vẫn vào cùng tài khoản.',
+  authEmailInvalid: 'Email chưa đúng — ví dụ ten@gmail.com. Không dùng email thì để trống.',
 
   // ─── Đối tác ───────────────────────────────────────────────────────────────
   supplier: 'Người bán',
@@ -249,6 +254,7 @@ export const L = {
   ...ONBOARDING_LABELS,
   ...BILLING_LABELS,
   ...LEGAL_LABELS,
+  ...ROLE_LABELS,
 } as const;
 
 /** Phụ đề giải thích cho các thuật ngữ buộc phải giữ. */

@@ -5,7 +5,8 @@ import { barItem, type NavItem } from './navModel';
 interface BottomNavProps {
   readonly items: readonly NavItem[];
   readonly createLabel: string;
-  readonly onCreate: () => void;
+  /** Không có ⇒ không vẽ nút tạo phiếu (vỏ không có sổ, người không được lập phiếu). */
+  readonly onCreate?: () => void;
 }
 
 /**
@@ -19,16 +20,20 @@ export function BottomNav({ items, createLabel, onCreate }: BottomNavProps) {
         <Slot item={barItem(items, 1)} />
         <Slot item={barItem(items, 2)} />
 
-        <div className="flex justify-center pb-1">
-          <button
-            type="button"
-            onClick={onCreate}
-            aria-label={createLabel}
-            className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full border-4 border-paper bg-brand text-paper shadow-lg"
-          >
-            <PlusIcon className="h-7 w-7" />
-          </button>
-        </div>
+        {onCreate ? (
+          <div className="flex justify-center pb-1">
+            <button
+              type="button"
+              onClick={onCreate}
+              aria-label={createLabel}
+              className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full border-4 border-paper bg-brand text-paper shadow-lg"
+            >
+              <PlusIcon className="h-7 w-7" />
+            </button>
+          </div>
+        ) : (
+          <span />
+        )}
 
         <Slot item={barItem(items, 3)} />
         <Slot item={barItem(items, 4)} />
