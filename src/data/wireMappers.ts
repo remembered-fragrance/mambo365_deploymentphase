@@ -101,6 +101,7 @@ export const transactionToInsert = (tx: Transaction) => ({
     : null,
   attachmentIds: tx.attachmentIds ? [...tx.attachmentIds] : [],
   note: tx.note?.trim() || null,
+  orderId: tx.orderId ?? null,
 });
 
 export const transactionToPatch = (patch: { attachmentIds?: string[]; note?: string }) => {
@@ -140,6 +141,7 @@ export const draftToInsert = (draft: DraftReceipt) => ({
   amountPaid: draft.amountPaid ?? 0,
   note: draft.note?.trim() || null,
   attachmentIds: draft.attachmentIds ? [...draft.attachmentIds] : [],
+  orderId: draft.orderId ?? null,
 });
 
 export const draftToPatch = (patch: Partial<DraftReceipt>) => {
@@ -154,6 +156,7 @@ export const draftToPatch = (patch: Partial<DraftReceipt>) => {
   if (patch.note !== undefined) result.note = patch.note ? patch.note.trim() : null;
   if (patch.attachmentIds !== undefined)
     result.attachmentIds = patch.attachmentIds ? [...patch.attachmentIds] : [];
+  if ('orderId' in patch) result.orderId = patch.orderId ?? null;
   return result;
 };
 

@@ -43,6 +43,9 @@ export const ORDER_LABELS = {
   orderChanged: 'Bên kia vừa đổi đơn — đã tải lại, bác xem rồi làm lại',
   orderMissing: 'Không tìm thấy đơn này',
   orderFulfilledHint: 'Đơn tự chuyển "Đã cân xong" khi vựa lập phiếu theo đơn.',
+  orderPick: 'Theo đơn',
+  orderPickNone: 'Không theo đơn',
+  orderPickHint: 'Chọn đơn đã nhận để phiếu này hoàn thành đơn đó.',
 
   notificationsEmpty: 'Chưa có thông báo nào',
   notificationsReadAll: 'Đánh dấu đã đọc hết',

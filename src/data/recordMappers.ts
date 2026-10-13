@@ -51,6 +51,7 @@ export const transactionFromRecord = (
     adjustments: (rec.adjustments as unknown as Transaction['adjustments']) ?? undefined,
     attachmentIds: rec.attachmentIds.length ? rec.attachmentIds : undefined,
     note: rec.note ?? undefined,
+    orderId: rec.orderId ?? undefined,
     payments: sortedPayments,
     amountPaid,
     syncState: 'synced',
@@ -68,6 +69,7 @@ export const draftFromRecord = (rec: DraftRecord): DraftReceipt => ({
   amountPaid: rec.amountPaid,
   note: rec.note ?? undefined,
   attachmentIds: rec.attachmentIds.length ? rec.attachmentIds : undefined,
+  orderId: rec.orderId ?? undefined,
   createdAt: rec.createdAt,
   updatedAt: rec.updatedAt,
 });
