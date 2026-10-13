@@ -51,10 +51,10 @@ export const useLinkedBalance = (): Loaded<readonly LinkedBalanceItem[]> => {
   return useLoad(currentOrgId ? linkedBalance : null, currentOrgId ?? '');
 };
 
-/** Mọi kết nối của tổ chức đang làm việc, cả hai phía. */
-export const useLinks = (): Loaded<readonly LinkSummary[]> => {
+/** Mọi kết nối của tổ chức đang làm việc, cả hai phía. `enabled` = có quyền xem (người cân của vựa không có → 403). */
+export const useLinks = (enabled = true): Loaded<readonly LinkSummary[]> => {
   const { currentOrgId } = useStore();
-  return useLoad(currentOrgId ? listLinks : null, currentOrgId ?? '');
+  return useLoad(currentOrgId && enabled ? listLinks : null, currentOrgId ?? '');
 };
 
 export interface LinkedReceiptPages {

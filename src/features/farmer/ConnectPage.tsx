@@ -6,7 +6,7 @@ import { ROUTES } from '../shared/navItems';
 import { ClaimCodeCard } from './ClaimCodeCard';
 
 /**
- * Đích của QR kết nối: `/ket-noi?ma=K7M2QX9P`. Chưa đăng nhập thì cổng đăng nhập / "Bác là ai?"
+ * Đích của QR kết nối: `/ket-noi?ma=K7M2QX9P`. Chưa đăng nhập thì cổng đăng nhập / "Bạn là ai?"
  * hiện trước mà vẫn giữ nguyên đường dẫn, xong là tới đây. Mọi vỏ đều có (vựa cũng được doanh
  * nghiệp mời). Không tự kết nối khi mở link — người dùng tự bấm.
  */

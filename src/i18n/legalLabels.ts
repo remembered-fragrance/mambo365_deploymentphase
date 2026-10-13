@@ -38,5 +38,6 @@ export const LEGAL_LABELS = {
   deleteAccountWorking: 'Đang xoá…',
   deleteAccountDone: 'Đã xoá tài khoản',
   deleteAccountHasMembers: 'Tổ chức còn nhân viên — gỡ hết nhân viên ở màn Nhân viên trước rồi xoá.',
+  deleteAccountStillMember: 'Bạn còn làm cho tổ chức khác — nhờ chủ gỡ bạn ra trước rồi mới xoá được tài khoản.',
   deleteAccountReceipts: 'Số phiếu trong sổ sẽ mất:',
 } as const;

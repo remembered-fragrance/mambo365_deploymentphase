@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import type { Column } from '@/components/data/dataViewModel';
 import { PencilIcon, PhoneIcon } from '@/components/ui/icons';
@@ -35,6 +36,8 @@ export const partnerColumns = (
   role: PartyRole,
   onOpen: (party: PartySummary) => void,
   onEdit: (party: PartySummary) => void,
+  /** Có tổ chức trên máy chủ và quyền `partner:manage`: cột Kết nối — mã để đưa tận tay. */
+  linkCell?: (party: PartySummary) => ReactNode,
 ): Column<PartySummary>[] => [
   {
     id: 'name',
@@ -103,6 +106,17 @@ export const partnerColumns = (
     hideBelow: 'xl',
     sortValue: (p) => p.lastDate ?? '',
   },
+  ...(linkCell
+    ? [
+        {
+          id: 'link',
+          header: L.linkColumn,
+          cell: (p: PartySummary) => (p.hasProfile ? linkCell(p) : '—'),
+          align: 'right',
+          mobile: 'badge',
+        } satisfies Column<PartySummary>,
+      ]
+    : []),
   {
     id: 'edit',
     header: '',

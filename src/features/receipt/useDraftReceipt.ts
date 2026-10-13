@@ -200,7 +200,10 @@ export function useDraftReceipt(
     setAttachmentIds: mark(setAttachmentIds),
     setOrderId: mark(setOrderId),
     finish,
+    // Như `finish`: tắt tự lưu trước, kẻo lần lưu đang chờ dựng lại đúng cái nháp vừa xoá.
     discard: () => {
+      finished.current = true;
+      if (timer.current) clearTimeout(timer.current);
       if (id) deleteDraft(id);
     },
   };

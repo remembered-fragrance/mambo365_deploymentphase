@@ -50,4 +50,11 @@ describe('xoá tài khoản', () => {
     await expect(deleteAccount(['org-me'])).rejects.toThrow(L.deleteAccountHasMembers);
     expect(await (await openLocalDb()).getAllKeys('books')).toEqual(['org-me']);
   });
+
+  it('còn làm thuê ở tổ chức khác: báo "nhờ chủ gỡ ra", KHÔNG dọn gì trên máy', async () => {
+    del.mockRejectedValue(new ApiError('VALIDATION_FAILED', 422, 'x', undefined, { reason: 'STILL_MEMBER', organizations: [] }));
+    await seed('org-me', 'photo-me');
+    await expect(deleteAccount(['org-me'])).rejects.toThrow(L.deleteAccountStillMember);
+    expect(await (await openLocalDb()).getAllKeys('books')).toEqual(['org-me']);
+  });
 });

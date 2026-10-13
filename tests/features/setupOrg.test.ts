@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { asksOrgName, orgNameFor } from '@/features/onboarding/setupOrg';
 
-describe('bước "Bác là ai?" — tên tổ chức', () => {
+describe('bước "Bạn là ai?" — tên tổ chức', () => {
   it('chỉ thương lái và doanh nghiệp mới có ô tên tổ chức', () => {
     expect(asksOrgName(null)).toBe(false);
     expect(asksOrgName('farmer')).toBe(false);

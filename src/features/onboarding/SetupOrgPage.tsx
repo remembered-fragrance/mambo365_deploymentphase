@@ -28,7 +28,7 @@ const fieldErrorsOf = (e: unknown): FieldErrors => {
 };
 
 /**
- * Bước "Bác là ai?" (FRONTEND.md §5.1): ngay sau đăng ký, `memberships` rỗng.
+ * Bước "Bạn là ai?" (FRONTEND.md §5.1): ngay sau đăng ký, `memberships` rỗng.
  * Một lần `bootstrap` tạo hồ sơ (kèm SĐT + email khôi phục), tổ chức, vai trò
  * `owner`, gói dùng thử (vựa, DN). Form là state cục bộ ⇒ xoá sạch khi tạo xong
  * hoặc đăng xuất (component rời màn) — không để người sau thừa hưởng lựa chọn.

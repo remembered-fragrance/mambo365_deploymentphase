@@ -395,7 +395,7 @@ thật:
 | Câu trên trang pháp lý | Thứ phải xây để câu đó thành thật |
 |---|---|
 | "Bấm Xoá tài khoản là xoá hẳn, kể cả ảnh chứng từ" | `delete_own_account()` + `data/account.ts` |
-| "Quản trị viên chỉ chạm dữ liệu khi bác yêu cầu, có ghi nhận" | Bảng `admin_access_log`, hai script quản trị bắt buộc khai tên người duyệt |
+| "Quản trị viên chỉ chạm dữ liệu khi bạn yêu cầu, có ghi nhận" | Bảng `admin_access_log`, hai script quản trị bắt buộc khai tên người duyệt |
 | "Không có công cụ thống kê, không tải gì từ máy chủ ngoài" | `npm run site:check` chặn `<script>` và mọi tài nguyên ngoài |
 
 ### Ba quyết định đáng ghi
@@ -440,7 +440,7 @@ mỗi lần thêm địa chỉ ngoài phải chạy lại phép grep đó và s�
 | Ô đồng ý điều khoản | **Không tick sẵn**; không tick mà bấm đăng ký → hiện lỗi, không đăng ký |
 | Hai liên kết trong ô đồng ý | Đúng địa chỉ site, mở tab mới |
 | Nút xoá tài khoản: để trống · gõ sai tên vựa · gõ đúng | Mờ · mờ kèm "Chưa khớp tên vựa" · sáng lên |
-| Vị trí thẻ xoá tài khoản | Nằm **sau** thẻ "Dữ liệu của bác" — đường đi ngang qua nút "Lưu ra file" |
+| Vị trí thẻ xoá tài khoản | Nằm **sau** thẻ "Dữ liệu của bạn" — đường đi ngang qua nút "Lưu ra file" |
 | Bốn trang site ở 375px và 320px | Không trang nào cuộn ngang; bảng dài cuộn trong khung của nó |
 | Liên kết giữa bốn trang | Không liên kết nào gãy |
 | `site:check` | Chặn đúng 10 chỗ còn `ĐIỀN:`; giá, số Zalo, không-script đều qua |
@@ -469,6 +469,24 @@ theo trách nhiệm của file.
   Mục "Chuyện nhỏ mà phải sửa" của giai đoạn E giữ nguyên như nhật ký.
 - Bảng chỉ số dưới đây còn ba số; số đo cũ ghi ở chú thích dưới bảng.
 - Repo backend bỏ chỉ số cùng loại cùng ngày (Thumua365_BE#19).
+
+---
+
+## Logo · mã kết nối dễ thấy · màn Nhân viên dạng dashboard · 14/10/2026
+
+Cần `@mambo/*` **0.13.0** (`api.reports.members`) — `package.json` đã trỏ release `v0.13.0`.
+
+- **Logo**: `public/logo.svg` (bản gốc `Logo/logo.svg` ngoài repo, thêm `viewBox` để co giãn), `favicon.svg` là
+  cùng file. PNG dựng lại từ SVG: `icon-192`, `icon-512` (nền trong), `icon-512-maskable` (nền trắng, logo
+  trong vùng an toàn 70%), `apple-touch-icon` (180px, nền trắng — iOS tô đen nền trong). Manifest tách `any` /
+  `maskable` thay vì một icon `any maskable`. `<Logo>` ở sidebar, màn đăng nhập, trang pháp lý.
+- **Mã kết nối**: vẫn mỗi nông hộ một mã (không có mã chung của vựa — nhóm chọn giữ mô hình cũ). Cột "Kết nối"
+  trên danh sách Nông hộ / Người mua: đã kết nối · mã đang chờ · nút "Lấy mã". Thẻ "Mã kết nối cho nông hộ"
+  trên Tổng quan. Danh sách và thẻ chi tiết dùng chung một `useLinks` nên lấy mã ở đâu cũng thấy ngay.
+- **Nhân viên**: chọn tháng, lọc chi nhánh, bốn số tổng, mỗi người số phiếu / tiền mua / lần ghi trả / lần làm
+  gần nhất. Thêm người chuyển vào hộp thoại. Thẻ "Nhân viên hôm nay" trên Tổng quan của chủ.
+- **Người làm không tự rời** (BE 0.13.0): bỏ nút "Rời tổ chức" của thẻ Tổ chức (#26 thêm theo BE 0.12.0) và
+  `leaveOrg`; thẻ chỉ nhắc "nhờ chủ gỡ bạn ra". `deleteAccount` bắt `STILL_MEMBER` → `L.deleteAccountStillMember`.
 
 ---
 

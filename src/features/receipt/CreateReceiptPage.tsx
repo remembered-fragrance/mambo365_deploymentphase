@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
-import { PlusIcon } from '@/components/ui/icons';
+import { PlusIcon, TrashIcon } from '@/components/ui/icons';
 import { formatVnd } from '@mambo/core/format';
 import { newId } from '@mambo/core/id';
 import type { TransactionKind } from '@mambo/core/types';
@@ -16,6 +17,7 @@ import { HelpButton } from '../help/HelpButton';
 import { FirstReceiptCoach } from '../onboarding/FirstReceiptCoach';
 import { ROUTES } from '../shared/navItems';
 import { CounterpartyPicker } from './CounterpartyPicker';
+import { discardConsequence, nextSession } from './draftSessions';
 import { LineEditor } from './LineEditor';
 import { MoreInfoPanel } from './MoreInfoPanel';
 import { OrderPicker } from './OrderPicker';
@@ -57,6 +59,7 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   const toast = useToast();
   const receipt = useDraftReceipt(draftId, kind);
   const [payPartOpen, setPayPartOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
 
   const sessions = data.drafts.filter((d) => d.status === 'draft' && (d.kind ?? 'purchase') === kind);
 
@@ -73,9 +76,19 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
     if (!tx) return;
     setPayPartOpen(false);
     toast({ message: `${L.total}: ${formatVnd(amountPaid)} · ${tx.supplierName}` });
-    // Quay về đúng thanh chip: còn khách đang cân thì mở khách kế, hết thì phiếu mới.
-    const remaining = sessions.filter((d) => d.id !== receipt.draftId);
-    goToDraft(remaining[0]?.id);
+    goToDraft(nextSession(sessions, receipt.draftId));
+  };
+
+  /**
+   * Khách bỏ đi, cân nhầm, bấm "Khách mới" thừa — nháp không chốt được thì phải xoá được, không
+   * thì nằm mãi trên thanh "Đang cân". Không có "Hoàn tác": nháp đã xoá thì máy khác cũng xoá theo.
+   */
+  const discard = () => {
+    const name = receipt.partyName;
+    setDiscardOpen(false);
+    receipt.discard();
+    toast({ message: `${L.draftDiscarded} · ${name.trim() || L.walkIn}`, tone: 'alert' });
+    goToDraft(nextSession(sessions, receipt.draftId));
   };
 
   /**
@@ -163,6 +176,15 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
             onNoteChange={receipt.setNote}
             onAttachmentsChange={receipt.setAttachmentIds}
           />
+
+          {/* Cuối cột, xa hai nút chốt ở thanh tổng tiền — tay đeo găng không chạm nhầm. Nháp
+              chưa lưu lần nào thì chưa có gì để xoá: rời màn là nó mất. */}
+          {receipt.draftId && (
+            <Button tone="danger" block onClick={() => setDiscardOpen(true)}>
+              <TrashIcon className="h-4 w-4" />
+              {L.discardDraft}
+            </Button>
+          )}
         </div>
 
         <div className="lg:col-span-3">
@@ -181,6 +203,15 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
         total={receipt.finalTotal}
         onConfirm={finish}
         onCancel={() => setPayPartOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={discardOpen}
+        title={L.discardDraftTitle}
+        consequence={discardConsequence(receipt.partyName, receipt.finalTotal)}
+        confirmLabel={L.del}
+        onConfirm={discard}
+        onCancel={() => setDiscardOpen(false)}
       />
     </PageContainer>
   );

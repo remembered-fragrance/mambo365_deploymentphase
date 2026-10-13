@@ -15,7 +15,7 @@ import { L } from '@/i18n/labels';
  * là việc tay làm được trong nửa giây; ở đây người dùng phải **gõ lại tên vựa
  * của mình**. Đó là thao tác duy nhất trong app không thể làm nhầm.
  *
- * Nút nằm dưới cùng màn Tài khoản, sau thẻ "Dữ liệu của bác" — thứ tự có chủ ý:
+ * Nút nằm dưới cùng màn Tài khoản, sau thẻ "Dữ liệu của bạn" — thứ tự có chủ ý:
  * đường ra khỏi đây đi ngang qua nút "Lưu ra file".
  */
 export function DeleteAccountCard() {

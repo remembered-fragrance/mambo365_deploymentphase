@@ -20,7 +20,7 @@ export const TERMS: LegalDoc = {
   title: 'Điều khoản sử dụng',
   meta: `Phiên bản ${LEGAL_VERSION} · Áp dụng từ ${LEGAL_EFFECTIVE_DATE}`,
   intro:
-    'Bấm "Đăng ký" (sau khi tự đánh dấu ô đồng ý) nghĩa là bác đồng ý với các điều dưới đây. Viết ngắn, nói thẳng, đọc hết trong khoảng năm phút.',
+    'Bấm "Đăng ký" (sau khi tự đánh dấu ô đồng ý) nghĩa là bạn đồng ý với các điều dưới đây. Viết ngắn, nói thẳng, đọc hết trong khoảng năm phút.',
   sections: [
     {
       id: 'gioi-thieu',
@@ -34,9 +34,9 @@ export const TERMS: LegalDoc = {
           ['Doanh nghiệp', 'Như vựa, thêm nhiều chi nhánh và phân quyền quản lý, nhân viên.'],
         ),
         note(
-          'Phiếu, biên nhận và báo cáo trong app KHÔNG phải chứng từ kế toán hay hoá đơn theo quy định về hoá đơn, chứng từ, và không thay thế tư vấn thuế. Số liệu do app cộng từ chính phiếu bác nhập — đưa kế toán xem trước khi dùng để kê khai.',
+          'Phiếu, biên nhận và báo cáo trong app KHÔNG phải chứng từ kế toán hay hoá đơn theo quy định về hoá đơn, chứng từ, và không thay thế tư vấn thuế. Số liệu do app cộng từ chính phiếu bạn nhập — đưa kế toán xem trước khi dùng để kê khai.',
         ),
-        p('THUMUA365 không phải sàn giao dịch: không đứng giữa mua bán, không giữ tiền hàng, không định giá thay bác.'),
+        p('THUMUA365 không phải sàn giao dịch: không đứng giữa mua bán, không giữ tiền hàng, không định giá thay bạn.'),
       ],
     },
     {
@@ -45,9 +45,9 @@ export const TERMS: LegalDoc = {
       blocks: [
         list(
           'Số điện thoại là khoá đăng nhập — mỗi số chỉ có một tài khoản. Email (nếu khai) là email khôi phục và cũng đăng nhập được, vẫn vào đúng tài khoản đó.',
-          'Bác phải đủ 18 tuổi, khai thông tin đúng và tự giữ mật khẩu. Mọi thao tác bằng tài khoản của bác được coi là do bác thực hiện, trừ khi bác đã báo mất tài khoản cho chúng tôi.',
+          'Bạn phải đủ 18 tuổi, khai thông tin đúng và tự giữ mật khẩu. Mọi thao tác bằng tài khoản của bạn được coi là do bạn thực hiện, trừ khi bạn đã báo mất tài khoản cho chúng tôi.',
           'Thấy dấu hiệu lạ (đăng nhập lạ, mất máy) thì đổi mật khẩu ngay và nhắn Zalo hỗ trợ.',
-          'Quên mật khẩu: nhắn Zalo hỗ trợ. Chúng tôi gọi lại đúng số đã đăng ký và hỏi vài thông tin về sổ trước khi đặt lại — hỏi kỹ vì ai đặt lại được mật khẩu là đọc được sổ tiền của bác.',
+          'Quên mật khẩu: nhắn Zalo hỗ trợ. Chúng tôi gọi lại đúng số đã đăng ký và hỏi vài thông tin về sổ trước khi đặt lại — hỏi kỹ vì ai đặt lại được mật khẩu là đọc được sổ tiền của bạn.',
         ),
       ],
     },
@@ -77,25 +77,25 @@ export const TERMS: LegalDoc = {
     },
     {
       id: 'du-lieu',
-      title: '5. Dữ liệu là của bác',
+      title: '5. Dữ liệu là của bạn',
       blocks: [
         list(
-          'Sổ, phiếu, danh bạ, ảnh chứng từ bác nhập vào thuộc về bác (hoặc tổ chức của bác). Chúng tôi chỉ lưu trữ và xử lý để cung cấp đúng các chức năng của app.',
-          'Bác xuất được toàn bộ sổ ra file bất cứ lúc nào, kể cả khi gói đã hết hạn.',
+          'Sổ, phiếu, danh bạ, ảnh chứng từ bạn nhập vào thuộc về bạn (hoặc tổ chức của bạn). Chúng tôi chỉ lưu trữ và xử lý để cung cấp đúng các chức năng của app.',
+          'Bạn xuất được toàn bộ sổ ra file bất cứ lúc nào, kể cả khi gói đã hết hạn.',
           'Việc thu thập và bảo vệ dữ liệu cá nhân nói chi tiết trong Chính sách quyền riêng tư — là một phần của điều khoản này.',
         ),
       ],
     },
     {
       id: 'nguoi-thu-ba',
-      title: '6. Dữ liệu của người thứ ba do bác nhập',
+      title: '6. Dữ liệu của người thứ ba do bạn nhập',
       blocks: [
         p(
-          'Tên, số điện thoại, khu vực, số tiền mua bán và công nợ của nông hộ, người mua là dữ liệu cá nhân của họ. Với phần dữ liệu này, bác (tổ chức của bác) là bên quyết định mục đích xử lý; THUMUA365 là bên xử lý theo yêu cầu của bác.',
+          'Tên, số điện thoại, khu vực, số tiền mua bán và công nợ của nông hộ, người mua là dữ liệu cá nhân của họ. Với phần dữ liệu này, bạn (tổ chức của bạn) là bên quyết định mục đích xử lý; THUMUA365 là bên xử lý theo yêu cầu của bạn.',
         ),
         list(
-          'Chỉ nhập thông tin cần cho việc mua bán, và cho họ biết bác ghi sổ bằng app.',
-          'Họ yêu cầu xem, sửa hay xoá thông tin của mình thì bác làm ngay trong app; cần hỗ trợ thì nhắn Zalo.',
+          'Chỉ nhập thông tin cần cho việc mua bán, và cho họ biết bạn ghi sổ bằng app.',
+          'Họ yêu cầu xem, sửa hay xoá thông tin của mình thì bạn làm ngay trong app; cần hỗ trợ thì nhắn Zalo.',
         ),
       ],
     },
@@ -108,11 +108,11 @@ export const TERMS: LegalDoc = {
           ['Nông dân', 'Miễn phí.'],
           ['Dùng thử (vựa, doanh nghiệp)', `${TRIAL_DAYS} ngày đầy đủ tính năng, tính từ lúc tạo vựa / doanh nghiệp. Không cần trả trước.`],
           ['Gói miễn phí', `Sau dùng thử: ${FREE_RECEIPTS_PER_MONTH} phiếu mỗi tháng.`],
-          ['Gói trả phí', `${PRICE_TEXT}. Giá đã hiện trong app trước khi bác chuyển tiền.`],
+          ['Gói trả phí', `${PRICE_TEXT}. Giá đã hiện trong app trước khi bạn chuyển tiền.`],
           ['Cách trả', 'Chuyển khoản ngân hàng theo mã QR trong app, kèm đúng nội dung app đưa sẵn.'],
         ),
         list(
-          'Không tự động gia hạn, không lưu thẻ — hết hạn thì bác chủ động chuyển tiếp, không chuyển cũng không bị trừ gì.',
+          'Không tự động gia hạn, không lưu thẻ — hết hạn thì bạn chủ động chuyển tiếp, không chuyển cũng không bị trừ gì.',
           'Chuyển sai nội dung: nhắn Zalo kèm ảnh giao dịch, chúng tôi đối soát và mở gói bằng tay trong ngày làm việc.',
           'Biên nhận thanh toán trong app xác nhận đã nhận tiền, không phải hoá đơn giá trị gia tăng.',
         ),
@@ -122,15 +122,15 @@ export const TERMS: LegalDoc = {
       id: 'hoan-tien',
       title: '8. Hoàn tiền',
       blocks: [
-        p(`Hoàn 100% nếu bác yêu cầu trong ${REFUND_DAYS} ngày kể từ lần thanh toán, không cần lý do — nhắn Zalo là được. Tiền hoàn về đúng tài khoản đã chuyển.`),
-        p('Khi chúng tôi thay đổi điều khoản theo hướng bất lợi mà bác không đồng ý, hoặc chúng tôi ngừng dịch vụ, phần thời gian chưa dùng được hoàn theo tỷ lệ.'),
+        p(`Hoàn 100% nếu bạn yêu cầu trong ${REFUND_DAYS} ngày kể từ lần thanh toán, không cần lý do — nhắn Zalo là được. Tiền hoàn về đúng tài khoản đã chuyển.`),
+        p('Khi chúng tôi thay đổi điều khoản theo hướng bất lợi mà bạn không đồng ý, hoặc chúng tôi ngừng dịch vụ, phần thời gian chưa dùng được hoàn theo tỷ lệ.'),
       ],
     },
     {
       id: 'het-han',
       title: '9. Khi hết hạn gói',
       blocks: [
-        p(`Không khoá dữ liệu. Hết hạn, app còn đồng bộ thêm ${GRACE_DAYS} ngày kèm nhắc nhở, rồi chuyển về gói miễn phí. Bác vẫn xem, tìm và xuất được toàn bộ sổ như thường.`),
+        p(`Không khoá dữ liệu. Hết hạn, app còn đồng bộ thêm ${GRACE_DAYS} ngày kèm nhắc nhở, rồi chuyển về gói miễn phí. Bạn vẫn xem, tìm và xuất được toàn bộ sổ như thường.`),
       ],
     },
     {
@@ -143,22 +143,22 @@ export const TERMS: LegalDoc = {
           'Bán lại, cho thuê tài khoản; chia sẻ mật khẩu thay vì thêm nhân viên đúng cách.',
           'Dò quét lỗ hổng, cố lấy dữ liệu của tổ chức khác, làm quá tải hoặc can thiệp vào hệ thống.',
         ),
-        p('Vi phạm nghiêm trọng thì chúng tôi tạm khoá tài khoản và báo lý do; trừ khi pháp luật cấm, bác vẫn được hỗ trợ xuất dữ liệu ra file.'),
+        p('Vi phạm nghiêm trọng thì chúng tôi tạm khoá tài khoản và báo lý do; trừ khi pháp luật cấm, bạn vẫn được hỗ trợ xuất dữ liệu ra file.'),
       ],
     },
     {
       id: 'so-huu-tri-tue',
       title: '11. Quyền sở hữu trí tuệ',
-      blocks: [p('Mã nguồn, giao diện, tên và biểu tượng THUMUA365 thuộc về chủ thể vận hành. Bác được dùng app cho việc kinh doanh của mình, không được sao chép hay bán lại phần mềm.')],
+      blocks: [p('Mã nguồn, giao diện, tên và biểu tượng THUMUA365 thuộc về chủ thể vận hành. Bạn được dùng app cho việc kinh doanh của mình, không được sao chép hay bán lại phần mềm.')],
     },
     {
       id: 'trach-nhiem',
       title: '12. Giới hạn trách nhiệm',
       blocks: [
         list(
-          'App tính đúng theo con số bác nhập. Nhập sai số cân, đơn giá, người bán thì kết quả sai — chúng tôi không chịu trách nhiệm về thiệt hại do sai sót nhập liệu.',
+          'App tính đúng theo con số bạn nhập. Nhập sai số cân, đơn giá, người bán thì kết quả sai — chúng tôi không chịu trách nhiệm về thiệt hại do sai sót nhập liệu.',
           'Chúng tôi nỗ lực hợp lý để app luôn chạy, nhưng không cam kết 100% thời gian. Vì vậy app ghi vào máy trước, mất mạng vẫn dùng được, và luôn cho lưu sổ ra file.',
-          'Trong phạm vi pháp luật cho phép, mức bồi thường tối đa bằng số tiền bác đã trả trong 3 tháng gần nhất. Điều này không loại trừ trách nhiệm mà pháp luật về bảo vệ người tiêu dùng hay bảo vệ dữ liệu cá nhân không cho phép loại trừ.',
+          'Trong phạm vi pháp luật cho phép, mức bồi thường tối đa bằng số tiền bạn đã trả trong 3 tháng gần nhất. Điều này không loại trừ trách nhiệm mà pháp luật về bảo vệ người tiêu dùng hay bảo vệ dữ liệu cá nhân không cho phép loại trừ.',
         ),
       ],
     },
@@ -167,7 +167,7 @@ export const TERMS: LegalDoc = {
       title: '13. Ngừng dùng, ngừng cung cấp',
       blocks: [
         list(
-          'Bác ngừng lúc nào cũng được: bấm "Xoá tài khoản" trong màn Tài khoản là xoá hẳn, không cần gọi ai.',
+          'Bạn ngừng lúc nào cũng được: bấm "Xoá tài khoản" trong màn Tài khoản là xoá hẳn, không cần gọi ai.',
           'Nếu ngừng cung cấp dịch vụ, chúng tôi báo trước ít nhất 30 ngày trong app và hỗ trợ xuất toàn bộ dữ liệu trước khi đóng.',
         ),
       ],
@@ -175,7 +175,7 @@ export const TERMS: LegalDoc = {
     {
       id: 'thay-doi',
       title: '14. Thay đổi điều khoản',
-      blocks: [p('Sửa gì thì đổi phiên bản, ngày áp dụng ở đầu trang và báo trong app. Thay đổi bất lợi cho bác thì báo trước ít nhất 30 ngày; không đồng ý thì ngừng dùng, xoá tài khoản và được hoàn phần chưa dùng.')],
+      blocks: [p('Sửa gì thì đổi phiên bản, ngày áp dụng ở đầu trang và báo trong app. Thay đổi bất lợi cho bạn thì báo trước ít nhất 30 ngày; không đồng ý thì ngừng dùng, xoá tài khoản và được hoàn phần chưa dùng.')],
     },
     {
       id: 'lien-he',

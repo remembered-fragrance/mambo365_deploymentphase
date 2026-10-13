@@ -75,7 +75,7 @@ const selectionColumn = (
 });
 
 export function ReceiptsPage() {
-  const { data, user } = useStore();
+  const { data, user, deleteDraft } = useStore();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [filterOpen, setFilterOpen] = useState(false);
@@ -175,8 +175,8 @@ export function ReceiptsPage() {
         )}
       </div>
 
-      {tab === 'draft' && <DraftList drafts={drafts} emptyTitle={L.noReceipts} />}
-      {tab === 'waiting' && <DraftList drafts={waiting} emptyTitle={L.noReceipts} />}
+      {tab === 'draft' && <DraftList drafts={drafts} emptyTitle={L.noReceipts} onDelete={deleteDraft} />}
+      {tab === 'waiting' && <DraftList drafts={waiting} emptyTitle={L.noReceipts} onDelete={deleteDraft} />}
 
       {tab === 'done' && (
         <MasterDetail

@@ -9,12 +9,9 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { monthRange, useBranches, useReportSummary } from '@/data/hooks/useOrg';
+import { monthRange, thisMonth, useBranches, useReportSummary } from '@/data/hooks/useOrg';
 import { L } from '@/i18n/labels';
 import { useAccess } from '../shared/useAccess';
-
-/** Tháng hiện tại theo giờ Việt Nam, dạng `2026-10`. */
-const thisMonth = (): string => new Date(Date.now() + 7 * 3_600_000).toISOString().slice(0, 7);
 
 function Side({ title, side }: { readonly title: string; readonly side: ReportSide }) {
   return (

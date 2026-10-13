@@ -32,14 +32,14 @@ const BASE = {
   // Đăng nhập vẫn dùng MỘT ô chung. Frontend tự nhận biết người dùng nhập
   // số điện thoại, email hay tên đăng nhập.
   authLoginIdentifier: 'Số điện thoại, email hoặc tên đăng nhập',
-  authLoginIdentifierHint: 'Nhập thông tin bác đã dùng để đăng nhập.',
+  authLoginIdentifierHint: 'Nhập thông tin bạn đã dùng để đăng nhập.',
 
   // Đăng ký tách riêng số điện thoại và email để không nhầm hai loại dữ liệu.
   authPhone: 'Số điện thoại (bắt buộc)',
-  authPhoneHint: 'Số này là tài khoản của bác — dùng để đăng nhập.',
+  authPhoneHint: 'Số này là tài khoản của bạn — dùng để đăng nhập.',
   authPhoneRequired: 'Cần số điện thoại để đăng ký. Email chỉ là thêm, không thay được số điện thoại.',
   authPhoneInvalid: 'Số điện thoại chưa đúng — ví dụ 0912 345 678.',
-  authPhoneTaken: 'Số điện thoại này đã có tài khoản — bác đăng nhập bằng số này nhé',
+  authPhoneTaken: 'Số điện thoại này đã có tài khoản — bạn đăng nhập bằng số này nhé',
   authEmailOptional: 'Email (không bắt buộc)',
   authEmailOptionalHint: 'Thêm email để có thêm một cách đăng nhập — vẫn vào cùng tài khoản.',
   authEmailInvalid: 'Email chưa đúng — ví dụ ten@gmail.com. Không dùng email thì để trống.',
@@ -233,6 +233,10 @@ const BASE = {
   savingDraft: 'Đang lưu',
   savedDraft: 'Đã lưu',
   nothingToFinish: 'Chưa đủ thông tin để chốt phiếu',
+  discardDraft: 'Xoá phiếu đang cân',
+  discardDraftTitle: 'Xoá phiếu đang cân này?',
+  discardDraftConsequence: 'Số đã cân mất hẳn, không lấy lại được. Sổ không ghi gì.',
+  draftDiscarded: 'Đã xoá phiếu đang cân',
 
   // ─── Chi tiết phiếu ───────────────────────────────────────────────────────
   receiptNumber: 'Số phiếu',
