@@ -27,7 +27,7 @@ export function BottomNav({ items, createLabel, onCreate }: BottomNavProps) {
     return (
       <nav className={NAV_CLASS}>
         <div className="mx-auto flex max-w-lg items-end">
-          <Half items={filled(items, [1, 2, 3, 4])} />
+          <SlotRow items={filled(items, [1, 2, 3, 4])} />
         </div>
       </nav>
     );
@@ -37,7 +37,7 @@ export function BottomNav({ items, createLabel, onCreate }: BottomNavProps) {
     <nav className={NAV_CLASS}>
       <div className="mx-auto grid max-w-lg grid-cols-[2fr_1fr_2fr] items-end">
         <div className="flex items-end">
-          <Half items={filled(items, [1, 2])} />
+          <SlotRow items={filled(items, [1, 2])} />
         </div>
 
         <div className="flex justify-center pb-1">
@@ -52,14 +52,14 @@ export function BottomNav({ items, createLabel, onCreate }: BottomNavProps) {
         </div>
 
         <div className="flex items-end">
-          <Half items={filled(items, [3, 4])} />
+          <SlotRow items={filled(items, [3, 4])} />
         </div>
       </div>
     </nav>
   );
 }
 
-function Half({ items }: { readonly items: readonly NavItem[] }) {
+function SlotRow({ items }: { readonly items: readonly NavItem[] }) {
   return (
     <>
       {items.map((item) => (
@@ -72,7 +72,6 @@ function Half({ items }: { readonly items: readonly NavItem[] }) {
 }
 
 function Slot({ item }: { readonly item: NavItem }) {
-
   const body = (
     <>
       <span className="relative">
