@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -10,6 +10,7 @@ import { useLinkedBalance } from '@/data/hooks/useLinked';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
+import { useAccess } from '../shared/useAccess';
 import { ClaimCodeCard } from './ClaimCodeCard';
 import { TraderBalanceCard } from './TraderBalanceCard';
 
@@ -19,6 +20,8 @@ import { TraderBalanceCard } from './TraderBalanceCard';
  */
 export function FarmerHomePage() {
   const { user, currentOrg } = useStore();
+  const { can } = useAccess();
+  const navigate = useNavigate();
   const balance = useLinkedBalance();
   const name = user?.name || currentOrg?.organization.name || '';
 
@@ -54,8 +57,16 @@ export function FarmerHomePage() {
           )}
         </section>
 
-        <Card title={L.farmerSoonTitle}>
-          <p className="text-sm text-ink-2">{L.farmerSoonOrders}</p>
+        <Card title={L.navOrders}>
+          <p className="text-sm text-ink-2">{L.farmerOrdersHint}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {can('order:create') && (
+              <Button tone="primary" onClick={() => navigate(ROUTES.orderCreate)}>
+                {L.orderCreateSell}
+              </Button>
+            )}
+            <Button onClick={() => navigate(ROUTES.orders)}>{L.farmerOrdersView}</Button>
+          </div>
         </Card>
 
         <Link to={ROUTES.profile} className="card flex min-h-16 items-center p-4 text-base font-bold text-brand">
