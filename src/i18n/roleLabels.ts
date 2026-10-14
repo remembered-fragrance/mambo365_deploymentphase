@@ -44,8 +44,8 @@ export const ROLE_LABELS = {
   // ─── Vỏ Nông dân ──────────────────────────────────────────────────────────
   farmerHello: 'Chào bạn',
   farmerIntro: 'Xem phiếu cân và tiền từng vựa còn nợ bạn — đúng như trên biên nhận vựa ghi.',
-  farmerSoonTitle: 'Sắp có',
-  farmerSoonOrders: 'Tạo đơn bán cho vựa và xem lịch sử đơn.',
+  farmerOrdersHint: 'Tạo đơn bán cho vựa và xem lịch sử đơn.',
+  farmerOrdersView: 'Xem đơn hàng',
   farmerAccount: 'Tài khoản của bạn',
   farmerTradersTitle: 'Các vựa đã kết nối',
   farmerNoTraders: 'Chưa kết nối vựa nào',
