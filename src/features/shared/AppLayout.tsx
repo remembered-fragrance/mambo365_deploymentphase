@@ -35,27 +35,13 @@ const syncTone = (pendingCount: number, error?: string): SyncTone => {
   return 'synced';
 };
 
-const PAGE_TITLE: Record<string, string> = {
-  [ROUTES.dashboard]: L.navDashboard,
-  [ROUTES.receipts]: L.navReceipts,
-  [ROUTES.create]: L.createReceipt,
-  [ROUTES.debts]: L.navDebts,
-  [ROUTES.inventory]: L.navInventory,
-  [ROUTES.suppliers]: L.navSuppliers,
-  [ROUTES.buyers]: L.navBuyers,
-  [ROUTES.products]: L.navProducts,
-  [ROUTES.pricing]: L.navPricing,
-  [ROUTES.reports]: L.taxReport,
-  [ROUTES.utilities]: L.navUtilities,
-  [ROUTES.profile]: L.navProfile,
-  [ROUTES.more]: L.navMore,
-  [ROUTES.orders]: L.navOrders,
-  [ROUTES.notifications]: L.navNotifications,
-  [ROUTES.members]: L.navMembers,
-  [ROUTES.branches]: L.navBranches,
-  [ROUTES.orgReport]: L.navOrgReport,
+/**
+ * Tên trang trên header điện thoại — CHỈ cho trang không tự có `PageHeader`. Mọi trang khác đã có
+ * tiêu đề ngay dưới header (cụ thể hơn: "Tạo phiếu bán" chứ không phải "Tạo phiếu"); ghi thêm ở
+ * header là hai dòng tiêu đề chồng nhau. Trang mới không có `PageHeader` thì thêm vào đây.
+ */
+const MOBILE_TITLE: Record<string, string> = {
   [ROUTES.map]: L.navMap,
-  [ROUTES.myPlaces]: L.navMyPlaces,
 };
 
 export function AppLayout({ children }: { readonly children: ReactNode }) {
@@ -159,7 +145,8 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
         }
         mobileHeader={
           <MobileHeader
-            title={PAGE_TITLE[pathname] ?? L.appName}
+            appName={L.appName}
+            title={MOBILE_TITLE[pathname]}
             themeToggle={themeToggle}
             actions={
               <>
