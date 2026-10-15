@@ -20,12 +20,12 @@
  * Không gọi trực tiếp bảng `profiles` qua PostgREST.
  */
 
-import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { User } from '@supabase/auth-js';
 import type { Me, MeBootstrapInput, MeProfile, MeProfilePatch } from '@mambo/contracts';
 import { detectIdentifierKind, normalizePhone } from '@mambo/core/identifier';
 import type { UserProfile } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
-import { api, setCurrentOrg } from './client';
+import { api, fetchMe, setCurrentOrg, type SupabaseAuth } from './client';
 import { profileFromMe, profileFromRow } from './authProfile';
 import { claimReferral } from './billing';
 import { track } from './track';
@@ -56,7 +56,7 @@ const internalEmail = (phoneE164: string): string =>
   `${phoneE164.replace('+', '')}@${INTERNAL_EMAIL_DOMAIN}`;
 
 const signInWithEmail = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseAuth,
   email: string,
   password: string,
 ): Promise<User | null> => {
@@ -75,7 +75,7 @@ const signInWithEmail = async (
  * gọi Supabase lần nữa. Lỗi gì cũng trả null — người gọi báo MỘT câu chung.
  */
 const signInViaBackend = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseAuth,
   identifier: string,
   password: string,
   alreadyTried: string,
@@ -90,7 +90,7 @@ const signInViaBackend = async (
   }
 };
 
-export const signIn = async (supabase: SupabaseClient, identifier: string, password: string): Promise<User> => {
+export const signIn = async (supabase: SupabaseAuth, identifier: string, password: string): Promise<User> => {
   try {
     const user = await signInOnce(supabase, identifier, password);
     track('login_succeeded', { method: detectIdentifierKind(identifier.trim()) });
@@ -103,7 +103,7 @@ export const signIn = async (supabase: SupabaseClient, identifier: string, passw
 };
 
 const signInOnce = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseAuth,
   identifier: string,
   password: string,
 ): Promise<User> => {
@@ -172,7 +172,7 @@ const signInOnce = async (
 };
 
 export const signUp = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseAuth,
   input: SignUpInput,
 ): Promise<User> => {
   const phone = normalizePhone(input.phone);
@@ -227,11 +227,9 @@ export const bootstrap = async (input: MeBootstrapInput): Promise<Me> => {
   return me;
 };
 
-export const getMe = async (): Promise<Me> => {
-  return api.me();
-};
+export const getMe = (): Promise<Me> => fetchMe();
 
-export const signOut = async (supabase: SupabaseClient): Promise<void> => {
+export const signOut = async (supabase: SupabaseAuth): Promise<void> => {
   await supabase.auth.signOut();
   setCurrentOrg(null);
 };
@@ -251,7 +249,7 @@ export interface ProfilePatch {
  * tải lại trang sẽ hiện giá trị cũ.
  */
 export const updateProfile = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseAuth,
   _userId: string,
   patch: ProfilePatch,
 ): Promise<MeProfile> => {
@@ -271,7 +269,7 @@ export const updateProfile = async (
 };
 
 export const changePassword = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseAuth,
   password: string,
 ): Promise<void> => {
   const { error } = await supabase.auth.updateUser({ password });
@@ -281,29 +279,23 @@ export const changePassword = async (
   }
 };
 
-export const loadProfile = async (
-  _supabase: SupabaseClient,
-  user: User,
-): Promise<UserProfile | null> => {
-  try {
-    const me = await api.me();
-    return profileFromMe(me, user);
-  } catch {
-    return {
-      id: user.id,
-      identifier:
-        (user.user_metadata?.phone as string | undefined) ??
-        user.phone ??
-        user.email ??
-        '',
-      name:
-        (user.user_metadata?.name as string | undefined) ??
-        '',
-      email: user.email ?? undefined,
-      phone:
-        (user.user_metadata?.phone as string | undefined) ??
-        user.phone ??
-        undefined,
-    };
-  }
-};
+/**
+ * Hồ sơ tạm khi `/v1/me` không trả lời — chỉ từ phiên Supabase, không gọi mạng. Gọi lại
+ * `/v1/me` ở đây (như trước) là bắt người dùng chờ thêm đúng một lần hỏng nữa.
+ */
+export const profileFromAccount = (user: User): UserProfile => ({
+  id: user.id,
+  identifier:
+    (user.user_metadata?.phone as string | undefined) ??
+    user.phone ??
+    user.email ??
+    '',
+  name:
+    (user.user_metadata?.name as string | undefined) ??
+    '',
+  email: user.email ?? undefined,
+  phone:
+    (user.user_metadata?.phone as string | undefined) ??
+    user.phone ??
+    undefined,
+});

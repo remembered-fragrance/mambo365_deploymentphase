@@ -4,7 +4,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseAuth } from '@/data/client';
 
 const resolveIdentifier = vi.fn();
 vi.mock('@/data/client', () => ({
@@ -32,7 +32,7 @@ const fakeSupabase = (accounts: Record<string, string>) => {
       ? { data: { user: { id: 'fake', identities: [] } }, error: null }
       : { data: { user: { id: email, identities: [{}] } }, error: null },
   );
-  const client = { auth: { signInWithPassword, signUp: signUpFn } } as unknown as SupabaseClient;
+  const client = { auth: { signInWithPassword, signUp: signUpFn } } as unknown as SupabaseAuth;
   return { client, signInWithPassword, signUp: signUpFn };
 };
 

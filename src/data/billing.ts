@@ -11,7 +11,7 @@ import type {
   SubscriptionStatus,
 } from '@mambo/core/subscription';
 import type { PlanPrice, PlanSummary } from '@mambo/contracts';
-import { api } from './client';
+import { api, fetchMe } from './client';
 import { track } from './track';
 
 export const subscriptionFromPlan = (plan: PlanSummary | null): Subscription | null => {
@@ -29,7 +29,7 @@ export const fetchSubscription = async (
   orgId: string,
 ): Promise<Subscription | null> => {
   if (!orgId) throw new Error('Organization is required');
-  const me = await api.me();
+  const me = await fetchMe();
   const membership = me.memberships.find((m) => m.organization.id === orgId);
   if (!membership) throw new Error('Not a member of this organization');
   return subscriptionFromPlan(membership.plan);
