@@ -15,6 +15,7 @@ import { PlanBanner } from '../billing/PlanBanner';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { NotificationsProvider } from '../notifications/NotificationsContext';
 import { DemoBanner } from '../onboarding/DemoBanner';
+import { draftHref } from '../receipt/draftSessions';
 import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
 import { navGroups, navItems, ROUTES } from './navItems';
@@ -202,7 +203,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
               block
               onClick={() => {
                 setCreateOpen(false);
-                navigate(`${ROUTES.create}?draft=${draft.id}`);
+                navigate(draftHref(draft));
               }}
             >
               {draft.supplierName || L.walkIn}

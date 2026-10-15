@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { newId } from '@mambo/core/id';
@@ -7,6 +7,7 @@ import type { PriceAdjustment } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { NumberField } from '../shared/NumberField';
 import { AttachmentPicker } from './AttachmentPicker';
+import { hasMoreInfo, moreInfoSummary } from './moreInfo';
 import { parseNumber } from '@mambo/core/parseNumber';
 
 interface MoreInfoPanelProps {
@@ -20,7 +21,8 @@ interface MoreInfoPanelProps {
 
 /**
  * Hiển thị dần: mặc định màn tạo phiếu chỉ có Người bán · Mặt hàng · Cân được ·
- * Đơn giá · Thành tiền. Những thứ ít dùng gập sau nút này.
+ * Đơn giá · Thành tiền. Những thứ ít dùng gập sau nút này; mở ra rồi gập lại được.
+ * Nháp mở lại mà đã có ghi chú / ảnh thì mở sẵn — không giấu thứ người dùng đã nhập.
  *
  * Khoản cộng/trừ nhập bằng HAI NÚT chứ không bắt gõ số âm — "âm để trừ" là câu
  * của lập trình viên, không phải của chủ vựa.
@@ -33,7 +35,8 @@ export function MoreInfoPanel({
   onNoteChange,
   onAttachmentsChange,
 }: MoreInfoPanelProps) {
-  const [open, setOpen] = useState(false);
+  const panelId = useId();
+  const [open, setOpen] = useState(() => hasMoreInfo({ adjustments, note, attachmentIds }));
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
 
@@ -54,16 +57,31 @@ export function MoreInfoPanel({
   };
 
   if (!open) {
+    const summary = moreInfoSummary({ adjustments, note, attachmentIds });
     return (
-      <Button block onClick={() => setOpen(true)}>
-        {L.moreInfo}
+      <Button block aria-expanded={false} onClick={() => setOpen(true)}>
+        <span className="min-w-0 truncate">
+          {L.moreInfo}
+          {summary ? <span className="font-normal text-ink-2"> · {summary}</span> : null}
+        </span>
       </Button>
     );
   }
 
   return (
-    <div className="card flex flex-col gap-3 p-3">
-      <p className="text-sm font-bold text-ink">{L.adjustments}</p>
+    <div id={panelId} className="card flex flex-col gap-3 p-3">
+      <div className="-mt-1 flex items-center justify-between gap-2">
+        <p className="text-sm font-bold text-ink">{L.adjustments}</p>
+        <button
+          type="button"
+          aria-expanded
+          aria-controls={panelId}
+          onClick={() => setOpen(false)}
+          className="min-h-10 rounded-xl px-3 text-sm font-semibold text-brand"
+        >
+          {L.collapse}
+        </button>
+      </div>
 
       {adjustments.length > 0 && (
         <ul className="flex flex-col gap-1">
@@ -83,8 +101,8 @@ export function MoreInfoPanel({
         </ul>
       )}
 
-      <Input label={L.note} value={label} onChange={(e) => setLabel(e.target.value)} />
-      <NumberField label={L.total} value={amount} spoken onValueChange={setAmount} />
+      <Input label={L.adjustmentLabel} value={label} onChange={(e) => setLabel(e.target.value)} />
+      <NumberField label={L.adjustmentAmount} value={amount} spoken onValueChange={setAmount} />
 
       <div className="flex gap-2">
         <Button block onClick={() => add(1)}>

@@ -92,6 +92,18 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   };
 
   /**
+   * Khách gửi hàng lại, chờ giá, chưa lấy tiền: cất phiếu sang "Để dành" để thanh "Đang cân" chỉ còn
+   * khách đang đứng ở sân. Về thẳng tab "Để dành" của màn Phiếu — thấy phiếu vừa cất nằm đó; bấm vào
+   * là mở lại để chốt như thường.
+   */
+  const saveForLater = () => {
+    const name = receipt.partyName;
+    receipt.saveForLater();
+    toast({ message: `${L.savedForLater} · ${name.trim() || L.walkIn}` });
+    navigate(`${ROUTES.receipts}?tab=waiting`);
+  };
+
+  /**
    * Chạm trần thì thay cả màn tạo phiếu, không phải chặn lúc bấm "xong": người
    * dùng cân xong cả chuyến hàng rồi mới bị từ chối là cách tệ nhất để nói
    * chuyện tiền nong. Nháp đang cân dở vẫn nằm nguyên trong sổ.
@@ -176,6 +188,21 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
             onNoteChange={receipt.setNote}
             onAttachmentsChange={receipt.setAttachmentIds}
           />
+
+          {receipt.status === 'waiting' ? (
+            <div className="card flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-ink-2">{L.waitingNotice}</p>
+              <Button className="shrink-0" onClick={receipt.backToWeighing}>
+                {L.backToWeighing}
+              </Button>
+            </div>
+          ) : (
+            (receipt.draftId || receipt.canFinish) && (
+              <Button block onClick={saveForLater}>
+                {L.saveForLater}
+              </Button>
+            )
+          )}
 
           {/* Cuối cột, xa hai nút chốt ở thanh tổng tiền — tay đeo găng không chạm nhầm. Nháp
               chưa lưu lần nào thì chưa có gì để xoá: rời màn là nó mất. */}
