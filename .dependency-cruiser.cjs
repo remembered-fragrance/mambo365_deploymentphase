@@ -65,7 +65,8 @@ module.exports = {
       from: {},
       to: {
         dependencyTypes: ['npm'],
-        path: '^(xlsx|jspdf|html2canvas)',
+        // Đường dẫn đã resolve (node_modules/…), không phải tên gói — `^xlsx` không bao giờ khớp.
+        path: '^node_modules/(xlsx|jspdf|html2canvas)/',
         dependencyTypesNot: ['dynamic-import'],
       },
     },
