@@ -514,6 +514,18 @@ sang, viết lại theo khung của app (BottomSheet, Toast, ConfirmDialog, nhã
   mà OSM chặn yêu cầu không có Referer.
 - **Màu ghim** là token `--color-trader` / `--color-enterprise` / `--color-me` (đủ day / sun / night); SVG ghim
   dùng `currentColor`, không ghi cứng mã màu.
+- **Ghi đè CSS của Leaflet phải có tiền tố `.map-page`**: `leaflet.css` nạp sau `index.css` (chunk MapPage),
+  cùng độ ưu tiên là thua — popup giãn dòng, nền trắng ở chế độ đêm.
+
+### Chạy thật đã kiểm (16/10/2026)
+
+Edge thật qua Playwright, mọi thứ ở máy: FE dev · API build từ `feat/ban-do` · DB docker · Supabase Auth giả
+(JWKS ES256 tự phát) — không chạm staging; mọi yêu cầu ra host khác (trừ tile OSM) bị chặn và đếm = 0.
+26/26 bước, chạy hai lần liền: chủ vựa (xem, popup, Chỉ đường / Gọi, lọc, thêm, sửa, gỡ, "Địa điểm của
+tôi", link `?xem` / `?sua`, id lạ), nông dân trên điện thoại (thanh dưới, bố cục, popup, bị chặn `/dia-diem`),
+người cân, chủ / nhân viên doanh nghiệp, chặn quyền vị trí. Lỗi chạy thật bắt được (test đơn vị không thấy):
+CSS bị leaflet.css đè; ghim giữ tên cũ sau khi sửa (`Marker` không cập nhật `title`); bấm ghim lúc đang bay
+tới vị trí của tôi thì popup trôi khỏi màn hình; lỗi ô tên không tắt khi gõ lại.
 
 ---
 
