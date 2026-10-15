@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { User } from '@supabase/auth-js';
 import { emptyData } from '@mambo/core/normalize';
 import type { AppData, SyncStatus, UserProfile } from '@mambo/core/types';
 import { hasBook, type Feature, type Me, type MeBootstrapInput, type MeMembership } from '@mambo/contracts';
@@ -11,6 +11,7 @@ import { createBookActions } from './bookActions';
 import { clearUserCache, readBook, writeBook } from './cache';
 import { api, getCurrentOrgId, getSupabase, hasBackend, setCurrentOrg } from './client';
 import { deviceAccount } from './deviceAccount';
+import { forgetMe, recallMe, rememberMe } from './meCache';
 import { enqueue, legacyQueueCount, pendingCount, type NewOp } from './queue';
 import { forgetSubscription } from './subscriptionStore';
 import { looksOnline, syncOnce } from './sync';
@@ -51,6 +52,12 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     setData(next);
   }, []);
   const activeKey = currentOrg?.organization.id ?? (!getSupabase() ? userId : null);
+  /**
+   * Bản `kickSync` mới nhất cho effect nạp sổ. `kickSync` đổi danh tính mỗi lần `/v1/me` trả
+   * lời (kể cả trả y hệt); effect nạp sổ phụ thuộc thẳng vào nó thì mỗi lần như thế lại xoá
+   * sổ đang hiện rồi đọc lại IndexedDB — mở app bằng bản `/v1/me` đã nhớ sẽ nháy trống.
+   */
+  const kickSyncRef = useRef<() => void>(() => undefined);
   const activateOrg = useCallback((orgId: string | null) => {
     generation.current++;
     readyKey.current = null;
@@ -84,6 +91,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       })
       .finally(() => { syncing.current = false; });
   }, [activeKey, currentOrg, show]);
+  useEffect(() => { kickSyncRef.current = kickSync; }, [kickSync]);
   const commit = useCallback((next: AppData, ops: NewOp[]) => {
     if (!activeKey || readyKey.current !== activeKey ||
       (getSupabase() && selected.current !== activeKey)) throw new Error('Organization book is not ready');
@@ -119,6 +127,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     try {
       const result = await auth.getMe();
       if (epoch !== sessionEpoch.current) return null;
+      rememberMe(result);
       applyMe(result);
       // Tên đăng nhập / email khôi phục nằm ở `profiles`; lỗi (chưa bootstrap, API cũ) ⇒ giữ bản /v1/me.
       if (result.memberships.length > 0) void api.account.profile().then((profile) => {
@@ -146,16 +155,16 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
    * mất mạng — vẫn phải có `user` từ phiên Supabase, không thì cổng giữ nguyên màn đăng
    * nhập mà không báo gì ("đăng nhập không chuyển trang"); lỗi hiện ở thanh đồng bộ.
    */
-  const enterSession = useCallback(async (supabase: SupabaseClient, account: User): Promise<void> => {
+  const enterSession = useCallback(async (account: User): Promise<void> => {
     const epoch = sessionEpoch.current;
     if (await refreshMe()) return;
-    const profile = await auth.loadProfile(supabase, account);
-    if (epoch === sessionEpoch.current) setUser(profile);
+    if (epoch === sessionEpoch.current) setUser(auth.profileFromAccount(account));
   }, [refreshMe]);
   const bootstrap = useCallback(async (input: MeBootstrapInput): Promise<Me> => {
     const epoch = sessionEpoch.current;
     const result = await auth.bootstrap(input);
     if (epoch !== sessionEpoch.current) throw new Error('Session changed');
+    rememberMe(result);
     applyMe(result);
     return result;
   }, [applyMe]);
@@ -177,9 +186,16 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         return;
       }
       authUser.current = session.user;
-      await enterSession(supabase, session.user);
+      // Có bản `/v1/me` lần trước ⇒ vào sổ ngay, hỏi lại máy chủ ở nền (xem meCache.ts).
+      const cached = recallMe(session.user.id);
+      if (cached) {
+        applyMe(cached);
+        void refreshMe();
+        return;
+      }
+      await enterSession(session.user);
     });
-  }, [enterSession]);
+  }, [applyMe, enterSession, refreshMe]);
   useEffect(() => {
     if (!activeKey) {
       show(emptyData());
@@ -199,7 +215,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         loading: false, pendingCount: count,
         error: legacyCount > 0 ? 'Có thao tác cũ chưa xác định tổ chức, đã cách ly để tránh gửi nhầm.' : undefined
       });
-      kickSync();
+      kickSyncRef.current();
     }).catch((error: unknown) => {
       if (!cancelled) setStatus({
         loading: false, pendingCount: 0,
@@ -207,7 +223,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       });
     });
     return () => { cancelled = true; };
-  }, [activeKey, currentOrgId, kickSync, show]);
+  }, [activeKey, currentOrgId, show]);
   useEffect(() => {
     if (!activeKey || (orgType && !hasBook(orgType))) return;
     const timer = setInterval(kickSync, SYNC_INTERVAL_MS);
@@ -245,7 +261,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         memberships.current = [];
         setMe(null);
         authUser.current = await auth.signIn(supabase, identifier, password);
-        await enterSession(supabase, authUser.current);
+        await enterSession(authUser.current);
       },
       signUp: async (input) => {
         const supabase = getSupabase();
@@ -255,7 +271,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         memberships.current = [];
         setMe(null);
         authUser.current = await auth.signUp(supabase, input);
-        await enterSession(supabase, authUser.current);
+        await enterSession(authUser.current);
       },
       signOut: async () => {
         sessionEpoch.current++;
@@ -268,6 +284,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         if (userId) {
           await clearUserCache(userId);
           forgetSubscription(userId);
+          forgetMe(userId);
         }
         setCurrentOrg(null);
         setCurrentOrgIdState(null);

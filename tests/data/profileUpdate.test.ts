@@ -1,7 +1,7 @@
 /** Sửa hồ sơ đi qua PATCH /v1/me/profile, rồi chép tên + email khôi phục sang user_metadata. */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseAuth } from '@/data/client';
 
 const fetchMock = vi.hoisted(() => vi.fn());
 
@@ -26,7 +26,7 @@ const saved = {
 };
 
 const updateUser = vi.fn(async () => ({ data: {}, error: null }));
-const supabase = { auth: { updateUser } } as unknown as SupabaseClient;
+const supabase = { auth: { updateUser } } as unknown as SupabaseAuth;
 
 beforeEach(() => {
   fetchMock.mockReset();

@@ -1,6 +1,6 @@
 /** Dựng `UserProfile` hiển thị từ hàng `profiles` hoặc từ `/v1/me` + phiên Supabase. */
 
-import type { User } from '@supabase/supabase-js';
+import type { User } from '@supabase/auth-js';
 import type { Me, MeProfile } from '@mambo/contracts';
 import type { UserProfile } from '@mambo/core/types';
 import type { ProfileRow } from './rows';

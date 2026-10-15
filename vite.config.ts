@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import { loadEnv } from 'vite';
+import { loadEnv, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -30,10 +30,35 @@ const assertProductionEnv = (mode: string): void => {
   }
 };
 
+/**
+ * `<link rel="preconnect">` tới API và Supabase: trình duyệt mở sẵn DNS + TCP + TLS ngay lúc đọc
+ * HTML, song song với tải JS — lời gọi đầu tiên (làm mới phiên, `/v1/me`) khỏi tốn thêm 2–3 lượt
+ * đi về trên mạng di động. `crossorigin` vì fetch CORS không kèm cookie dùng kết nối riêng.
+ */
+const preconnect = (mode: string): Plugin => ({
+  name: 'thumua365:preconnect',
+  transformIndexHtml() {
+    const env = loadEnv(mode, process.cwd(), 'VITE_');
+    const origins = [env.VITE_API_URL, env.VITE_SUPABASE_URL].flatMap((value) => {
+      try {
+        return value?.trim() ? [new URL(value.trim()).origin] : [];
+      } catch {
+        return [];
+      }
+    });
+    return [...new Set(origins)].map((href) => ({
+      tag: 'link',
+      attrs: { rel: 'preconnect', href, crossorigin: '' },
+      injectTo: 'head-prepend' as const,
+    }));
+  },
+});
+
 export default defineConfig(({ mode }) => {
   assertProductionEnv(mode);
   return {
     plugins: [
+      preconnect(mode),
       react(),
       tailwindcss(),
       VitePWA({
