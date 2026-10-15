@@ -53,6 +53,8 @@ export interface StoreValue {
   readonly features: readonly Feature[];
   readonly plan: PlanSummary | null;
   readonly needsBootstrap: boolean;
+  readonly accountState: 'loading' | 'ready' | 'error' | 'local';
+  readonly accountError: string | undefined;
 
   bootstrap: (input: MeBootstrapInput) => Promise<Me>;
   selectOrg: (orgId: string) => Promise<void> | void;

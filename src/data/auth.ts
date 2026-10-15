@@ -59,6 +59,15 @@ export const profileFromMe = (me: Me, defaultEmail?: string): UserProfile => ({
   businessName: me.memberships[0]?.organization.name ?? undefined,
 });
 
+export const profileFromAuthUser = (user: User): UserProfile => ({
+  id: user.id,
+  identifier:
+    (user.user_metadata?.phone as string | undefined) ?? user.phone ?? user.email ?? '',
+  name: (user.user_metadata?.name as string | undefined) ?? '',
+  email: user.email ?? undefined,
+  phone: (user.user_metadata?.phone as string | undefined) ?? user.phone ?? undefined,
+});
+
 const signInWithEmail = async (
   supabase: SupabaseClient,
   email: string,
@@ -271,32 +280,5 @@ export const changePassword = async (
 
   if (error) {
     throw new Error(`Không đổi được mật khẩu: ${error.message}`);
-  }
-};
-
-export const loadProfile = async (
-  _supabase: SupabaseClient,
-  user: User,
-): Promise<UserProfile | null> => {
-  try {
-    const me = await api.me();
-    return profileFromMe(me, user.email ?? '');
-  } catch {
-    return {
-      id: user.id,
-      identifier:
-        (user.user_metadata?.phone as string | undefined) ??
-        user.phone ??
-        user.email ??
-        '',
-      name:
-        (user.user_metadata?.name as string | undefined) ??
-        '',
-      email: user.email ?? undefined,
-      phone:
-        (user.user_metadata?.phone as string | undefined) ??
-        user.phone ??
-        undefined,
-    };
   }
 };

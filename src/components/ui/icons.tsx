@@ -118,6 +118,18 @@ export const GiftIcon = (p: IconProps) => (
 export const HelpIcon = (p: IconProps) => (
   <Icon {...p} d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z|M9.5 9.5a2.5 2.5 0 1 1 3 2.4V14|M12 17.5v.01" />
 );
+/** Vựa / điểm thu mua — dùng màn chọn vai trò. */
+export const StoreIcon = (p: IconProps) => (
+  <Icon {...p} d="M4 9l2-5h12l2 5|M4 9h16v11H4z|M9 20v-6h6v6" />
+);
+/** Doanh nghiệp / HTX. */
+export const BuildingIcon = (p: IconProps) => (
+  <Icon {...p} d="M4 20V6l8-3 8 3v14|M9 20v-5h6v5|M9 10h.01M12 10h.01M15 10h.01M9 14h.01M12 14h.01M15 14h.01" />
+);
+/** Nhà vườn / nông dân. */
+export const LeafIcon = (p: IconProps) => (
+  <Icon {...p} d="M5 19c6-1 10-5 12-12 0 0-7 1-10 6|M9 13c2 2 4 3 7 4|M12 8v3" />
+);
 
 /** Hình tạm cho bốn nông sản. Thay bằng bộ ký hiệu chính thức khi có. */
 export const CropIcon = ({ crop, className }: IconProps & { readonly crop?: string }) => {

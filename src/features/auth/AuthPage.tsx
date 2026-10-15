@@ -11,29 +11,20 @@ type Mode = 'signIn' | 'signUp';
 /**
  * Đăng nhập / đăng ký.
  *
- * Đăng nhập:
- * - Một ô nhận số điện thoại, email hoặc tên tài khoản.
- *
- * Đăng ký:
- * - Tách số điện thoại và email thành hai ô riêng.
- * - Số điện thoại là bắt buộc.
- * - Email là không bắt buộc.
+ * Đăng nhập: một ô nhận SĐT, email hoặc tên tài khoản.
+ * Đăng ký: tạo tài khoản Supabase Auth — chọn vai trò / tổ chức ở
+ * `BootstrapPage` sau khi `me.memberships` còn rỗng (không bootstrap tại đây).
  */
 export function AuthPage() {
   const { signIn, signUp } = useStore();
   const online = useBackend();
 
   const [mode, setMode] = useState<Mode>('signIn');
-
-  // Đăng nhập vẫn dùng một ô chung.
   const [identifier, setIdentifier] = useState('');
-
-  // Đăng ký dùng dữ liệu riêng.
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
-
   const [password, setPassword] = useState('');
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -103,28 +94,27 @@ export function AuthPage() {
 
             {mode === 'signIn' ? (
               <Input
-                label={L.authIdentifier}
+                label={L.authLoginIdentifier}
                 value={identifier}
-                hint={L.authIdentifierHint}
+                hint={L.authLoginIdentifierHint}
                 autoComplete="username"
                 onChange={(e) => setIdentifier(e.target.value)}
               />
             ) : (
               <>
                 <Input
-                  label="Số điện thoại"
+                  label={L.authPhone}
                   value={phone}
-                  hint="Dùng số điện thoại này để đăng nhập."
+                  hint={L.authPhoneHint}
                   inputMode="tel"
                   autoComplete="tel"
                   onChange={(e) => setPhone(e.target.value)}
                 />
-
                 <Input
-                  label="Email (không bắt buộc)"
+                  label={L.authEmailOptional}
                   type="email"
                   value={email}
-                  hint="Có thể dùng email để đăng nhập nếu bác muốn thêm."
+                  hint={L.authEmailOptionalHint}
                   inputMode="email"
                   autoComplete="email"
                   onChange={(e) => setEmail(e.target.value)}

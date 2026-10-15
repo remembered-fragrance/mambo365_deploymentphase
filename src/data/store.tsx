@@ -12,6 +12,7 @@ import {
   type Permission,
   type PlanSummary,
 } from '@mambo/contracts';
+import { ApiError } from '@mambo/sdk';
 import { deleteAccount } from './account';
 import * as auth from './auth';
 import { createBookActions } from './bookActions';
@@ -29,6 +30,9 @@ const NO_FEATURES: readonly Feature[] = [];
 export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [me, setMe] = useState<Me | null>(null);
+  const [accountState, setAccountState] = useState<'loading' | 'ready' | 'error' | 'local'>('loading');
+  const [accountError, setAccountError] = useState<string | undefined>();
+  const [bootstrapFallbackAvailable, setBootstrapFallbackAvailable] = useState(false);
   const [currentOrgId, setCurrentOrgIdState] = useState<string | null>(null);
   const [data, setData] = useState<AppData>(emptyData);
   const [status, setStatus] = useState<SyncStatus>({ loading: true, pendingCount: 0 });
@@ -50,7 +54,9 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const permissions = currentOrg?.permissions ?? NO_PERMISSIONS;
   const features = currentOrg?.features ?? NO_FEATURES;
   const plan: PlanSummary | null = currentOrg?.plan ?? null;
-  const needsBootstrap = Boolean(user && me && me.memberships.length === 0);
+  const needsBootstrap = Boolean(
+    user && (bootstrapFallbackAvailable || (me && me.memberships.length === 0)),
+  );
   const show = useCallback((next: AppData) => {
     latest.current = next;
     setData(next);
@@ -109,6 +115,9 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     void persistence.current.then(kickSync);
   }, [activeKey, currentOrgId, kickSync, show]);
   const applyMe = useCallback((result: Me) => {
+    setBootstrapFallbackAvailable(false);
+    setAccountState('ready');
+    setAccountError(undefined);
     memberships.current = result.memberships;
     setMe(result);
     setUser(auth.profileFromMe(result));
@@ -121,6 +130,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   }, [activateOrg]);
   const refreshMe = useCallback(async (): Promise<Me | null> => {
     const epoch = sessionEpoch.current;
+    setAccountState('loading');
+    setAccountError(undefined);
     try {
       const result = await auth.getMe();
       if (epoch !== sessionEpoch.current) return null;
@@ -132,6 +143,16 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         ...previous, loading: false,
         error: error instanceof Error ? error.message : 'Cannot validate membership'
       }));
+      setAccountState('error');
+      setAccountError(
+        error instanceof TypeError ? undefined :
+          error instanceof Error ? error.message : 'Không tải được thông tin tài khoản',
+      );
+      if (error instanceof ApiError && error.status >= 500) {
+        // meBootstrap is idempotent: allow onboarding to reconcile memberships
+        // when reading /me is unavailable.
+        setBootstrapFallbackAvailable(true);
+      }
       return null;
     }
   }, [applyMe]);
@@ -154,6 +175,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     if (!supabase) {
       setCurrentOrg(null);
       setUser(deviceAccount());
+      setAccountState('local');
       setStatus(IDLE_STATUS);
       return;
     }
@@ -163,12 +185,15 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       if (!session) {
         setUser(null);
         setMe(null);
+        setBootstrapFallbackAvailable(false);
+        setAccountState('ready');
+        setAccountError(undefined);
         setStatus(IDLE_STATUS);
         return;
       }
       const meData = await refreshMe();
       if (!meData) {
-        const profile = await auth.loadProfile(supabase, session.user);
+        const profile = auth.profileFromAuthUser(session.user);
         if (epoch === sessionEpoch.current) setUser(profile);
       }
     });
@@ -225,6 +250,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       features,
       plan,
       needsBootstrap,
+      accountState,
+      accountError,
       bootstrap,
       selectOrg,
       refreshMe,
@@ -237,15 +264,14 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         activateOrg(null);
         memberships.current = [];
         setMe(null);
+        setBootstrapFallbackAvailable(false);
+        setAccountState('loading');
+        setAccountError(undefined);
 
         const account = await auth.signIn(supabase, identifier, password);
 
-        // Set user ngay sau khi Supabase Auth thành công
-        const fallbackProfile = await auth.loadProfile(supabase, account);
-
-        if (fallbackProfile) {
-          setUser(fallbackProfile);
-        }
+        // Use Auth metadata immediately; refreshMe is the sole membership request.
+        setUser(auth.profileFromAuthUser(account));
 
         // Sau đó mới lấy dữ liệu đầy đủ từ backend
         await refreshMe();
@@ -257,8 +283,15 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         activateOrg(null);
         memberships.current = [];
         setMe(null);
-        await auth.signUp(supabase, input);
-        await refreshMe();
+        setBootstrapFallbackAvailable(false);
+        setAccountState('loading');
+        setAccountError(undefined);
+        // Chỉ tạo user Auth. Chọn vai trò / tổ chức ở BootstrapPage qua meBootstrap.
+        const account = await auth.signUp(supabase, input);
+        setUser(auth.profileFromAuthUser(account));
+        // The contract defines meBootstrap as the immediate next step after signup.
+        setBootstrapFallbackAvailable(true);
+        setAccountState('ready');
       },
       signOut: async () => {
         sessionEpoch.current++;
@@ -275,6 +308,9 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         setCurrentOrgIdState(null);
         setUser(null);
         setMe(null);
+        setBootstrapFallbackAvailable(false);
+        setAccountState('ready');
+        setAccountError(undefined);
         show(emptyData());
       },
       updateProfile: async (patch) => {
@@ -297,13 +333,17 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         setCurrentOrgIdState(null);
         setUser(null);
         setMe(null);
+        setBootstrapFallbackAvailable(false);
+        setAccountState('ready');
+        setAccountError(undefined);
         show(emptyData());
       },
       syncNow: kickSync,
     }),
     [
       activateOrg, data, status, user, me, currentOrgId, currentOrg, orgType,
-      userRole, permissions, features, plan, needsBootstrap, bootstrap,
+      userRole, permissions, features, plan, needsBootstrap, accountState, accountError,
+      bootstrap,
       selectOrg, refreshMe, activeKey, commit, kickSync, userId, show,
     ],
   );
