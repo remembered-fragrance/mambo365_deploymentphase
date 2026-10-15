@@ -19,6 +19,11 @@
   --color-receivable: #0e6e7a;
   --color-payable: #9a3412;
   --color-alert: #a81e2e;
+  /* Bản đồ: ghim vựa / doanh nghiệp, chấm "vị trí của tôi", nhãn chủ quyền. */
+  --color-trader: #b45309;
+  --color-enterprise: #1e40af;
+  --color-me: #1d6fe0;
+  --color-sea-label: #2b4a6b;
 
   --density-row-h: 3.25rem;
   --density-gap: 1rem;
@@ -42,6 +47,10 @@
   --color-receivable: #0a5560;
   --color-payable: #7c2d12;
   --color-alert: #8a0f1e;
+  --color-trader: #92400e;
+  --color-enterprise: #1e3a8a;
+  --color-me: #1558b8;
+  --color-sea-label: #1b3550;
 
   --density-row-h: 3.75rem;
   --density-gap: 1.25rem;
@@ -62,6 +71,11 @@
   --color-receivable: #4fc0cd;
   --color-payable: #e08d5c;
   --color-alert: #f0788a;
+  --color-trader: #e08a3c;
+  --color-enterprise: #7c9cf0;
+  --color-me: #5aa2ff;
+  /* Nền bản đồ vẫn sáng (ảnh tile) ⇒ nhãn biển giữ màu tối. */
+  --color-sea-label: #2b4a6b;
 }
 
 html,
@@ -176,4 +190,132 @@ body {
   .sheet-panel {
     animation: none;
   }
+}
+
+/* ─── Bản đồ thu mua (Leaflet) ───────────────────────────────────────────────
+   Màn bản đồ chiếm trọn phần còn lại dưới header, trên thanh dưới. Ghim, chấm
+   vị trí, nhãn chủ quyền vẽ bằng HTML/SVG trong divIcon — màu lấy từ token.
+   ────────────────────────────────────────────────────────────────────────── */
+.map-page {
+  height: calc(100dvh - 7.25rem - env(safe-area-inset-bottom));
+  min-height: 22rem;
+}
+
+@media (min-width: 64rem) {
+  .map-page {
+    height: calc(100dvh - 3.5rem);
+  }
+}
+
+.leaflet-container {
+  font-family: var(--font-sans);
+  background-color: var(--color-paper);
+}
+
+.leaflet-div-icon.map-icon {
+  background: transparent;
+  border: none;
+}
+
+.map-pin {
+  display: block;
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.35));
+}
+
+.map-pin--trader {
+  color: var(--color-trader);
+}
+
+.map-pin--enterprise {
+  color: var(--color-enterprise);
+}
+
+.map-pin--draft {
+  color: var(--color-brand);
+}
+
+.map-pin__outline {
+  stroke: var(--color-card);
+}
+
+.map-pin__glyph {
+  stroke: var(--color-card);
+  fill: none;
+}
+
+.map-pin__dot {
+  fill: var(--color-card);
+}
+
+.map-me-dot {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background-color: var(--color-me);
+  border: 3px solid var(--color-card);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-me) 35%, transparent);
+}
+
+.map-me-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  animation: map-pulse 2s ease-out infinite;
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-me) 60%, transparent);
+}
+
+@keyframes map-pulse {
+  to {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-me-dot::after {
+    animation: none;
+  }
+}
+
+.map-accuracy {
+  stroke: var(--color-me);
+  fill: var(--color-me);
+  fill-opacity: 0.12;
+}
+
+.map-sovereignty {
+  pointer-events: none;
+  width: max-content;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--color-sea-label);
+  text-shadow:
+    0 0 3px white,
+    0 0 3px white,
+    0 0 3px white;
+  transform: translate(-50%, -50%);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background-color: var(--color-card);
+  color: var(--color-ink);
+}
+
+.leaflet-popup-content {
+  margin: 0.75rem 0.875rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.leaflet-popup-content p {
+  margin: 0;
+}
+
+.map-picking .leaflet-container {
+  cursor: crosshair;
 }

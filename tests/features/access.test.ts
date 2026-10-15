@@ -13,9 +13,10 @@ describe('điều hướng theo mô hình ba vai trò', () => {
     expect(ids(none)).toEqual(expect.arrayContaining(['receipts', 'debts', 'pricing', 'plans', 'importData']));
   });
 
-  it('nông dân → Trang chủ, Đơn hàng, Tài khoản; không có màn nào của sổ', () => {
+  it('nông dân → Trang chủ, Đơn hàng, Bản đồ, Tài khoản; không có màn nào của sổ', () => {
     const farmer = access('farmer', 'owner');
-    expect(navItems(counts, farmer).map((i) => i.id)).toEqual(['dashboard', 'orders', 'profile']);
+    expect(navItems(counts, farmer).map((i) => i.id)).toEqual(['dashboard', 'orders', 'map', 'profile']);
+    expect(navItems(counts, farmer).find((i) => i.id === 'map')?.bar).toBe(3);
     expect(allows(farmer, ROUTE_GATES[ROUTES.receipts])).toBe(false);
     expect(allows(farmer, ROUTE_GATES[ROUTES.plans])).toBe(false);
     expect(navGroups(counts, farmer).every((g) => g.items.length > 0)).toBe(true);
@@ -39,6 +40,23 @@ describe('điều hướng theo mô hình ba vai trò', () => {
     const staff = ids(access('trader', 'staff'));
     expect(staff).toEqual(expect.arrayContaining(['receipts', 'debts', 'suppliers', 'products']));
     for (const hidden of ['pricing', 'reports', 'plans', 'importData']) expect(staff).not.toContain(hidden);
+  });
+
+  it('bản đồ: mọi vai trò có tổ chức đều xem; đặt địa điểm chỉ chủ vựa, chủ / quản lý doanh nghiệp', () => {
+    const roles: [OrgType, MemberRole][] = [
+      ['farmer', 'owner'],
+      ['trader', 'owner'],
+      ['trader', 'staff'],
+      ['enterprise', 'owner'],
+      ['enterprise', 'manager'],
+      ['enterprise', 'staff'],
+    ];
+    expect(roles.map(([t, r]) => allows(access(t, r), ROUTE_GATES[ROUTES.map]))).toEqual([true, true, true, true, true, true]);
+    expect(roles.map(([t, r]) => allows(access(t, r), ROUTE_GATES[ROUTES.myPlaces]))).toEqual([false, true, false, true, true, false]);
+    // Sổ của máy này (chưa có máy chủ): không có bản đồ.
+    expect(allows({ orgType: null, permissions: [] }, ROUTE_GATES[ROUTES.map])).toBe(false);
+    expect(ids(access('trader', 'staff'))).toContain('map');
+    expect(ids(access('trader', 'staff'))).not.toContain('myPlaces');
   });
 
   it('quản lý doanh nghiệp → có giá và báo cáo, không có Gói', () => {

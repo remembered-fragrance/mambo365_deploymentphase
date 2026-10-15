@@ -17,11 +17,13 @@ import {
   ChartIcon,
   DebtIcon,
   HomeIcon,
+  MapIcon,
   MoreIcon,
   PackageIcon,
   PeopleIcon,
   PercentIcon,
   PhoneIcon,
+  PinIcon,
   ReceiptIcon,
   TagIcon,
   ToolIcon,
@@ -56,6 +58,8 @@ export const ROUTES = {
   orgReport: '/bao-cao-tong',
   linked: '/vua',
   connect: '/ket-noi',
+  map: '/ban-do',
+  myPlaces: '/dia-diem',
   linkedTrader: (orgId: string) => `/vua/${orgId}`,
   more: '/them',
   auth: '/dang-nhap',
@@ -90,6 +94,9 @@ export const ROUTE_GATES: Readonly<Record<string, Gate>> = {
   [ROUTES.members]: { org: true, permission: 'staff:manage' },
   [ROUTES.branches]: { org: true, enterprise: true, permission: 'branch:manage' },
   [ROUTES.orgReport]: { org: true, enterprise: true, permission: 'report:view' },
+  // Bản đồ: cần máy chủ; xem thì mọi vai trò, đặt địa điểm thì `place:manage`.
+  [ROUTES.map]: { org: true },
+  [ROUTES.myPlaces]: { org: true, permission: 'place:manage' },
 };
 
 const visible = (access: Access) => (item: NavItem): boolean => allows(access, ROUTE_GATES[item.to]);
@@ -101,11 +108,12 @@ export interface NavCounts {
 }
 
 export const navItems = (counts: NavCounts, access: Access): NavItem[] => {
-  // Vỏ Nông dân: không có sổ ⇒ thanh dưới chỉ có Trang chủ, Đơn hàng, Tài khoản.
+  // Vỏ Nông dân: không có sổ ⇒ thanh dưới có Trang chủ, Đơn hàng, Bản đồ (tìm vựa gần), Tài khoản.
   if (isFarmer(access)) {
     return [
       { id: 'dashboard', label: L.navDashboard, to: ROUTES.dashboard, Icon: HomeIcon, bar: 1 },
       { id: 'orders', label: L.navOrders, to: ROUTES.orders, Icon: PackageIcon, bar: 2 },
+      { id: 'map', label: L.navMap, to: ROUTES.map, Icon: MapIcon, bar: 3 },
       { id: 'profile', label: L.navProfile, to: ROUTES.profile, Icon: UserIcon, bar: 4 },
     ];
   }
@@ -131,6 +139,7 @@ export const secondaryItems = (access: Access): NavItem[] => allSecondary().filt
 
 const allSecondary = (): NavItem[] => [
   { id: 'orders', label: L.navOrders, to: ROUTES.orders, Icon: PackageIcon },
+  { id: 'map', label: L.navMap, to: ROUTES.map, Icon: MapIcon },
   { id: 'suppliers', label: L.navSuppliers, to: ROUTES.suppliers, Icon: PhoneIcon },
   { id: 'buyers', label: L.navBuyers, to: ROUTES.buyers, Icon: PeopleIcon },
   { id: 'products', label: L.navProducts, to: ROUTES.products, Icon: TagIcon },
@@ -141,6 +150,7 @@ const allSecondary = (): NavItem[] => [
   { id: 'profile', label: L.navProfile, to: ROUTES.profile, Icon: UserIcon },
   { id: 'members', label: L.navMembers, to: ROUTES.members, Icon: PeopleIcon },
   { id: 'branches', label: L.navBranches, to: ROUTES.branches, Icon: HomeIcon },
+  { id: 'myPlaces', label: L.navMyPlaces, to: ROUTES.myPlaces, Icon: PinIcon },
   { id: 'orgReport', label: L.navOrgReport, to: ROUTES.orgReport, Icon: ChartIcon },
   { id: 'plans', label: L.planTitle, to: ROUTES.plans, Icon: CardIcon },
   { id: 'importData', label: L.importTitle, to: ROUTES.importData, Icon: UploadIcon },
@@ -157,7 +167,7 @@ export const navGroups = (counts: NavCounts, access: Access): NavGroup[] => {
     {
       id: 'daily',
       label: L.groupDaily,
-      items: [...pick(bar, ['dashboard', 'receipts', 'debts']), ...pick(rest, ['orders'])],
+      items: [...pick(bar, ['dashboard', 'receipts', 'debts']), ...pick(rest, ['orders', 'map'])],
     },
     { id: 'partners', label: L.groupPartners, items: pick(rest, ['suppliers', 'buyers']) },
     { id: 'goods', label: L.groupGoods, items: pick(rest, ['products', 'inventory', 'pricing']) },
@@ -165,7 +175,7 @@ export const navGroups = (counts: NavCounts, access: Access): NavGroup[] => {
     {
       id: 'account',
       label: L.groupAccount,
-      items: pick(rest, ['profile', 'members', 'branches', 'plans', 'importData']),
+      items: pick(rest, ['profile', 'members', 'branches', 'myPlaces', 'plans', 'importData']),
     },
   ];
   // Nhóm rỗng (người cân không có Đối tác/Hàng hoá đầy đủ, nông dân) thì bỏ hẳn tiêu đề.

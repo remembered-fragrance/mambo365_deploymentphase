@@ -490,6 +490,33 @@ Cần `@mambo/*` **0.13.0** (`api.reports.members`) — `package.json` đã tr�
 
 ---
 
+## Bản đồ thu mua · 16/10/2026
+
+Cần `@mambo/*` **0.14.0** (`api.places`, quyền `place:manage`). **`package.json` còn trỏ release `v0.13.0`**:
+BE phát hành `v0.14.0` xong mới đổi 3 URL rồi `npm install` để lock có integrity thật — trước đó CI đỏ ở
+typecheck. Chuyển từ prototype LiveMap (`k20elite/LiveMap`)
+sang, viết lại theo khung của app (BottomSheet, Toast, ConfirmDialog, nhãn tiếng Việt trong `i18n/mapLabels.ts`).
+
+- **Hai màn**: `/ban-do` (mọi vai trò có tổ chức; sổ của máy này không có) và `/dia-diem` "Địa điểm của tôi"
+  (chủ vựa, chủ / quản lý doanh nghiệp). Nông dân có Bản đồ ở thanh dưới, ô thứ 3. `/ban-do?xem=<id>` mở popup,
+  `?sua=<id>` mở form sửa — `mapLinks.ts` tách riêng để màn danh sách không kéo Leaflet.
+- **Leaflet chỉ nằm trong chunk `MapPage`** (170 KB, gzip 51 KB) — luật depcruise `leaflet-chi-o-ban-do` chặn
+  import từ ngoài `features/map/`. JS khởi tạo không đổi.
+- **Tải theo khung nhìn**: `GET /v1/places?bbox=` mỗi lần dừng kéo, huỷ yêu cầu cũ bằng `AbortSignal`, kẹp bbox
+  về ±180/±90 (thu nhỏ hết cỡ Leaflet trả kinh độ > 180 → máy chủ 422). Trả về chạm `PLACES_PAGE_LIMIT` (500)
+  thì báo "phóng to để thấy hết".
+- **Kiểm ở máy bằng cùng schema với máy chủ** (`PlaceInput` của contracts); lỗi 422 của máy chủ gắn vào ô,
+  `lng` gộp vào `lat` vì form chỉ có một dòng Vị trí. Vượt `PLACES_PER_ORG_LIMIT` (100) báo kèm con số.
+- **Hoàng Sa, Trường Sa**: nhãn chủ quyền vẽ đè trên nền; khung Việt Nam (`VN_BOUNDS`) gồm cả hai quần đảo.
+- **Tile**: mặc định OpenStreetMap — miễn phí, phải ghi nguồn, **không cho lưu lượng lớn**
+  (https://operations.osmfoundation.org/policies/tiles/). Đổi bằng `VITE_TILE_URL` / `VITE_TILE_ATTRIBUTION`.
+  `TileLayer` gửi `referrerPolicy="strict-origin-when-cross-origin"` vì Vercel đặt `no-referrer` cho cả trang
+  mà OSM chặn yêu cầu không có Referer.
+- **Màu ghim** là token `--color-trader` / `--color-enterprise` / `--color-me` (đủ day / sun / night); SVG ghim
+  dùng `currentColor`, không ghi cứng mã màu.
+
+---
+
 ## Ba số phải giữ trong tầm
 
 Đo lúc kết thúc mỗi giai đoạn.

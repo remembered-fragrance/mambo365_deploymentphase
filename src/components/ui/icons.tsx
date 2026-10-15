@@ -39,6 +39,14 @@ export const KeyboardIcon = (p: IconProps) => (
 );
 
 export const HomeIcon = (p: IconProps) => <Icon {...p} d="M4 11l8-7 8 7|M6 10v10h12V10" />;
+/** Tấm bản đồ gấp ba. */
+export const MapIcon = (p: IconProps) => (
+  <Icon {...p} d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z|M9 4v14|M15 6v14" />
+);
+/** Ghim địa điểm. */
+export const PinIcon = (p: IconProps) => (
+  <Icon {...p} d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z|M12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
+);
 export const ReceiptIcon = (p: IconProps) => (
   <Icon {...p} d="M6 3h12v18l-3-2-3 2-3-2-3 2z|M9 8h6M9 12h6" />
 );
