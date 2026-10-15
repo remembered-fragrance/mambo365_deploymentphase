@@ -8,8 +8,7 @@ import { computeReceiptTotal } from '@mambo/core/calc';
 import { formatDateTime, formatVnd } from '@mambo/core/format';
 import type { DraftReceipt } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
-import { discardConsequence } from '../receipt/draftSessions';
-import { ROUTES } from '../shared/navItems';
+import { discardConsequence, draftHref } from '../receipt/draftSessions';
 
 interface DraftListProps {
   readonly drafts: readonly DraftReceipt[];
@@ -18,7 +17,7 @@ interface DraftListProps {
 }
 
 /**
- * Nháp mở lại bằng `?draft=<id>` — chạm một cái là về đúng phiếu đang cân dở.
+ * Nháp mở lại bằng `draftHref` — chạm một cái là về đúng phiếu đang cân dở.
  * Nháp bỏ dở (khách bỏ đi, cân nhầm) xoá được ngay ở đây, khỏi phải mở ra; nút xoá là ô riêng
  * cạnh dòng và luôn hỏi lại, nên chạm nhầm cũng không mất gì.
  */
@@ -37,7 +36,7 @@ export function DraftList({ drafts, emptyTitle, onDelete }: DraftListProps) {
           const { total } = computeReceiptTotal(draft.lines);
           return (
             <li key={draft.id} className="flex items-stretch gap-2">
-              <Link to={`${ROUTES.create}?draft=${draft.id}`} className="card flex min-w-0 flex-1 items-center gap-3 p-3">
+              <Link to={draftHref(draft)} className="card flex min-w-0 flex-1 items-center gap-3 p-3">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-bold text-ink">{name(draft)}</span>
                   <span className="num block text-sm text-ink-3">

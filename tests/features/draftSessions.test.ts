@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { discardConsequence, nextSession } from '@/features/receipt/draftSessions';
+import { discardConsequence, draftHref, nextSession } from '@/features/receipt/draftSessions';
 import type { DraftReceipt } from '@mambo/core/types';
 
 const draft = (id: string): DraftReceipt => ({
@@ -42,5 +42,20 @@ describe('discardConsequence', () => {
 
   it('chưa có tên thì gọi là khách lẻ', () => {
     expect(discardConsequence('  ', 0).startsWith('Khách lẻ · ')).toBe(true);
+  });
+});
+
+describe('draftHref', () => {
+  const params = (href: string) => new URLSearchParams(href.slice(href.indexOf('?')));
+
+  it('nháp phiếu bán mở lại đúng là phiếu bán', () => {
+    const href = draftHref({ id: 'b1', kind: 'sale' });
+    expect(href.startsWith('/tao-phieu?')).toBe(true);
+    expect(params(href).get('kind')).toBe('sale');
+    expect(params(href).get('draft')).toBe('b1');
+  });
+
+  it('nháp cũ chưa có loại thì là phiếu mua', () => {
+    expect(params(draftHref({ id: 'a1' })).get('kind')).toBe('purchase');
   });
 });
