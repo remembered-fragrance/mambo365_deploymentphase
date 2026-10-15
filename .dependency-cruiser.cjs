@@ -71,6 +71,13 @@ module.exports = {
       },
     },
     {
+      name: 'leaflet-chi-o-ban-do',
+      comment: 'leaflet · react-leaflet chỉ dùng trong features/map/ — màn đó nạp bằng lazy(), không vào JS khởi tạo.',
+      severity: 'error',
+      from: { pathNot: '^src/features/map/' },
+      to: { path: 'node_modules/(leaflet|react-leaflet|@types/leaflet)/', dependencyTypesNot: ['dynamic-import'] },
+    },
+    {
       name: 'khong-phu-thuoc-vong',
       severity: 'error',
       from: {},

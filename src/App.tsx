@@ -38,6 +38,9 @@ const MembersPage = lazy(() => import('@/features/org/MembersPage').then((m) => 
 const BranchesPage = lazy(() => import('@/features/org/BranchesPage').then((m) => ({ default: m.BranchesPage })));
 const OrgReportPage = lazy(() => import('@/features/org/OrgReportPage').then((m) => ({ default: m.OrgReportPage })));
 const ConnectPage = lazy(() => import('@/features/farmer/ConnectPage').then((m) => ({ default: m.ConnectPage })));
+// Leaflet (~150KB) chỉ tải khi mở bản đồ.
+const MapPage = lazy(() => import('@/features/map/MapPage').then((m) => ({ default: m.MapPage })));
+const MyPlacesPage = lazy(() => import('@/features/map/MyPlacesPage').then((m) => ({ default: m.MyPlacesPage })));
 const ReceiptsPage = lazy(() =>
   import('@/features/receipts/ReceiptsPage').then((m) => ({ default: m.ReceiptsPage })),
 );
@@ -143,6 +146,8 @@ export function App() {
                         <Route path={ROUTES.branches} element={<Gated route={ROUTES.branches}><BranchesPage /></Gated>} />
                         <Route path={ROUTES.orgReport} element={<Gated route={ROUTES.orgReport}><OrgReportPage /></Gated>} />
                         <Route path={ROUTES.connect} element={<Gated route={ROUTES.connect}><ConnectPage /></Gated>} />
+                        <Route path={ROUTES.map} element={<Gated route={ROUTES.map}><MapPage /></Gated>} />
+                        <Route path={ROUTES.myPlaces} element={<Gated route={ROUTES.myPlaces}><MyPlacesPage /></Gated>} />
                         <Route path={ROUTES.more} element={<MorePage />} />
                         <Route path="*" element={<NotFoundPage />} />
                       </Routes>
