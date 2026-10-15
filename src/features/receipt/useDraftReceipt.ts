@@ -64,7 +64,7 @@ export function useDraftReceipt(
   const [lines, setLines] = useState<readonly LineDraft[]>(() =>
     stored && stored.lines.length > 0 ? stored.lines.map(fromLine) : [emptyLine()],
   );
-  const [adjustments, setAdjustments] = useState<readonly PriceAdjustment[]>([]);
+  const [adjustments, setAdjustments] = useState<readonly PriceAdjustment[]>(stored?.adjustments ?? []);
   const [note, setNote] = useState(stored?.note ?? '');
   const [attachmentIds, setAttachmentIds] = useState<readonly string[]>(stored?.attachmentIds ?? []);
   const [orderId, setOrderId] = useState(stored?.orderId);
@@ -93,7 +93,10 @@ export function useDraftReceipt(
       supplierName: partyName,
       lines: lines.map(toLine),
       amountPaid: 0,
-      note: note || undefined,
+      // Luôn gửi đủ, kể cả khi trống: gỡ hết khoản / xoá ghi chú / bỏ khách cũng phải lên máy chủ,
+      // không thì lần kéo về sau dựng lại đúng cái vừa gỡ.
+      adjustments: [...adjustments],
+      note,
       attachmentIds: [...attachmentIds],
       orderId,
     });
@@ -114,7 +117,7 @@ export function useDraftReceipt(
     };
     // `save` / `upsertDraft` đổi tham chiếu mỗi lần sổ đổi; đưa vào đây sẽ tự lưu vòng lặp.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, kind, status, counterpartyId, partyName, lines, note, attachmentIds, orderId]);
+  }, [id, kind, status, counterpartyId, partyName, lines, adjustments, note, attachmentIds, orderId]);
 
   const mark = useCallback(<T,>(setter: (value: T) => void) => {
     return (value: T) => {

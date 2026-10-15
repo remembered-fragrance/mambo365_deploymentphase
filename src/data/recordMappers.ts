@@ -67,6 +67,7 @@ export const draftFromRecord = (rec: DraftRecord): DraftReceipt => ({
   supplierName: rec.supplierName,
   lines: rec.lines as unknown as DraftReceipt['lines'],
   amountPaid: rec.amountPaid,
+  adjustments: rec.adjustments?.length ? rec.adjustments : undefined,
   note: rec.note ?? undefined,
   attachmentIds: rec.attachmentIds.length ? rec.attachmentIds : undefined,
   orderId: rec.orderId ?? undefined,
