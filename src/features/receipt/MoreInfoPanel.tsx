@@ -41,7 +41,8 @@ export function MoreInfoPanel({
   const [amount, setAmount] = useState('');
 
   const add = (sign: 1 | -1) => {
-    const value = parseNumber(amount);
+    // Tiền là đồng nguyên — máy chủ từ chối số lẻ, nháp sẽ kẹt ở "xung đột" không lên mạng được.
+    const value = Math.round(parseNumber(amount));
     if (value <= 0) return;
     onAdjustmentsChange([
       ...adjustments,
@@ -92,6 +93,7 @@ export function MoreInfoPanel({
               <button
                 type="button"
                 onClick={() => onAdjustmentsChange(adjustments.filter((a) => a.id !== adj.id))}
+                aria-label={`${L.del} ${adj.label}`}
                 className="text-sm font-semibold text-alert"
               >
                 {L.del}

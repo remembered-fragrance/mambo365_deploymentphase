@@ -111,6 +111,12 @@ export const transactionToPatch = (patch: { attachmentIds?: string[]; note?: str
   return result;
 };
 
+/** Khoản cộng/trừ của nháp — trống gửi `null` (máy chủ cũng lưu NULL), không gửi mảng rỗng. */
+const adjustmentsToWire = (list: DraftReceipt['adjustments']) =>
+  list && list.length > 0
+    ? list.map((a) => ({ id: a.id, kind: a.kind, label: a.label, amount: a.amount, ...(a.ruleId ? { ruleId: a.ruleId } : {}) }))
+    : null;
+
 export const draftToInsert = (draft: DraftReceipt) => ({
   status: draft.status,
   kind: draft.kind ?? null,
@@ -139,21 +145,26 @@ export const draftToInsert = (draft: DraftReceipt) => ({
     ...(l.qualityGrade ? { qualityGrade: l.qualityGrade } : {}),
   })),
   amountPaid: draft.amountPaid ?? 0,
+  adjustments: adjustmentsToWire(draft.adjustments),
   note: draft.note?.trim() || null,
   attachmentIds: draft.attachmentIds ? [...draft.attachmentIds] : [],
   orderId: draft.orderId ?? null,
 });
 
+/**
+ * Có KHOÁ là gửi, kể cả giá trị `undefined` (= xoá): người dùng bỏ khách, gỡ hết khoản, xoá ghi chú
+ * thì máy chủ cũng phải bỏ theo. Không có khoá (người gọi không đụng tới) thì giữ nguyên.
+ */
 export const draftToPatch = (patch: Partial<DraftReceipt>) => {
   const result: Record<string, unknown> = {};
   if (patch.status !== undefined) result.status = patch.status;
   if (patch.kind !== undefined) result.kind = patch.kind ?? null;
-  if (patch.counterpartyId !== undefined)
-    result.counterpartyId = partyIdToWire(patch.counterpartyId);
+  if ('counterpartyId' in patch) result.counterpartyId = partyIdToWire(patch.counterpartyId);
   if (patch.supplierName !== undefined) result.supplierName = patch.supplierName.trim();
   if (patch.lines !== undefined) result.lines = patch.lines;
   if (patch.amountPaid !== undefined) result.amountPaid = patch.amountPaid;
-  if (patch.note !== undefined) result.note = patch.note ? patch.note.trim() : null;
+  if ('adjustments' in patch) result.adjustments = adjustmentsToWire(patch.adjustments);
+  if ('note' in patch) result.note = patch.note?.trim() || null;
   if (patch.attachmentIds !== undefined)
     result.attachmentIds = patch.attachmentIds ? [...patch.attachmentIds] : [];
   if ('orderId' in patch) result.orderId = patch.orderId ?? null;

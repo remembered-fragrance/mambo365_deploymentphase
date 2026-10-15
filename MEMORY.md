@@ -527,6 +527,23 @@ người cân, chủ / nhân viên doanh nghiệp, chặn quyền vị trí. L�
 CSS bị leaflet.css đè; ghim giữ tên cũ sau khi sửa (`Marker` không cập nhật `title`); bấm ghim lúc đang bay
 tới vị trí của tôi thì popup trôi khỏi màn hình; lỗi ô tên không tắt khi gõ lại.
 
+## Nháp giữ khoản cộng/trừ · `@mambo/*` 0.15.0 · 17/10/2026
+
+Trước đây khoản cộng/trừ chỉ nằm trong state của màn lập phiếu: chuyển khách hoặc "Để dành" là mất (bảng
+`drafts` không có chỗ lưu). BE v0.15.0 thêm `drafts.adjustments`. **API phải lên trước app**: app mới gửi
+`adjustments` lên API ≤ 0.14 thì op bị từ chối và nháp kẹt "xung đột".
+
+- `useDraftReceipt`: lấy khoản từ nháp đã lưu, tự lưu khi khoản đổi. `save()` luôn gửi đủ `adjustments`,
+  `note` và `counterpartyId`, kể cả khi trống.
+- `draftToPatch` gửi theo **khoá có mặt** (`'note' in patch`) chứ không theo `!== undefined`. Đây là lỗi cũ:
+  gỡ hết khoản, xoá ghi chú hay bỏ khách thì máy chủ không biết, và lần kéo về sau dựng lại đúng cái vừa gỡ.
+  Khoản trống gửi `null`, không gửi `[]`.
+- Ô số tiền của khoản làm tròn về đồng nguyên. Các ô tiền khác (trả một phần, trả nợ, quy tắc giá) **chưa**
+  làm tròn, xem `D:\EXE201\GHI_CHU_LAM_TRON_TIEN.md`.
+- Màn bản đồ có `h1` ẩn (`sr-only`) cho trình đọc màn hình. Nút xoá từng khoản có `aria-label` "Xoá <tên khoản>".
+- Chạy thật (local, hai trình duyệt chung một sổ, 1280 và 390px): 9/9. Máy 2 với sổ trống kéo về thấy đủ khoản;
+  gỡ khoản và xoá ghi chú thì máy chủ thành `null`; chốt phiếu mang khoản, số trả đúng.
+
 ---
 
 ## Ba số phải giữ trong tầm

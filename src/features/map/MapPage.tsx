@@ -173,6 +173,8 @@ export function MapPage() {
 
   return (
     <div role="region" aria-label={L.mapAria} className={`map-page relative isolate ${picking ? 'map-picking' : ''}`}>
+      {/* Bản đồ chiếm trọn màn nên không có PageHeader — vẫn cần h1 cho trình đọc màn hình. */}
+      <h1 className="sr-only">{L.mapAria}</h1>
       <MapContainer
         ref={setMap}
         center={VN_CENTER}
