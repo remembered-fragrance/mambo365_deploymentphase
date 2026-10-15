@@ -1,7 +1,7 @@
 import { formatPhoneVn, normalizePhone } from '@mambo/core/identifier';
 import type { Place, PlaceKind } from '@mambo/contracts';
 import type { Marker as LeafletMarker } from 'leaflet';
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef } from 'react';
 import { Circle, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet';
 import { L } from '@/i18n/labels';
 import { directionsUrl, distanceMeters, formatDistance, type LatLng, SOVEREIGNTY_LABELS, telHref } from './geo';
@@ -120,12 +120,15 @@ const PlaceMarker = ({
   mine,
   focused,
   onFocused,
+  onClick,
   children,
 }: {
   readonly place: Place;
   readonly mine: boolean;
   readonly focused: boolean;
   readonly onFocused: () => void;
+  /** true = bản đồ vừa dừng bay → canh lại popup (xem `stopFlight` của MapPage). */
+  readonly onClick: () => boolean;
   readonly children: ReactNode;
 }) => {
   const ref = useRef<LeafletMarker>(null);
@@ -134,8 +137,17 @@ const PlaceMarker = ({
     ref.current.openPopup();
     onFocused();
   }, [focused, onFocused]);
+  // Popup chưa mở (handler này chạy trước Leaflet) thì `update` không làm gì — mở sau sẽ tự canh.
+  const handlers = useMemo(() => ({ click: () => onClick() && ref.current?.getPopup()?.update() }), [onClick]);
   return (
-    <Marker ref={ref} position={[place.lat, place.lng]} icon={placeIcon(place.kind, mine)} title={place.name} alt={place.name}>
+    <Marker
+      ref={ref}
+      position={[place.lat, place.lng]}
+      icon={placeIcon(place.kind, mine)}
+      title={place.name}
+      alt={place.name}
+      eventHandlers={handlers}
+    >
       {/* Chừa chỗ cho thanh lọc phía trên và nút nổi bên phải khi bản đồ tự trượt để hiện popup. */}
       <Popup autoPanPaddingTopLeft={[16, 96]} autoPanPaddingBottomRight={[64, 24]}>
         {children}
@@ -155,6 +167,7 @@ export const PlacesLayer = ({
   focusId,
   onFocused,
   onEdit,
+  onMarkerClick,
   onStatus,
 }: {
   readonly kinds: readonly PlaceKind[];
@@ -168,6 +181,7 @@ export const PlacesLayer = ({
   readonly focusId: string | null;
   readonly onFocused: () => void;
   readonly onEdit: (place: Place) => void;
+  readonly onMarkerClick: () => boolean;
   readonly onStatus: (status: PlacesInView) => void;
 }) => {
   const status = usePlacesInView(kinds, version);
@@ -179,8 +193,17 @@ export const PlacesLayer = ({
         .filter((p) => p.id !== hiddenId)
         .map((place) => {
           const mine = place.organizationId === myOrgId;
+          // `Marker` của react-leaflet chỉ cập nhật vị trí / icon — `title`, `alt` gán lúc tạo. Đổi tên
+          // thì dựng lại ghim, không thì chữ di chuột và tên trình đọc màn hình đọc vẫn là tên cũ.
           return (
-            <PlaceMarker key={place.id} place={place} mine={mine} focused={place.id === focusId} onFocused={onFocused}>
+            <PlaceMarker
+              key={`${place.id}:${place.name}`}
+              place={place}
+              mine={mine}
+              focused={place.id === focusId}
+              onFocused={onFocused}
+              onClick={onMarkerClick}
+            >
               <PlacePopup place={place} me={me} canEdit={mine && canManage} onEdit={onEdit} />
             </PlaceMarker>
           );

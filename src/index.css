@@ -195,6 +195,8 @@ body {
 /* ─── Bản đồ thu mua (Leaflet) ───────────────────────────────────────────────
    Màn bản đồ chiếm trọn phần còn lại dưới header, trên thanh dưới. Ghim, chấm
    vị trí, nhãn chủ quyền vẽ bằng HTML/SVG trong divIcon — màu lấy từ token.
+   leaflet.css nạp SAU file này (trong chunk MapPage): ghi đè class của Leaflet
+   phải có tiền tố `.map-page`, cùng độ ưu tiên là thua.
    ────────────────────────────────────────────────────────────────────────── */
 .map-page {
   height: calc(100dvh - 7.25rem - env(safe-area-inset-bottom));
@@ -207,7 +209,7 @@ body {
   }
 }
 
-.leaflet-container {
+.map-page .leaflet-container {
   font-family: var(--font-sans);
   background-color: var(--color-paper);
 }
@@ -300,19 +302,19 @@ body {
   transform: translate(-50%, -50%);
 }
 
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
+.map-page .leaflet-popup-content-wrapper,
+.map-page .leaflet-popup-tip {
   background-color: var(--color-card);
   color: var(--color-ink);
 }
 
-.leaflet-popup-content {
+.map-page .leaflet-popup-content {
   margin: 0.75rem 0.875rem;
   font-size: 0.875rem;
   line-height: 1.4;
 }
 
-.leaflet-popup-content p {
+.map-page .leaflet-popup-content p {
   margin: 0;
 }
 

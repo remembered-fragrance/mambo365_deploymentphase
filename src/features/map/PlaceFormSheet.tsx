@@ -1,5 +1,5 @@
 import { type Place, PlaceInput } from '@mambo/contracts';
-import { type FormEvent, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -117,7 +117,17 @@ export function PlaceFormSheet({
   const [busy, setBusy] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
 
-  const set = (key: keyof PlaceFormValues) => (value: string) => onChange({ ...values, [key]: value });
+  const set = (key: keyof PlaceFormValues) => (value: string) => {
+    onChange({ ...values, [key]: value });
+    // Đang sửa ô nào thì thôi báo lỗi ô đó — bấm lưu sẽ kiểm lại.
+    if (errors[key]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
 
   const fail = (err: unknown) => {
     const fields = placeFieldErrors(err);
@@ -125,8 +135,7 @@ export function PlaceFormSheet({
     setFormError(Object.keys(fields).length > 0 ? null : placeErrorMessage(err));
   };
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
+  const submit = async () => {
     if (busy) return;
     const local = validatePlace(values, position);
     setErrors(local);
@@ -159,7 +168,12 @@ export function PlaceFormSheet({
   return (
     <>
       <BottomSheet open={!confirmRemove} title={target ? L.placeEditTitle : L.placeAddTitle} onClose={busy ? () => undefined : onClose}>
-        <form className="mx-auto flex max-w-lg flex-col gap-4" onSubmit={(e) => void submit(e)} noValidate>
+        <form className="mx-auto flex max-w-lg flex-col gap-4" onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+          noValidate
+        >
           <div className="flex items-center justify-between gap-3 rounded-xl border border-rule bg-paper px-3 py-2">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-ink-2">{L.placePosition}</p>
@@ -222,10 +236,10 @@ export function PlaceFormSheet({
               <span />
             )}
             <div className="flex gap-3">
-              <Button block onClick={onClose} disabled={busy}>
+              <Button block className="whitespace-nowrap" onClick={onClose} disabled={busy}>
                 {L.cancel}
               </Button>
-              <Button type="submit" tone="primary" block disabled={busy}>
+              <Button type="submit" tone="primary" block className="whitespace-nowrap" disabled={busy}>
                 {busy ? L.placeSaving : target ? L.save : L.placeSubmitNew}
               </Button>
             </div>

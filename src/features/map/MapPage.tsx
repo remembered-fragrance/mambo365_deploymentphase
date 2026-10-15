@@ -56,18 +56,44 @@ export function MapPage() {
   const wantFlyToMe = useRef(false);
   const openedFromLink = useRef(params.has(MAP_VIEW_PARAM) || params.has(MAP_EDIT_PARAM));
 
+  /** Đang bay do app gọi `flyTo` (tới vị trí của tôi, tới một điểm). */
+  const flying = useRef(false);
+  const fly = useCallback(
+    (at: LatLng, zoom: number) => {
+      if (!map) return;
+      flying.current = true;
+      map.once('moveend', () => {
+        flying.current = false;
+      });
+      map.flyTo([at.lat, at.lng], zoom);
+    },
+    [map],
+  );
+
+  /**
+   * Bấm ghim lúc bản đồ còn đang bay (hay gặp nhất: vừa mở màn, đang bay tới vị trí của tôi). Popup
+   * chỉ tự canh vào khung một lần lúc mở, flyTo chạy tiếp kéo nó trôi khỏi màn hình tới khi bay xong.
+   * Dừng tại chỗ (không animation) rồi báo ghim canh lại popup.
+   */
+  const stopFlight = useCallback((): boolean => {
+    if (!map || !flying.current) return false;
+    flying.current = false;
+    map.setView(map.getCenter(), Math.round(map.getZoom()), { animate: false });
+    return true;
+  }, [map]);
+
   // Lần đầu có vị trí: bay tới quanh mình (nếu đang ở Việt Nam và không mở bằng link tới một điểm).
   useEffect(() => {
     const pos = location.position;
     if (!map || !pos) return;
     if (wantFlyToMe.current) {
       wantFlyToMe.current = false;
-      map.flyTo([pos.lat, pos.lng], Math.max(map.getZoom(), NEAR_ZOOM));
+      fly(pos, Math.max(map.getZoom(), NEAR_ZOOM));
     } else if (!flewToMe.current && insideVietnam(pos) && !openedFromLink.current) {
-      map.flyTo([pos.lat, pos.lng], FIRST_FIX_ZOOM);
+      fly(pos, FIRST_FIX_ZOOM);
     }
     flewToMe.current = true;
-  }, [map, location.position]);
+  }, [map, location.position, fly]);
 
   // Mở từ trang "Địa điểm của tôi".
   useEffect(() => {
@@ -78,7 +104,7 @@ export function MapPage() {
     setParams({}, { replace: true });
     getPlace(id)
       .then((place) => {
-        map.flyTo([place.lat, place.lng], Math.max(map.getZoom(), NEAR_ZOOM));
+        fly(place, Math.max(map.getZoom(), NEAR_ZOOM));
         if (editing && canManage && place.organizationId === currentOrgId) {
           setValues(formFromPlace(place));
           setMode({ kind: 'form', target: place, draft: place });
@@ -87,12 +113,12 @@ export function MapPage() {
         }
       })
       .catch(() => toast({ message: L.mapNotFound, tone: 'alert' }));
-  }, [map, params, setParams, canManage, currentOrgId, toast]);
+  }, [map, params, setParams, canManage, currentOrgId, toast, fly]);
 
   const goToMe = () => {
     const pos = location.position;
     if (pos && map) {
-      map.flyTo([pos.lat, pos.lng], Math.max(map.getZoom(), NEAR_ZOOM));
+      fly(pos, Math.max(map.getZoom(), NEAR_ZOOM));
     } else {
       wantFlyToMe.current = true;
       location.start();
@@ -121,7 +147,7 @@ export function MapPage() {
   const pickMyPosition = () => {
     const pos = location.position;
     if (!pos || mode.kind !== 'pick') return;
-    map?.flyTo([pos.lat, pos.lng], Math.max(map.getZoom(), NEAR_ZOOM));
+    if (map) fly(pos, Math.max(map.getZoom(), NEAR_ZOOM));
     setMode({ ...mode, draft: { lat: pos.lat, lng: pos.lng } });
   };
 
@@ -169,6 +195,7 @@ export function MapPage() {
           focusId={focusId}
           onFocused={onFocused}
           onEdit={startEdit}
+          onMarkerClick={stopFlight}
           onStatus={onStatus}
         />
         <MyLocationLayer position={location.position} />
