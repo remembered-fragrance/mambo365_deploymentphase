@@ -7,7 +7,7 @@ import { SidebarNav } from '@/components/layout/SidebarNav';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
 import { OfflineBanner, SyncBadge, type SyncTone } from '@/components/feedback/SyncBadge';
-import { MoonIcon, SearchIcon, SunIcon } from '@/components/ui/icons';
+import { ChevronLeftIcon, MoonIcon, SearchIcon, SunIcon } from '@/components/ui/icons';
 import { overdueCount } from '@mambo/core/debtSelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
@@ -49,7 +49,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
   const { data, status, stuck } = useStore();
   const { theme, cycleTheme } = useTheme();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, key: locationKey } = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -106,6 +106,29 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
     </button>
   );
 
+  // App cài lên màn hình chính (standalone) không có nút back của trình duyệt — màn con phải tự có.
+  // Mở thẳng từ đường dẫn (key 'default' = chưa có lịch sử trong app) thì lùi về màn cha.
+  const atTab = items.some((item) => item.to === pathname);
+  const goBack = () => {
+    if (locationKey !== 'default') {
+      navigate(-1);
+      return;
+    }
+    const cut = pathname.lastIndexOf('/');
+    const hasMore = items.some((item) => item.to === ROUTES.more);
+    navigate(cut > 0 ? pathname.slice(0, cut) : hasMore ? ROUTES.more : ROUTES.dashboard);
+  };
+  const backButton = !atTab && (
+    <button
+      type="button"
+      onClick={goBack}
+      aria-label={L.goBack}
+      className="-ml-1 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-ink-2"
+    >
+      <ChevronLeftIcon />
+    </button>
+  );
+
   const badge = <SyncBadge tone={tone} label={SYNC_LABEL[tone]} />;
   // Thông báo là của tổ chức trên máy chủ — sổ của máy này không có.
   const bell = access.orgType && <NotificationBell />;
@@ -148,6 +171,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
           <MobileHeader
             appName={L.appName}
             title={MOBILE_TITLE[pathname]}
+            back={backButton}
             themeToggle={themeToggle}
             actions={
               <>

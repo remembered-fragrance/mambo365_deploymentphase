@@ -214,7 +214,8 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
           )}
         </div>
 
-        <div className="lg:col-span-3">
+        {/* Điện thoại: `contents` để thanh tổng dính theo cả lưới, không kẹt trong khung cao bằng chính nó. */}
+        <div className="max-lg:contents lg:col-span-3">
           <ReceiptSummary
             total={receipt.finalTotal}
             canFinish={receipt.canFinish}
