@@ -171,6 +171,7 @@ const BASE = {
   themeSun: 'Ngoài nắng',
   themeNight: 'Ban đêm',
   themeSwitch: 'Đổi chế độ xem',
+  goBack: 'Quay lại',
 
   // ─── Đồng bộ ──────────────────────────────────────────────────────────────
   syncSynced: 'Đã lưu lên mạng',
