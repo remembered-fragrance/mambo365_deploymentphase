@@ -73,7 +73,8 @@ export function ReportsPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,26rem)_1fr]">
         <div className="flex flex-col gap-3">
           <p className="num text-sm font-semibold text-ink-2">{range.label}</p>
-          <div className="grid grid-cols-2 gap-3">
+          {/* Một cột trên điện thoại: hai cột thì số tiền tỷ đồng bị tràn khỏi ô. */}
+          <div className="grid gap-3 sm:grid-cols-2">
             <Figure label={L.taxTotalPurchase} value={formatVnd(report.totalPurchase)} />
             <Figure label={L.taxTotalSale} value={formatVnd(report.totalSale)} />
             <Figure label={L.taxGrossProfit} value={formatVnd(report.grossProfit)} />

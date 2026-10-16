@@ -152,17 +152,21 @@ export function ReceiptsPage() {
       />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <Chip label={L.tabDone} selected={tab === 'done'} onSelect={() => patch({ tab: 'done' })} />
-        <Chip
-          label={`${L.draftWeighing} (${drafts.length})`}
-          selected={tab === 'draft'}
-          onSelect={() => patch({ tab: 'draft' })}
-        />
-        <Chip
-          label={`${L.draftSaved} (${waiting.length})`}
-          selected={tab === 'waiting'}
-          onSelect={() => patch({ tab: 'waiting' })}
-        />
+        {/* Chip trạng thái luôn một hàng (cuộn ngang nếu thiếu chỗ): xuống hai hàng
+            thì bộ lọc chiếm nửa màn điện thoại trước phiếu đầu tiên. */}
+        <div className="flex max-w-full gap-2 overflow-x-auto [&>*]:shrink-0">
+          <Chip label={L.tabDone} selected={tab === 'done'} onSelect={() => patch({ tab: 'done' })} />
+          <Chip
+            label={`${L.draftWeighing} (${drafts.length})`}
+            selected={tab === 'draft'}
+            onSelect={() => patch({ tab: 'draft' })}
+          />
+          <Chip
+            label={`${L.draftSaved} (${waiting.length})`}
+            selected={tab === 'waiting'}
+            onSelect={() => patch({ tab: 'waiting' })}
+          />
+        </div>
         {tab === 'done' && (
           <div className="ml-auto">
             <Segmented

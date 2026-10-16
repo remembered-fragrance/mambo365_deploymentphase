@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui/Badge';
-import type { Column } from '@/components/data/dataViewModel';
+import { STRETCH_TITLE, type Column } from '@/components/data/dataViewModel';
 import { PencilIcon, PhoneIcon } from '@/components/ui/icons';
 import { formatDate, formatVnd } from '@mambo/core/format';
 import type { PartySummary, PartyRole } from '@mambo/core/partySelectors';
@@ -43,7 +43,7 @@ export const partnerColumns = (
     id: 'name',
     header: L.partyName,
     cell: (p) => (
-      <button type="button" onClick={() => onOpen(p)} className="text-left font-bold text-ink underline decoration-rule underline-offset-4">
+      <button type="button" onClick={() => onOpen(p)} className={`text-left font-bold text-ink underline decoration-rule underline-offset-4 ${STRETCH_TITLE}`}>
         {p.name}
       </button>
     ),
