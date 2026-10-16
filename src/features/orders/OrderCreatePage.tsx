@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/Toast';
 import { linkErrorMessage, useLinks } from '@/data/hooks/useLinked';
 import { createOrder } from '@/data/hooks/useOrders';
 import { L } from '@/i18n/labels';
+import { parseMoney } from '../shared/money';
 import { NumberField } from '../shared/NumberField';
 import { ROUTES } from '../shared/navItems';
 import { useAccess } from '../shared/useAccess';
@@ -63,7 +64,7 @@ export function OrderCreatePage() {
         counterpartOrgId: target,
         crop: (crop || null) as OrderCreateInput['crop'],
         estQuantity,
-        offeredPrice: price ? Math.round(parseNumber(price)) : null,
+        offeredPrice: price ? parseMoney(price) : null,
         note: note.trim() || null,
       });
       toast({ message: L.orderSent });
@@ -129,7 +130,7 @@ export function OrderCreatePage() {
             onValueChange={setCrop}
           />
           <NumberField label={L.orderQuantity} value={quantity} unit="kg" onValueChange={setQuantity} />
-          <NumberField label={L.orderPrice} value={price} unit="₫" spoken onValueChange={setPrice} />
+          <NumberField label={L.orderPrice} value={price} unit="₫" spoken money onValueChange={setPrice} />
           <Input label={L.orderNote} value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} />
           {error && <p className="text-sm text-alert">{error}</p>}
           <Button type="submit" tone="primary" size="lg" block disabled={busy}>

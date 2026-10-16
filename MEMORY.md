@@ -538,11 +538,26 @@ Trước đây khoản cộng/trừ chỉ nằm trong state của màn lập phi
 - `draftToPatch` gửi theo **khoá có mặt** (`'note' in patch`) chứ không theo `!== undefined`. Đây là lỗi cũ:
   gỡ hết khoản, xoá ghi chú hay bỏ khách thì máy chủ không biết, và lần kéo về sau dựng lại đúng cái vừa gỡ.
   Khoản trống gửi `null`, không gửi `[]`.
-- Ô số tiền của khoản làm tròn về đồng nguyên. Các ô tiền khác (trả một phần, trả nợ, quy tắc giá) **chưa**
-  làm tròn, xem `D:\EXE201\GHI_CHU_LAM_TRON_TIEN.md`.
+- Ô số tiền của khoản làm tròn về đồng nguyên (các ô tiền khác: xem mục làm tròn tiền bên dưới).
 - Màn bản đồ có `h1` ẩn (`sr-only`) cho trình đọc màn hình. Nút xoá từng khoản có `aria-label` "Xoá <tên khoản>".
 - Chạy thật (local, hai trình duyệt chung một sổ, 1280 và 390px): 9/9. Máy 2 với sổ trống kéo về thấy đủ khoản;
   gỡ khoản và xoá ghi chú thì máy chủ thành `null`; chốt phiếu mang khoản, số trả đúng.
+
+## Ô tiền gõ lẻ được, lưu đồng nguyên · 17/10/2026
+
+Ô tiền dùng chung `NumberField` với ô cân nên gõ được dấu phẩy. Máy chủ chỉ nhận tiền là `int`: một lần trả
+`500000,5` bị từ chối và op kẹt "xung đột". Người dùng chọn **cho gõ, app tự làm tròn** (không chặn phím phẩy).
+
+- `features/shared/money.ts`: `parseMoney` = làm tròn tới đồng gần nhất (0,5 lên). Dùng cho mọi ô tiền: khoản
+  cộng/trừ, trả một phần khi chốt, trả nợ, tiền cố định của quy tắc giá, giá đề nghị của đơn.
+- `NumberField` có prop `money`: gõ lẻ thì dòng gợi ý (và bàn phím số) báo "Tiền không có số lẻ, sẽ lưu X₫".
+  Ô tiền mới **phải** dùng `parseMoney` và bật `money`. Đơn giá, khối lượng, phần trăm được lẻ, không dùng.
+- `wireMappers` làm tròn mọi trường tiền lần nữa trước khi gửi (lưới cho dữ liệu lẻ có sẵn trong máy).
+  Op lẻ **đã kẹt** từ trước trong hàng đợi thì không sửa được bằng cách này: dữ liệu đã được map lúc xếp hàng.
+- Cùng đợt: `Dialog` có `max-h` + tự cuộn. Trước đây hộp cao hơn màn hình (form quy tắc giá ở laptop 900px
+  và điện thoại) đẩy nút **Lưu** ra ngoài màn hình, không cuộn tới được.
+- Chạy thật (local, 1280 và 390px): 7/7. Máy chủ nhận đúng 30.001 / 500.001 / 100.000 / −20.001, hàng đợi
+  trong máy rỗng. Hồi quy: khoản cộng/trừ 9/9, lập phiếu 11/11.
 
 ---
 

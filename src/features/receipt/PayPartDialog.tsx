@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { formatVnd } from '@mambo/core/format';
-import { parseNumber } from '@mambo/core/parseNumber';
 import { L } from '@/i18n/labels';
+import { parseMoney } from '../shared/money';
 import { NumberField } from '../shared/NumberField';
 
 interface PayPartDialogProps {
@@ -23,7 +23,7 @@ interface PayPartDialogProps {
 export function PayPartDialog({ open, total, onConfirm, onCancel }: PayPartDialogProps) {
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const paid = Math.min(parseNumber(amount), total);
+  const paid = Math.min(parseMoney(amount), total);
 
   return (
     <Dialog open={open} title={L.payPartAndFinish} onClose={onCancel}>
@@ -32,7 +32,7 @@ export function PayPartDialog({ open, total, onConfirm, onCancel }: PayPartDialo
           {L.total}: <span className="font-bold text-ink">{formatVnd(total)}</span>
         </p>
 
-        <NumberField label={L.amountPaidNow} value={amount} spoken autoFocus onValueChange={setAmount} />
+        <NumberField label={L.amountPaidNow} value={amount} spoken money autoFocus onValueChange={setAmount} />
 
         <p className="num text-sm text-ink-2">
           {L.remainingDebt}: <span className="font-bold text-payable">{formatVnd(total - paid)}</span>
