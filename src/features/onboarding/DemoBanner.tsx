@@ -23,16 +23,22 @@ export function DemoBanner() {
     <>
       <div
         role="status"
-        className="no-print flex flex-wrap items-center gap-2 border-b border-alert bg-card px-4 py-2"
+        className="no-print flex flex-wrap items-center gap-2 border-b border-alert bg-card px-4 py-2 max-sm:py-1.5"
       >
         <WarningIcon className="h-5 w-5 shrink-0 text-alert" />
-        <p className="flex-1 text-sm font-semibold text-alert">{L.demoBanner}</p>
+        {/* Điện thoại: chữ ngắn để banner gọn một dòng — vẫn nói rõ là dữ liệu mẫu,
+            nút vẫn mở hộp xác nhận ghi đủ hậu quả. */}
+        <p className="flex-1 text-sm font-semibold text-alert">
+          <span className="sm:hidden">{L.demoBannerShort}</span>
+          <span className="max-sm:hidden">{L.demoBanner}</span>
+        </p>
         <button
           type="button"
           onClick={() => setConfirm(true)}
           className="min-h-11 rounded-lg border border-alert px-3 text-sm font-bold text-alert"
         >
-          {L.demoClear}
+          <span className="sm:hidden">{L.demoClearShort}</span>
+          <span className="max-sm:hidden">{L.demoClear}</span>
         </button>
       </div>
 

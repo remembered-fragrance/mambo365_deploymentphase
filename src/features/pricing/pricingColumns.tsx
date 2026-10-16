@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/Badge';
-import type { Column } from '@/components/data/dataViewModel';
+import { STRETCH_TITLE, type Column } from '@/components/data/dataViewModel';
 import { PencilIcon } from '@/components/ui/icons';
 import { formatVnd, formatWeight } from '@mambo/core/format';
 import { previewRule } from '@mambo/core/pricingPreview';
@@ -36,7 +36,7 @@ export const pricingColumns = (
       <button
         type="button"
         onClick={() => onEdit(rule)}
-        className="text-left font-bold text-ink underline decoration-rule underline-offset-4"
+        className={`text-left font-bold text-ink underline decoration-rule underline-offset-4 ${STRETCH_TITLE}`}
       >
         {rule.name}
       </button>

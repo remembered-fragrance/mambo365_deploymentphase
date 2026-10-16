@@ -157,14 +157,17 @@ function RowCard<TRow>({
       {badges.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {badges.map((col) => (
-            <span key={col.id}>{col.cell(row)}</span>
+            // Nút/liên kết trong thẻ nổi lên trên lớp phủ của nút tên (xem STRETCH_TITLE).
+            <span key={col.id} className="[&:has(a,button)]:relative [&:has(a,button)]:z-10">
+              {col.cell(row)}
+            </span>
           ))}
         </div>
       )}
     </>
   );
 
-  if (!onRowClick) return <div className="card p-3">{body}</div>;
+  if (!onRowClick) return <div className="relative card p-3">{body}</div>;
 
   return (
     <button
