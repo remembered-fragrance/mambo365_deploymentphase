@@ -2,6 +2,15 @@ import type { Buyer, DraftReceipt, Note, Payment, PricingRule, Product, Supplier
 import { GUEST_BUYER_ID, GUEST_SUPPLIER_ID } from '@mambo/core/normalizeTransaction';
 import { freezeLineTotals } from '@mambo/core/calc';
 
+/**
+ * Tiền lên máy chủ là đồng nguyên (`Money` trong hợp đồng là `int`): một số lẻ làm op bị từ chối và
+ * kẹt ở "xung đột". Ô tiền đã làm tròn khi đọc (`features/shared/money.ts`); đây là lưới cuối cho
+ * dữ liệu lẻ có sẵn trong máy từ trước. Đơn giá, khối lượng, phần trăm được lẻ — không đi qua đây.
+ */
+const money = (amount: number): number => Math.round(amount);
+const optionalMoney = (amount: number | undefined): number | null =>
+  amount === undefined ? null : money(amount);
+
 export const partyIdToWire = (id: string | null | undefined): string | null =>
   !id || id === GUEST_SUPPLIER_ID || id === GUEST_BUYER_ID ? null : id;
 
@@ -55,7 +64,7 @@ export const productToPatch = (patch: Partial<Product>) => {
 export const paymentToInsert = (payment: Payment, transactionId: string) => ({
   transactionId,
   date: payment.date,
-  amount: payment.amount,
+  amount: money(payment.amount),
   note: payment.note?.trim() || null,
 });
 
@@ -88,14 +97,14 @@ export const transactionToInsert = (tx: Transaction) => ({
     };
   }),
   creditTerms: tx.creditTerms
-    ? tx.creditTerms.map((ct) => ({ dueDate: ct.dueDate, amount: ct.amount }))
+    ? tx.creditTerms.map((ct) => ({ dueDate: ct.dueDate, amount: money(ct.amount) }))
     : null,
   adjustments: tx.adjustments
     ? tx.adjustments.map((a) => ({
         id: a.id,
         kind: a.kind,
         label: a.label,
-        amount: a.amount,
+        amount: money(a.amount),
         ruleId: a.ruleId,
       }))
     : null,
@@ -114,7 +123,7 @@ export const transactionToPatch = (patch: { attachmentIds?: string[]; note?: str
 /** Khoản cộng/trừ của nháp — trống gửi `null` (máy chủ cũng lưu NULL), không gửi mảng rỗng. */
 const adjustmentsToWire = (list: DraftReceipt['adjustments']) =>
   list && list.length > 0
-    ? list.map((a) => ({ id: a.id, kind: a.kind, label: a.label, amount: a.amount, ...(a.ruleId ? { ruleId: a.ruleId } : {}) }))
+    ? list.map((a) => ({ id: a.id, kind: a.kind, label: a.label, amount: money(a.amount), ...(a.ruleId ? { ruleId: a.ruleId } : {}) }))
     : null;
 
 export const draftToInsert = (draft: DraftReceipt) => ({
@@ -144,7 +153,7 @@ export const draftToInsert = (draft: DraftReceipt) => ({
     roundedTotal: l.roundedTotal,
     ...(l.qualityGrade ? { qualityGrade: l.qualityGrade } : {}),
   })),
-  amountPaid: draft.amountPaid ?? 0,
+  amountPaid: money(draft.amountPaid ?? 0),
   adjustments: adjustmentsToWire(draft.adjustments),
   note: draft.note?.trim() || null,
   attachmentIds: draft.attachmentIds ? [...draft.attachmentIds] : [],
@@ -162,7 +171,7 @@ export const draftToPatch = (patch: Partial<DraftReceipt>) => {
   if ('counterpartyId' in patch) result.counterpartyId = partyIdToWire(patch.counterpartyId);
   if (patch.supplierName !== undefined) result.supplierName = patch.supplierName.trim();
   if (patch.lines !== undefined) result.lines = patch.lines;
-  if (patch.amountPaid !== undefined) result.amountPaid = patch.amountPaid;
+  if (patch.amountPaid !== undefined) result.amountPaid = money(patch.amountPaid);
   if ('adjustments' in patch) result.adjustments = adjustmentsToWire(patch.adjustments);
   if ('note' in patch) result.note = patch.note?.trim() || null;
   if (patch.attachmentIds !== undefined)
@@ -175,7 +184,7 @@ export const pricingRuleToInsert = (rule: PricingRule) => ({
   name: rule.name.trim(),
   kind: rule.kind,
   productId: rule.productId ?? null,
-  fixedAmount: rule.fixedAmount ?? null,
+  fixedAmount: optionalMoney(rule.fixedAmount),
   percentOfTotal: rule.percentOfTotal ?? null,
   minWeightKg: rule.minWeightKg ?? null,
   appliesOnPickup: rule.appliesOnPickup ?? null,
@@ -187,7 +196,7 @@ export const pricingRuleToPatch = (patch: Partial<PricingRule>) => {
   if (patch.name !== undefined) result.name = patch.name.trim();
   if (patch.kind !== undefined) result.kind = patch.kind;
   if (patch.productId !== undefined) result.productId = patch.productId ?? null;
-  if (patch.fixedAmount !== undefined) result.fixedAmount = patch.fixedAmount ?? null;
+  if (patch.fixedAmount !== undefined) result.fixedAmount = optionalMoney(patch.fixedAmount);
   if (patch.percentOfTotal !== undefined) result.percentOfTotal = patch.percentOfTotal ?? null;
   if (patch.minWeightKg !== undefined) result.minWeightKg = patch.minWeightKg ?? null;
   if (patch.appliesOnPickup !== undefined) result.appliesOnPickup = patch.appliesOnPickup ?? null;

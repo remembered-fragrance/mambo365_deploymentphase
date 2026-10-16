@@ -116,6 +116,7 @@ export function PricingRuleEditor({
           label={L.ruleFixedAmount}
           value={draft.fixedAmount}
           spoken
+          money
           onValueChange={(fixedAmount) => set({ fixedAmount })}
         />
         <NumberField

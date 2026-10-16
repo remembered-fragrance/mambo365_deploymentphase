@@ -52,7 +52,9 @@ export function Dialog({ open, title, description, onClose, children }: DialogPr
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="card relative z-10 w-full max-w-md p-5 shadow-xl outline-none"
+        // Hộp dài hơn màn hình (form quy tắc giá trên laptop/điện thoại) phải tự cuộn — body đã
+        // khoá cuộn, không giới hạn chiều cao thì nút Lưu nằm ngoài màn hình, không chạm tới được.
+        className="card relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain p-5 shadow-xl outline-none"
       >
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>

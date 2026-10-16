@@ -5,10 +5,10 @@ import { newId } from '@mambo/core/id';
 import { formatVnd } from '@mambo/core/format';
 import type { PriceAdjustment } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { parseMoney } from '../shared/money';
 import { NumberField } from '../shared/NumberField';
 import { AttachmentPicker } from './AttachmentPicker';
 import { hasMoreInfo, moreInfoSummary } from './moreInfo';
-import { parseNumber } from '@mambo/core/parseNumber';
 
 interface MoreInfoPanelProps {
   readonly adjustments: readonly PriceAdjustment[];
@@ -41,8 +41,7 @@ export function MoreInfoPanel({
   const [amount, setAmount] = useState('');
 
   const add = (sign: 1 | -1) => {
-    // Tiền là đồng nguyên — máy chủ từ chối số lẻ, nháp sẽ kẹt ở "xung đột" không lên mạng được.
-    const value = Math.round(parseNumber(amount));
+    const value = parseMoney(amount);
     if (value <= 0) return;
     onAdjustmentsChange([
       ...adjustments,
@@ -104,7 +103,7 @@ export function MoreInfoPanel({
       )}
 
       <Input label={L.adjustmentLabel} value={label} onChange={(e) => setLabel(e.target.value)} />
-      <NumberField label={L.adjustmentAmount} value={amount} spoken onValueChange={setAmount} />
+      <NumberField label={L.adjustmentAmount} value={amount} spoken money onValueChange={setAmount} />
 
       <div className="flex gap-2">
         <Button block onClick={() => add(1)}>

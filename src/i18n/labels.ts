@@ -240,6 +240,7 @@ const BASE = {
   payFullAndFinish: 'Trả đủ & xong',
   payPartAndFinish: 'Ghi nợ & xong',
   amountPaidNow: 'Trả bao nhiêu',
+  moneyRoundedTo: 'Tiền không có số lẻ, sẽ lưu',
   reviewBeforeFinish: 'Xem lại trước khi chốt',
   savingDraft: 'Đang lưu',
   savedDraft: 'Đã lưu',
