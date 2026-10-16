@@ -91,6 +91,11 @@ export interface StoreValue {
   // ─── Tài khoản ────────────────────────────────────────────────────────────
   signIn: (identifier: string, password: string) => Promise<void>;
   signUp: (input: SignUpInput) => Promise<void>;
+  /**
+   * Link "đặt lại mật khẩu" trong thư: đổi `token_hash` lấy phiên rồi vào app như đăng nhập. Sau đó
+   * `changePassword` đặt mật khẩu mới. Link sai / hết hạn / đã dùng → lỗi `L.resetLinkInvalid`.
+   */
+  openRecoverySession: (tokenHash: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (patch: ProfilePatch) => Promise<void>;
   changePassword: (password: string) => Promise<void>;

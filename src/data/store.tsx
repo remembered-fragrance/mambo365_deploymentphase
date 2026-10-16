@@ -273,6 +273,16 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         authUser.current = await auth.signUp(supabase, input);
         await enterSession(authUser.current);
       },
+      openRecoverySession: async (tokenHash) => {
+        const supabase = getSupabase();
+        if (!supabase) throw new Error('Chưa cấu hình máy chủ');
+        sessionEpoch.current++;
+        activateOrg(null);
+        memberships.current = [];
+        setMe(null);
+        authUser.current = await auth.openRecoverySession(supabase, tokenHash);
+        await enterSession(authUser.current);
+      },
       signOut: async () => {
         sessionEpoch.current++;
         authUser.current = null;

@@ -9,7 +9,7 @@
  * cùng, cấu hình xuống dưới.
  */
 
-import { LEGAL_LINKS } from '@/config';
+import { LEGAL_LINKS, MAIL_LINKS } from '@/config';
 import { L } from '@/i18n/labels';
 import {
   BoxIcon,
@@ -66,6 +66,8 @@ export const ROUTES = {
   terms: LEGAL_LINKS.terms,
   privacy: LEGAL_LINKS.privacy,
   guide: LEGAL_LINKS.guide,
+  resetPassword: MAIL_LINKS.resetPassword,
+  confirmEmail: MAIL_LINKS.confirmEmail,
 } as const;
 
 /**

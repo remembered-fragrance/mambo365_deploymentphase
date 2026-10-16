@@ -82,6 +82,7 @@ export const PRIVACY: LegalDoc = {
           ['Bên cung cấp hạ tầng', 'Xử lý gì', 'Đặt ở đâu'],
           ['Supabase', 'Đăng nhập, cơ sở dữ liệu, ảnh chứng từ (mã hoá khi truyền và khi lưu)', REGION],
           ['Render', 'Máy chủ API — mọi yêu cầu đọc / ghi sổ đi qua đây', 'Singapore'],
+          ['Brevo', 'Gửi thư xác nhận email khôi phục và thư đặt lại mật khẩu — chỉ nhận địa chỉ email và nội dung thư (link), không kèm dữ liệu sổ', 'Liên minh châu Âu'],
           ['Vercel', 'Phát trang web của app; nhật ký truy cập kỹ thuật (IP, thời điểm)', 'Mạng phân phối toàn cầu'],
           ['vietqr.io', 'Sinh ảnh mã QR — chỉ nhận số tiền và nội dung chuyển khoản, không kèm tên hay dữ liệu sổ', 'Việt Nam'],
           ['Ngân hàng, Casso / SePay', 'Thông tin của chính giao dịch chuyển khoản, để tự mở gói', 'Việt Nam'],
