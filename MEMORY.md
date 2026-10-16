@@ -559,6 +559,25 @@ Trước đây khoản cộng/trừ chỉ nằm trong state của màn lập phi
 - Chạy thật (local, 1280 và 390px): 7/7. Máy chủ nhận đúng 30.001 / 500.001 / 100.000 / −20.001, hàng đợi
   trong máy rỗng. Hồi quy: khoản cộng/trừ 9/9, lập phiếu 11/11.
 
+## Quên mật khẩu · xác nhận email · mật khẩu 8–72 · `@mambo/*` 0.16.0 · 16/10/2026
+
+Trước đây không có "Quên mật khẩu": đăng nhập bằng email nội bộ `84…@id.thumua365.vn`, nên thư Supabase không
+tới ai. Email khôi phục cũng chưa từng được xác nhận. Máy chủ (BE 0.16.0) giờ gửi thư qua Brevo:
+
+- **Xác nhận email**: lưu email khôi phục thì máy chủ gửi link `/xac-nhan-email?token=…`. Thẻ Tài khoản hiện
+  "Đã xác nhận" / "Chưa xác nhận" + nút "Gửi lại thư xác nhận" (60 giây một thư). Trang xác nhận không cần đăng nhập.
+- **Quên mật khẩu**: nút ở màn đăng nhập (chỉ khi có máy chủ), gõ tên đăng nhập / SĐT / email. Luôn hiện cùng
+  một câu (không cho dò ai có tài khoản) + link Zalo kỹ thuật viên. Chỉ email **đã xác nhận** mới nhận thư.
+  Link `/dat-lai-mat-khau?token_hash=…&type=recovery` → `verifyOtp` → đặt mật khẩu mới → vào sổ.
+  Máy đang đăng nhập sẵn thì trang không đụng phiên đó, chỉ đường sang Tài khoản.
+- **Một luật mật khẩu**: 8–72 ký tự ở đăng ký, đổi mật khẩu, đặt lại, thêm nhân viên (`MIN/MAX_PASSWORD_LENGTH`
+  lấy từ contracts, `features/shared/password.ts`). Màn đăng nhập không kiểm độ dài: mật khẩu cũ 6–7 ký tự
+  vẫn vào được. Đăng ký kiểm thêm tên bắt buộc.
+- Chính sách 2.2 (16/10/2026): thêm Brevo là bên xử lý email.
+- SDK 0.16 kiểm phản hồi theo contract (`recoveryEmailVerified`) ⇒ **BE phải lên trước FE**.
+- Chạy thật (local, 1280 và 390px): 14/14.
+- Chưa có `BREVO_API_KEY` + `MAIL_FROM` trên Render thì cả hai loại thư báo "chưa gửi được thư".
+
 ---
 
 ## Ba số phải giữ trong tầm
@@ -588,8 +607,10 @@ Trước đây khoản cộng/trừ chỉ nằm trong state của màn lập phi
 |---|---|---|
 | Chạy migration, sinh kiểu, test chéo hai tài khoản | Tài khoản Supabase (2 project) | `supabase/VAN_HANH.md` §2–§5 |
 | Bảy kịch bản đồng bộ | Hai thiết bị thật + sóng chập chờn | `supabase/VAN_HANH.md` §6 |
-| Cấu hình Auth (tắt xác nhận email, mật khẩu 6 ký tự, rate limit) | Dashboard Supabase | `supabase/VAN_HANH.md` §3 |
+| Cấu hình Auth (tắt xác nhận email, mật khẩu **8** ký tự, rate limit) | Dashboard Supabase | `supabase/VAN_HANH.md` §3 |
 | Vercel Preview → staging, Production → prod | Tài khoản Vercel | `supabase/VAN_HANH.md` §1 |
+| Gửi thư quên mật khẩu / xác nhận email | Tài khoản Brevo + `BREVO_API_KEY`, `MAIL_FROM` trên Render | BE `ops/PRODUCTION.md` |
+| Số Zalo kỹ thuật viên thật | Nhóm | `src/config.ts` `SUPPORT_ZALO` |
 | Lighthouse mobile | Chạy trên bản deploy | — |
 | Bộ ký hiệu 4 nông sản | Tuyến | `deploy_plan/NOTES.md` mục E |
 | Mười mục nghiệm thu luồng tiền | Supabase thật + một lần chuyển khoản thật | `supabase/VAN_HANH.md` §7.3 |

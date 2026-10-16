@@ -8,7 +8,7 @@ export const ORG_LABELS = {
   memberAddHint: 'Bạn tạo tài khoản cho người của mình: họ đăng nhập bằng số điện thoại và mật khẩu bạn đặt, rồi tự đổi mật khẩu.',
   memberName: 'Tên',
   memberPhone: 'Số điện thoại (để đăng nhập)',
-  memberPassword: 'Mật khẩu ban đầu (ít nhất 8 ký tự)',
+  memberPassword: 'Mật khẩu ban đầu (8–72 ký tự)',
   memberRole: 'Vai trò',
   memberBranch: 'Chi nhánh',
   memberBranchAll: 'Cả doanh nghiệp',

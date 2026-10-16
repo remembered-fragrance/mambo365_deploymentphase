@@ -77,7 +77,11 @@ export const GUIDE: LegalDoc = {
           'Phòng xa: vào Tài khoản bấm "Lưu ra file", gửi file sang máy mới (Zalo cũng được), rồi bấm "Lấy lại từ file". Máy sắp hỏng hay sắp bán thì lưu trước, đừng đợi.',
         ),
         p('Quên mật khẩu thì sao?'),
-        list(`Nhắn Zalo ${SUPPORT_ZALO}. Chúng tôi gọi lại đúng số đã đăng ký và hỏi vài thông tin về sổ trước khi đặt lại — hỏi kỹ vì ai đặt lại được mật khẩu là đọc được sổ tiền của bạn.`),
+        list(
+          'Bấm "Quên mật khẩu?" ở màn đăng nhập. Nếu tài khoản có email khôi phục đã xác nhận, link đặt mật khẩu mới được gửi tới email đó.',
+          'Thêm email ở Tài khoản rồi bấm link trong thư xác nhận — chưa xác nhận thì chưa lấy lại qua email được.',
+          `Không có email: nhắn Zalo ${SUPPORT_ZALO}. Chúng tôi gọi lại đúng số đã đăng ký và hỏi vài thông tin về sổ trước khi đặt lại — hỏi kỹ vì ai đặt lại được mật khẩu là đọc được sổ tiền của bạn.`,
+        ),
         p('Hết hạn gói thì sổ có bị khoá không?'),
         list(`Không. App đồng bộ thêm ${GRACE_DAYS} ngày kèm nhắc nhở, rồi về gói miễn phí ${FREE_RECEIPTS_PER_MONTH} phiếu mỗi tháng. Xem và xuất sổ vẫn như thường.`),
         p('Có tự trừ tiền hằng tháng không?'),

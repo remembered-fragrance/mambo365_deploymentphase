@@ -268,6 +268,13 @@ export const updateProfile = async (
   return saved;
 };
 
+/** Link đặt lại mật khẩu (BE 0.16.0): `token_hash` → phiên của chủ tài khoản. */
+export const openRecoverySession = async (supabase: SupabaseAuth, tokenHash: string): Promise<User> => {
+  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+  if (error || !data.user) throw new Error(L.resetLinkInvalid, { cause: error ?? undefined });
+  return data.user;
+};
+
 export const changePassword = async (
   supabase: SupabaseAuth,
   password: string,

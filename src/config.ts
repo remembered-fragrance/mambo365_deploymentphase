@@ -56,8 +56,12 @@ export const MAX_ATTACHMENTS = 5;
 /** Thời gian còn hoàn tác được sau một hành động ghi tiền / xoá (ms). */
 export const UNDO_MS = 8_000;
 
-/** Mật khẩu tối thiểu — cho phép toàn số, vì tệp người dùng gõ trên bàn phím số. */
-export const MIN_PASSWORD_LENGTH = 6;
+/**
+ * Mật khẩu 8–72 ký tự, toàn số cũng được (tệp người dùng gõ trên bàn phím số). MỘT luật cho đăng ký,
+ * đổi mật khẩu, đặt lại qua email và chủ tạo tài khoản nhân viên — lấy từ contracts (BE 0.16.0), cùng
+ * số với máy chủ và với "Minimum password length" của Supabase Auth. Trước đây đăng ký 6, nhân viên 8.
+ */
+export { PASSWORD_MAX_LENGTH as MAX_PASSWORD_LENGTH, PASSWORD_MIN_LENGTH as MIN_PASSWORD_LENGTH } from '@mambo/contracts';
 
 /** Số phiên bản hiện lên màn Tài khoản — hỏi qua điện thoại là biết ngay bản nào. */
 export const APP_VERSION = '1.0.0';
@@ -76,9 +80,18 @@ export const LEGAL_LINKS = {
   guide: '/huong-dan',
 } as const;
 
+/**
+ * Hai trang mở từ link trong thư — công khai, ngoài cổng đăng nhập (người quên mật khẩu chưa đăng
+ * nhập được). Máy chủ dựng link bằng đúng hai đường dẫn này (Thumua365_BE `RecoveryMailService`).
+ */
+export const MAIL_LINKS = {
+  resetPassword: '/dat-lai-mat-khau',
+  confirmEmail: '/xac-nhan-email',
+} as const;
+
 /** Phiên bản và ngày áp dụng của Điều khoản + Chính sách — đổi nội dung thì đổi cả hai. */
-export const LEGAL_VERSION = '2.1';
-export const LEGAL_EFFECTIVE_DATE = '13/10/2026';
+export const LEGAL_VERSION = '2.2';
+export const LEGAL_EFFECTIVE_DATE = '16/10/2026';
 
 /**
  * Thông tin chủ thể vận hành — Luật BVDLCN 2025 và Luật TMĐT 2025 bắt buộc công khai.

@@ -21,6 +21,7 @@ const saved = {
   username: 'vuahung',
   phone: '+84912345678',
   recoveryEmail: 'hung@gmail.com',
+  recoveryEmailVerified: false,
   referralCode: null,
   referred: false,
 };

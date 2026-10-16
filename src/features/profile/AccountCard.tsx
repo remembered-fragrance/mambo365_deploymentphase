@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { WarningIcon } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toast';
 import { useEmailReminder } from '@/data/hooks/useEmailReminder';
+import { sendVerificationMail, useRecoveryEmailStatus } from '@/data/hooks/useRecovery';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { changedProfileFields } from './profilePatch';
@@ -51,7 +52,24 @@ export function AccountCard() {
   const [formError, setFormError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const reminder = useEmailReminder(Boolean(user?.email));
+  const emailStatus = useRecoveryEmailStatus(savedEmail);
+  const [sending, setSending] = useState(false);
   const org = currentOrg?.organization;
+
+  const resendVerification = async () => {
+    setSending(true);
+    try {
+      const status = await sendVerificationMail();
+      toast({
+        message: status === 'sent' ? L.emailVerifySent : status === 'too_soon' ? L.emailVerifyTooSoon : status === 'already_verified' ? L.emailVerifyAlready : L.emailMissingTitle,
+      });
+      if (status === 'already_verified') emailStatus.reload();
+    } catch (e) {
+      toast({ message: e instanceof Error ? e.message : L.errorTitle, tone: 'alert' });
+    } finally {
+      setSending(false);
+    }
+  };
 
   // Tên đăng nhập / email khôi phục về SAU khi màn đã mở (GET /v1/me/profile chạy nền):
   // chưa gõ gì thì nhận giá trị mới, không thì giữ chữ người dùng đang sửa.
@@ -141,6 +159,19 @@ export function AccountCard() {
             setEdited(true);
           }}
         />
+        {/* Trạng thái của email ĐÃ LƯU — đang gõ email khác thì chưa nói gì. */}
+        {savedEmail && email.trim().toLowerCase() === savedEmail.toLowerCase() && emailStatus.verified !== null && (
+          emailStatus.verified ? (
+            <p className="-mt-1 text-sm font-medium text-brand">{L.emailVerified}</p>
+          ) : (
+            <div className="-mt-1 rounded-xl border border-alert bg-paper p-3">
+              <p className="text-sm text-ink-2">{L.emailUnverified}</p>
+              <Button className="mt-2" disabled={sending} onClick={resendVerification}>
+                {sending ? L.authWorking : L.emailSendVerify}
+              </Button>
+            </div>
+          )
+        )}
         <Input
           label={L.profilePhone}
           value={user?.phone ? formatPhoneVn(user.phone) : '—'}

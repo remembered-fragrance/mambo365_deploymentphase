@@ -27,7 +27,9 @@ import {
   useMemberActivity,
   useMembers,
 } from '@/data/hooks/useOrg';
+import { MAX_PASSWORD_LENGTH } from '@/config';
 import { L } from '@/i18n/labels';
+import { passwordProblem } from '../shared/password';
 import { useAccess } from '../shared/useAccess';
 
 const ROLE_LABEL: Record<MemberRole, string> = { owner: L.roleOwner, manager: L.roleManager, staff: L.roleStaff };
@@ -115,10 +117,16 @@ export function MembersPage() {
     }, 0);
 
   const add = async () => {
+    // Cùng luật với đăng ký (tên, SĐT, mật khẩu 8–72) — báo bằng câu của app, không phải câu của trình duyệt.
+    const e164 = normalizePhone(phone);
+    const problem = !name.trim() ? L.authNameRequired : !e164 ? L.authPhoneInvalid : passwordProblem(password);
+    if (problem) {
+      setError(problem);
+      return;
+    }
     setBusy(true);
     setError(undefined);
     // Số từng bị gỡ khỏi tổ chức này được bật lại với tài khoản và mật khẩu CŨ — phải nói cho chủ biết.
-    const e164 = normalizePhone(phone);
     const comingBack = members.data?.some((m) => m.status === 'removed' && m.phone === e164);
     try {
       await createMember({
@@ -285,7 +293,7 @@ export function MembersPage() {
             value={password}
             required
             type="password"
-            minLength={8}
+            maxLength={MAX_PASSWORD_LENGTH}
             autoComplete="new-password"
             onChange={(e) => setPassword(e.target.value)}
           />

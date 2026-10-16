@@ -82,6 +82,13 @@ const MorePage = lazy(() =>
 const PlansPage = lazy(() =>
   import('@/features/billing/PlansPage').then((m) => ({ default: m.PlansPage })),
 );
+// Trang mở từ link trong thư (BE 0.16.0) — công khai, như trang pháp lý.
+const ResetPasswordPage = lazy(() =>
+  import('@/features/recovery/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })),
+);
+const ConfirmEmailPage = lazy(() =>
+  import('@/features/recovery/ConfirmEmailPage').then((m) => ({ default: m.ConfirmEmailPage })),
+);
 const LegalPage = lazy(() =>
   import('@/features/legal/LegalPage').then((m) => ({ default: m.LegalPage })),
 );
@@ -109,6 +116,9 @@ export function App() {
               <Route path={ROUTES.terms} element={<Suspense fallback={null}><LegalPage kind="terms" /></Suspense>} />
               <Route path={ROUTES.privacy} element={<Suspense fallback={null}><LegalPage kind="privacy" /></Suspense>} />
               <Route path={ROUTES.guide} element={<Suspense fallback={null}><LegalPage kind="guide" /></Suspense>} />
+              {/* Link trong thư: người quên mật khẩu chưa đăng nhập được ⇒ ngoài cổng đăng nhập. */}
+              <Route path={ROUTES.resetPassword} element={<Suspense fallback={null}><ResetPasswordPage /></Suspense>} />
+              <Route path={ROUTES.confirmEmail} element={<Suspense fallback={null}><ConfirmEmailPage /></Suspense>} />
               <Route
                 path="*"
                 element={

@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
-import { MIN_PASSWORD_LENGTH } from '@/config';
+import { MAX_PASSWORD_LENGTH } from '@/config';
 import { useStore } from '@/data/useStore';
+import { passwordProblem } from '@/features/shared/password';
 import { L } from '@/i18n/labels';
 
 /** Đổi mật khẩu. Gõ hai lần — sai một chữ là mất đường vào sổ của chính mình. */
@@ -16,8 +17,9 @@ export function PasswordCard() {
   const [error, setError] = useState<string | undefined>();
 
   const submit = async () => {
-    if (next.length < MIN_PASSWORD_LENGTH) {
-      setError(L.passwordTooShort);
+    const problem = passwordProblem(next);
+    if (problem) {
+      setError(problem);
       return;
     }
     if (next !== again) {
@@ -43,6 +45,8 @@ export function PasswordCard() {
           type="password"
           value={next}
           hint={L.authPasswordHint}
+          maxLength={MAX_PASSWORD_LENGTH}
+          autoComplete="new-password"
           onChange={(e) => setNext(e.target.value)}
         />
         <Input
