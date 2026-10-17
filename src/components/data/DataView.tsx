@@ -121,6 +121,15 @@ export function DataView<TRow>({
   );
 }
 
+/**
+ * Thẻ không có `onRowClick` (còn chứa nút khác — bọc cả thẻ trong <button> thì nút lồng nút): nút ở ô
+ * tiêu đề được kéo giãn phủ cả thẻ ("stretched link"), chạm chỗ nào trên thẻ cũng mở. Nút, liên kết và
+ * chữ chọn để chép (mã kết nối) trong thẻ thì `relative` để nổi lên trên lớp phủ — phần tử positioned
+ * đứng sau trong DOM tự vẽ đè lên, không cần `:has()` (máy Android / iOS cũ không có).
+ */
+const STRETCH_TITLE = '[&>button]:after:absolute [&>button]:after:inset-0';
+const ABOVE_STRETCH = '[&_a]:relative [&_button]:relative [&_.select-all]:relative';
+
 function RowCard<TRow>({
   row,
   columns,
@@ -136,13 +145,14 @@ function RowCard<TRow>({
   const value = pickColumn(columns, 'value');
   const secondary = pickColumns(columns, 'secondary');
   const badges = pickColumns(columns, 'badge');
+  const stretch = !onRowClick;
 
   const body = (
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-bold text-ink">{title?.cell(row)}</p>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-ink-3">
+          <p className={`truncate font-bold text-ink ${stretch ? STRETCH_TITLE : ''}`}>{title?.cell(row)}</p>
+          <div className={`mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-ink-3 ${stretch ? ABOVE_STRETCH : ''}`}>
             {secondary.map((col) => (
               <span key={col.id} className={col.numeric ? 'num' : ''}>
                 {col.cell(row)}
@@ -150,12 +160,12 @@ function RowCard<TRow>({
             ))}
           </div>
         </div>
-        <div className="shrink-0 text-right">
+        <div className={`shrink-0 text-right ${stretch ? ABOVE_STRETCH : ''}`}>
           <p className="num font-extrabold text-ink">{value?.cell(row)}</p>
         </div>
       </div>
       {badges.length > 0 && (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <div className={`mt-2 flex flex-wrap items-center gap-1.5 ${stretch ? ABOVE_STRETCH : ''}`}>
           {badges.map((col) => (
             <span key={col.id}>{col.cell(row)}</span>
           ))}
@@ -164,7 +174,7 @@ function RowCard<TRow>({
     </>
   );
 
-  if (!onRowClick) return <div className="card p-3">{body}</div>;
+  if (!onRowClick) return <div className="relative card p-3">{body}</div>;
 
   return (
     <button
