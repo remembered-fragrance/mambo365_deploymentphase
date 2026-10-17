@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { ChevronRightIcon } from '@/components/ui/icons';
 import { L } from '@/i18n/labels';
 import { secondaryItems } from '../shared/navItems';
+import { useAccess } from '../shared/useAccess';
 
 /**
  * Ô "Thêm" của thanh dưới.
@@ -13,12 +14,13 @@ import { secondaryItems } from '../shared/navItems';
  * chức năng đến được trong ≤2 chạm từ Tổng quan".
  */
 export function MorePage() {
+  const access = useAccess();
   return (
     <PageContainer width="content">
       <PageHeader title={L.navMore} />
 
       <ul className="grid gap-2 sm:grid-cols-2">
-        {secondaryItems().map((item) => (
+        {secondaryItems(access).map((item) => (
           <li key={item.id}>
             <Link to={item.to} className="card flex min-h-16 items-center gap-3 p-4">
               <item.Icon className="h-6 w-6 shrink-0 text-brand" />

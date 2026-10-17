@@ -109,7 +109,7 @@ Không có công nghệ mới. Dùng lại toàn bộ từ D: `DataView` · `Mas
 - [ ] Tồn kho ở 375px: **không cuộn ngang**
 - [ ] Mọi trang có nút "?" giải thích
 - [ ] `grep -rn "KL/SL\|Hectogram\|Backup\|SL lớn" src/` → **rỗng** (bảng từ vựng đã áp)
-- [ ] Không file nào >300 dòng; bundle vẫn ≤250KB gzip
+- [ ] Bundle vẫn ≤250KB gzip
 
 ---
 

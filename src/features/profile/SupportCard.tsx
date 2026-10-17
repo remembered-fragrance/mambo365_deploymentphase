@@ -7,7 +7,7 @@ import { APP_VERSION, SUPPORT_ZALO } from '@/config';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 
-/** Kênh liên lạc + số phiên bản (để hỗ trợ từ xa hỏi "bác đang dùng bản nào"). */
+/** Kênh liên lạc + số phiên bản (để hỗ trợ từ xa hỏi "bạn đang dùng bản nào"). */
 export function SupportCard() {
   const { signOut } = useStore();
   const [confirmOut, setConfirmOut] = useState(false);
@@ -22,6 +22,10 @@ export function SupportCard() {
           <PhoneIcon className="h-4 w-4" />
           {L.supportZalo}: {SUPPORT_ZALO}
         </a>
+
+        {/* Nói giờ trực THẬT. Hứa 24/7 khi chỉ có một người là mất uy tín ngay
+            từ khách đầu tiên gọi lúc 10 giờ đêm. */}
+        <p className="text-sm text-ink-2">{L.supportHours}</p>
 
         <p className="num text-sm text-ink-3">
           {L.appVersion} {APP_VERSION}

@@ -8,12 +8,17 @@
  *
  * Luật: không viết chuỗi tiếng Việt thẳng vào JSX. Mọi chữ đi qua đây.
  *
- * `L` gộp từ bốn mảnh — một file duy nhất sẽ vượt 300 dòng, mà đó cũng là luật
- * của dự án. Nơi dùng vẫn chỉ có một: `import { L } from '@/i18n/labels'`.
+ * `L` gộp từ chín mảnh. Nơi dùng vẫn chỉ có một:
+ * `import { L } from '@/i18n/labels'`.
  */
 
 import { BILLING_LABELS } from './billingLabels';
+import { LEGAL_LABELS } from './legalLabels';
+import { MAP_LABELS } from './mapLabels';
 import { ONBOARDING_LABELS } from './onboardingLabels';
+import { ORDER_LABELS } from './orderLabels';
+import { ORG_LABELS } from './orgLabels';
+import { ROLE_LABELS } from './roleLabels';
 import { SCREEN_LABELS } from './screenLabels';
 
 const BASE = {
@@ -23,6 +28,22 @@ const BASE = {
   saleReceipt: 'Phiếu bán hàng',
   purchase: 'Mua',
   sale: 'Bán',
+
+  // ─── Đăng nhập / đăng ký ───────────────────────────────────────────────────
+  // Đăng nhập vẫn dùng MỘT ô chung. Frontend tự nhận biết người dùng nhập
+  // số điện thoại, email hay tên đăng nhập.
+  authLoginIdentifier: 'Số điện thoại, email hoặc tên đăng nhập',
+  authLoginIdentifierHint: 'Nhập thông tin bạn đã dùng để đăng nhập.',
+
+  // Đăng ký tách riêng số điện thoại và email để không nhầm hai loại dữ liệu.
+  authPhone: 'Số điện thoại (bắt buộc)',
+  authPhoneHint: 'Số này là tài khoản của bạn — dùng để đăng nhập.',
+  authPhoneRequired: 'Cần số điện thoại để đăng ký. Email chỉ là thêm, không thay được số điện thoại.',
+  authPhoneInvalid: 'Số điện thoại chưa đúng — ví dụ 0912 345 678.',
+  authPhoneTaken: 'Số điện thoại này đã có tài khoản — bạn đăng nhập bằng số này nhé',
+  authEmailOptional: 'Email (không bắt buộc)',
+  authEmailOptionalHint: 'Thêm email để có thêm một cách đăng nhập — vẫn vào cùng tài khoản.',
+  authEmailInvalid: 'Email chưa đúng — ví dụ ten@gmail.com. Không dùng email thì để trống.',
 
   // ─── Đối tác ───────────────────────────────────────────────────────────────
   supplier: 'Người bán',
@@ -65,7 +86,7 @@ const BASE = {
   pickupFee: 'Phí xe đến lấy',
   minWeightThreshold: 'Từ bao nhiêu kg trở lên',
 
-  // ─── Chung ─────────────────────────────────────────────────────────────────
+  // ─── Chung ──────────────────────────────────────────────────────────────────
   time: 'Thời gian',
   note: 'Ghi chú',
   history: 'Lịch sử giao dịch',
@@ -104,6 +125,7 @@ const BASE = {
   save: 'Lưu',
   cancel: 'Bỏ qua',
   close: 'Đóng',
+  showPassword: 'Hiện mật khẩu',
   confirm: 'Đồng ý',
   undo: 'Hoàn tác',
   del: 'Xoá',
@@ -138,7 +160,7 @@ const BASE = {
   navBuyers: 'Người mua',
   navProducts: 'Mặt hàng',
   navInventory: 'Tồn kho',
-  navProfile: 'Hồ sơ vựa',
+  navProfile: 'Tài khoản',
   createPurchase: 'Tạo phiếu mua',
   createSale: 'Tạo phiếu bán',
   createReceipt: 'Tạo phiếu',
@@ -204,15 +226,30 @@ const BASE = {
   addLine: 'Thêm mặt hàng',
   removeLine: 'Bỏ dòng này',
   moreInfo: 'Thêm thông tin khác',
+  collapse: 'Thu gọn',
+  adjustmentLabel: 'Khoản gì (vd: tiền xe)',
+  adjustmentAmount: 'Số tiền',
+  moreInfoAdjustments: 'khoản cộng/trừ',
+  moreInfoHasNote: 'có ghi chú',
+  moreInfoPhotos: 'ảnh',
+  saveForLater: 'Để dành, chốt sau',
+  savedForLater: 'Đã để dành',
+  waitingNotice: 'Phiếu để dành — sửa tiếp được, chốt khi đủ.',
+  backToWeighing: 'Đưa về Đang cân',
   lastTime: 'Lần trước',
   reuse: 'Dùng lại',
   payFullAndFinish: 'Trả đủ & xong',
   payPartAndFinish: 'Ghi nợ & xong',
   amountPaidNow: 'Trả bao nhiêu',
+  moneyRoundedTo: 'Tiền không có số lẻ, sẽ lưu',
   reviewBeforeFinish: 'Xem lại trước khi chốt',
   savingDraft: 'Đang lưu',
   savedDraft: 'Đã lưu',
   nothingToFinish: 'Chưa đủ thông tin để chốt phiếu',
+  discardDraft: 'Xoá phiếu đang cân',
+  discardDraftTitle: 'Xoá phiếu đang cân này?',
+  discardDraftConsequence: 'Số đã cân mất hẳn, không lấy lại được. Sổ không ghi gì.',
+  draftDiscarded: 'Đã xoá phiếu đang cân',
 
   // ─── Chi tiết phiếu ───────────────────────────────────────────────────────
   receiptNumber: 'Số phiếu',
@@ -230,7 +267,17 @@ const BASE = {
   emptyTitle: 'Chưa có gì ở đây',
 } as const;
 
-export const L = { ...BASE, ...SCREEN_LABELS, ...ONBOARDING_LABELS, ...BILLING_LABELS } as const;
+export const L = {
+  ...BASE,
+  ...SCREEN_LABELS,
+  ...ONBOARDING_LABELS,
+  ...BILLING_LABELS,
+  ...LEGAL_LABELS,
+  ...ROLE_LABELS,
+  ...ORDER_LABELS,
+  ...ORG_LABELS,
+  ...MAP_LABELS,
+} as const;
 
 /** Phụ đề giải thích cho các thuật ngữ buộc phải giữ. */
 export const SUB = {

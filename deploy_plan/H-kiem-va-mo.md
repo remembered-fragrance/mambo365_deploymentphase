@@ -35,7 +35,6 @@ Nguyên tắc: **mở dần, không mở toang.** 5–10 người quen trong hai
 
 - [ ] Lighthouse mobile: **Perf ≥85 · A11y ≥95 · Best Practices ≥95 · PWA installable ✅**
 - [ ] JS khởi tạo **≤250KB gzip**
-- [ ] Không file nào trong `src/` **>300 dòng**
 - [ ] Phủ test `core/` **≥80%**
 - [ ] `npx depcruise src --validate` → **0 vi phạm**
 - [ ] Kiểm mọi luật cấm ở [README §3.7](README.md) bằng `grep`

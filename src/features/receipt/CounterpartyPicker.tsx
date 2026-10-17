@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/Input';
-import { formatDate, formatVnd } from '@/core/format';
-import { supplierSummaries } from '@/core/supplierSelectors';
-import { buyerSummaries } from '@/core/buyerSelectors';
-import { transactionTotals } from '@/core/calc';
-import type { AppData, TransactionKind } from '@/core/types';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import { supplierSummaries } from '@mambo/core/supplierSelectors';
+import { buyerSummaries } from '@mambo/core/buyerSelectors';
+import { transactionTotals } from '@mambo/core/calc';
+import type { AppData, TransactionKind } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 
 interface CounterpartyPickerProps {

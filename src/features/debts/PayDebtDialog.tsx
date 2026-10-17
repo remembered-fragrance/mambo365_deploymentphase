@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { transactionTotals } from '@/core/calc';
-import type { DebtSide } from '@/core/debtSelectors';
-import { formatDate, formatVnd } from '@/core/format';
-import { parseNumber } from '@/core/parseNumber';
-import type { Transaction } from '@/core/types';
+import { transactionTotals } from '@mambo/core/calc';
+import type { DebtSide } from '@mambo/core/debtSelectors';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { parseMoney } from '../shared/money';
 import { NumberField } from '../shared/NumberField';
 
 interface PayDebtDialogProps {
@@ -27,7 +27,7 @@ export function PayDebtDialog({ tx, side, onConfirm, onCancel }: PayDebtDialogPr
   if (!tx) return null;
 
   const { debt } = transactionTotals(tx);
-  const paying = Math.min(parseNumber(amount), debt);
+  const paying = Math.min(parseMoney(amount), debt);
   const title = side === 'payable' ? L.payPart : L.collectPart;
 
   const submit = () => {
@@ -47,7 +47,7 @@ export function PayDebtDialog({ tx, side, onConfirm, onCancel }: PayDebtDialogPr
           {L.debtOf}: <span className="font-bold text-ink">{formatVnd(debt)}</span>
         </p>
 
-        <NumberField label={L.amountPaidNow} value={amount} spoken autoFocus onValueChange={setAmount} />
+        <NumberField label={L.amountPaidNow} value={amount} spoken money autoFocus onValueChange={setAmount} />
 
         <p className="num text-sm text-ink-2">
           {L.remainingDebt}:{' '}

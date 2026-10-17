@@ -13,7 +13,7 @@
  *  - `counterparty_id` NULL nghĩa là Khách lẻ, không có hồ sơ đối tác.
  */
 
-import type { CreditTerm, PriceAdjustment, TransactionLine } from '@/core/types';
+import type { CreditTerm, PriceAdjustment, TransactionLine } from '@mambo/core/types';
 
 export interface BaseRow {
   readonly id: string;

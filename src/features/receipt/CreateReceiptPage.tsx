@@ -3,11 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
-import { PlusIcon } from '@/components/ui/icons';
-import { formatVnd } from '@/core/format';
-import { newId } from '@/core/id';
-import type { TransactionKind } from '@/core/types';
+import { PlusIcon, TrashIcon } from '@/components/ui/icons';
+import { formatVnd } from '@mambo/core/format';
+import { newId } from '@mambo/core/id';
+import type { TransactionKind } from '@mambo/core/types';
 import { useSubscription } from '@/data/hooks/useSubscription';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
@@ -16,8 +17,10 @@ import { HelpButton } from '../help/HelpButton';
 import { FirstReceiptCoach } from '../onboarding/FirstReceiptCoach';
 import { ROUTES } from '../shared/navItems';
 import { CounterpartyPicker } from './CounterpartyPicker';
+import { discardConsequence, nextSession } from './draftSessions';
 import { LineEditor } from './LineEditor';
 import { MoreInfoPanel } from './MoreInfoPanel';
+import { OrderPicker } from './OrderPicker';
 import { PayPartDialog } from './PayPartDialog';
 import { ReceiptSummary } from './ReceiptSummary';
 import { SessionRail } from './SessionRail';
@@ -56,6 +59,7 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   const toast = useToast();
   const receipt = useDraftReceipt(draftId, kind);
   const [payPartOpen, setPayPartOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
 
   const sessions = data.drafts.filter((d) => d.status === 'draft' && (d.kind ?? 'purchase') === kind);
 
@@ -72,9 +76,31 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
     if (!tx) return;
     setPayPartOpen(false);
     toast({ message: `${L.total}: ${formatVnd(amountPaid)} · ${tx.supplierName}` });
-    // Quay về đúng thanh chip: còn khách đang cân thì mở khách kế, hết thì phiếu mới.
-    const remaining = sessions.filter((d) => d.id !== receipt.draftId);
-    goToDraft(remaining[0]?.id);
+    goToDraft(nextSession(sessions, receipt.draftId));
+  };
+
+  /**
+   * Khách bỏ đi, cân nhầm, bấm "Khách mới" thừa — nháp không chốt được thì phải xoá được, không
+   * thì nằm mãi trên thanh "Đang cân". Không có "Hoàn tác": nháp đã xoá thì máy khác cũng xoá theo.
+   */
+  const discard = () => {
+    const name = receipt.partyName;
+    setDiscardOpen(false);
+    receipt.discard();
+    toast({ message: `${L.draftDiscarded} · ${name.trim() || L.walkIn}`, tone: 'alert' });
+    goToDraft(nextSession(sessions, receipt.draftId));
+  };
+
+  /**
+   * Khách gửi hàng lại, chờ giá, chưa lấy tiền: cất phiếu sang "Để dành" để thanh "Đang cân" chỉ còn
+   * khách đang đứng ở sân. Về thẳng tab "Để dành" của màn Phiếu — thấy phiếu vừa cất nằm đó; bấm vào
+   * là mở lại để chốt như thường.
+   */
+  const saveForLater = () => {
+    const name = receipt.partyName;
+    receipt.saveForLater();
+    toast({ message: `${L.savedForLater} · ${name.trim() || L.walkIn}` });
+    navigate(`${ROUTES.receipts}?tab=waiting`);
   };
 
   /**
@@ -122,6 +148,14 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
         </aside>
 
         <div className="flex flex-col gap-4 lg:col-span-6">
+          <OrderPicker
+            data={data}
+            kind={kind}
+            orderId={receipt.orderId}
+            onPick={receipt.setOrderId}
+            onCounterparty={receipt.setCounterparty}
+          />
+
           <CounterpartyPicker
             data={data}
             kind={kind}
@@ -154,6 +188,30 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
             onNoteChange={receipt.setNote}
             onAttachmentsChange={receipt.setAttachmentIds}
           />
+
+          {receipt.status === 'waiting' ? (
+            <div className="card flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-ink-2">{L.waitingNotice}</p>
+              <Button className="shrink-0" onClick={receipt.backToWeighing}>
+                {L.backToWeighing}
+              </Button>
+            </div>
+          ) : (
+            (receipt.draftId || receipt.canFinish) && (
+              <Button block onClick={saveForLater}>
+                {L.saveForLater}
+              </Button>
+            )
+          )}
+
+          {/* Cuối cột, xa hai nút chốt ở thanh tổng tiền — tay đeo găng không chạm nhầm. Nháp
+              chưa lưu lần nào thì chưa có gì để xoá: rời màn là nó mất. */}
+          {receipt.draftId && (
+            <Button tone="danger" block onClick={() => setDiscardOpen(true)}>
+              <TrashIcon className="h-4 w-4" />
+              {L.discardDraft}
+            </Button>
+          )}
         </div>
 
         <div className="lg:col-span-3">
@@ -172,6 +230,15 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
         total={receipt.finalTotal}
         onConfirm={finish}
         onCancel={() => setPayPartOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={discardOpen}
+        title={L.discardDraftTitle}
+        consequence={discardConsequence(receipt.partyName, receipt.finalTotal)}
+        confirmLabel={L.del}
+        onConfirm={discard}
+        onCancel={() => setDiscardOpen(false)}
       />
     </PageContainer>
   );

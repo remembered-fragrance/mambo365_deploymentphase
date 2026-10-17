@@ -11,14 +11,18 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PlusIcon } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toast';
-import { formatVnd } from '@/core/format';
-import { partySummaries, partyTransactions, type PartyRole, type PartySummary } from '@/core/partySelectors';
+import { formatVnd } from '@mambo/core/format';
+import { partySummaries, partyTransactions, type PartyRole, type PartySummary } from '@mambo/core/partySelectors';
+import { useLinks } from '@/data/hooks/useLinked';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { HelpButton } from '../help/HelpButton';
 import { useWideScreen } from '../shared/useWideScreen';
 import { PartnerDetail } from './PartnerDetail';
+import { useAccess } from '../shared/useAccess';
 import { PartnerFormDialog, emptyParty, type PartyDraft } from './PartnerFormDialog';
+import { LinkCodeCell } from './LinkCodeCell';
+import { linkStateOf } from './linkState';
 import { partnerColumns } from './partnerColumns';
 
 /**
@@ -28,7 +32,8 @@ import { partnerColumns } from './partnerColumns';
  * chúng đã bắt đầu lệch. Gộp trước, tô vẽ sau (E §4.3).
  */
 export function PartnerListPage({ role }: { readonly role: PartyRole }) {
-  const { data, addSupplier, updateSupplier, deleteSupplier, addBuyer, updateBuyer, deleteBuyer } =
+  const { can } = useAccess();
+  const { data, currentOrgId, addSupplier, updateSupplier, deleteSupplier, addBuyer, updateBuyer, deleteBuyer } =
     useStore();
   const [params, setParams] = useSearchParams();
   const toast = useToast();
@@ -39,6 +44,8 @@ export function PartnerListPage({ role }: { readonly role: PartyRole }) {
   const [sort, setSort] = useState<SortState>({ columnId: 'last', desc: true });
 
   const supplierSide = role === 'supplier';
+  const linkable = Boolean(currentOrgId) && can('partner:manage');
+  const links = useLinks(linkable);
   const rows = useMemo(() => partySummaries(data, role), [data, role]);
 
   const selectedId = params.get('doi-tac') ?? undefined;
@@ -92,7 +99,14 @@ export function PartnerListPage({ role }: { readonly role: PartyRole }) {
 
   // Dựng lại mỗi lần vẽ, không `useMemo`: các hàm bên trong đọc URL hiện tại,
   // mà ghi nhớ chúng thì chỉ đổi được một thứ rẻ tiền lấy một lỗi khó tìm.
-  const columns = partnerColumns(role, (p) => select(p.id), openEdit);
+  const columns = partnerColumns(
+    role,
+    (p) => select(p.id),
+    openEdit,
+    linkable
+      ? (p) => <LinkCodeCell state={linkStateOf(links.data ?? [], p.id)} partnerKind={role} partnerId={p.id} onChanged={links.reload} />
+      : undefined,
+  );
 
   const list = (
     <DataView
@@ -118,7 +132,8 @@ export function PartnerListPage({ role }: { readonly role: PartyRole }) {
       party={selected}
       role={role}
       transactions={partyTransactions(data, selected.id)}
-      onEdit={() => openEdit(selected)}
+      onEdit={can('partner:manage') ? () => openEdit(selected) : undefined}
+      links={linkable ? links : undefined}
     />
   ) : undefined;
 

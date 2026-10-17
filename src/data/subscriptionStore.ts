@@ -16,8 +16,8 @@
  * đáng tiền là đồng bộ, mà cái đó máy chủ chặn bằng `has_active_sync()`.
  */
 
-import type { PaymentIntent, Subscription } from '@/core/subscription';
-import { fetchPaymentIntents, fetchSubscription } from './billing';
+import type { PaymentIntent, Subscription } from '@mambo/core/subscription';
+import { fetchBillingOffer, fetchPaymentIntents, fetchSubscription, type BillingOffer } from './billing';
 import { getSupabase } from './client';
 
 const KEY_PREFIX = 'thumua365:plan:';
@@ -25,10 +25,12 @@ const KEY_PREFIX = 'thumua365:plan:';
 export interface SubscriptionSnapshot {
   readonly subscription: Subscription | null;
   readonly intents: readonly PaymentIntent[];
+  /** Bán gói tự phục vụ hay liên hệ, kèm bảng giá — chỉ người có `billing:manage` mới tải. */
+  readonly offer: BillingOffer | null;
   readonly loading: boolean;
 }
 
-const EMPTY: SubscriptionSnapshot = { subscription: null, intents: [], loading: false };
+const EMPTY: SubscriptionSnapshot = { subscription: null, intents: [], offer: null, loading: false };
 
 let snapshot: SubscriptionSnapshot = EMPTY;
 let loadedFor: string | null = null;
@@ -44,6 +46,7 @@ const remember = (userId: string, subscription: Subscription | null): void => {
     if (subscription) localStorage.setItem(KEY_PREFIX + userId, JSON.stringify(subscription));
     else localStorage.removeItem(KEY_PREFIX + userId);
   } catch {
+    if (loadedFor !== userId) return;
     // Bộ nhớ đầy hoặc bị chặn — không đáng làm hỏng một lượt đồng bộ.
   }
 };
@@ -64,39 +67,46 @@ export const subscribeSubscription = (listener: () => void): (() => void) => {
   };
 };
 
-export const subscriptionSnapshot = (): SubscriptionSnapshot => snapshot;
+export const subscriptionSnapshot = (orgId?: string | null): SubscriptionSnapshot =>
+  orgId === undefined || loadedFor === orgId ? snapshot : EMPTY;
 
 /**
  * Đọc lại từ máy chủ. `force` để màn chờ chuyển khoản hỏi theo nhịp; không có
- * nó thì mỗi tài khoản chỉ hỏi một lần cho tới khi đổi tài khoản.
+ * nó thì mỗi tổ chức chỉ hỏi một lần cho tới khi đổi tổ chức. `billing` = người gọi
+ * có `billing:manage`: tải thêm lịch sử chuyển khoản và bảng giá (người khác bị 403).
  */
-export const loadSubscription = async (userId: string | null, force = false): Promise<void> => {
+export const loadSubscription = async (orgId: string | null, force = false, billing = false): Promise<void> => {
   const supabase = getSupabase();
 
-  if (!supabase || !userId) {
+  if (!supabase || !orgId) {
     loadedFor = null;
     if (snapshot !== EMPTY) emit(EMPTY);
     return;
   }
 
-  if (!force && loadedFor === userId) return;
-  loadedFor = userId;
+  if (!force && loadedFor === orgId) return;
+  const same = loadedFor === orgId;
+  loadedFor = orgId;
 
   // Hiện ngay bản nhớ trong máy để không có khoảnh khắc nào người đã trả tiền
-  // bị coi là bậc miễn phí trong lúc chờ mạng.
-  emit({ subscription: recall(userId), intents: snapshot.intents, loading: true });
+  // bị coi là bậc miễn phí trong lúc chờ mạng. Hỏi lại cùng tổ chức thì giữ nguyên
+  // lịch sử đang hiện — màn chờ chuyển khoản không được nháy trống.
+  emit(same ? { ...snapshot, loading: true } : { ...EMPTY, subscription: recall(orgId), loading: true });
 
-  try {
-    const [subscription, intents] = await Promise.all([
-      fetchSubscription(supabase, userId),
-      fetchPaymentIntents(supabase, userId),
-    ]);
-    remember(userId, subscription);
-    emit({ subscription, intents, loading: false });
-  } catch {
-    // Hỏi hụt thì giữ nguyên bản đang có. Không hạ bậc vì một lần mất sóng.
-    emit({ ...snapshot, loading: false });
-  }
+  const [subscription, intents, offer] = await Promise.allSettled([
+    fetchSubscription(supabase, orgId),
+    billing ? fetchPaymentIntents() : Promise.resolve(snapshot.intents),
+    billing ? fetchBillingOffer() : Promise.resolve(snapshot.offer),
+  ]);
+  if (loadedFor !== orgId) return;
+  if (subscription.status === 'fulfilled') remember(orgId, subscription.value);
+  // Hỏi hụt thì giữ nguyên bản đang có. Không hạ bậc vì một lần mất sóng.
+  emit({
+    subscription: subscription.status === 'fulfilled' ? subscription.value : snapshot.subscription,
+    intents: intents.status === 'fulfilled' ? intents.value : snapshot.intents,
+    offer: offer.status === 'fulfilled' ? offer.value : snapshot.offer,
+    loading: false,
+  });
 };
 
 /** Thêm ý định thanh toán vừa tạo vào danh sách đang hiện, chưa cần hỏi lại. */

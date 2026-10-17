@@ -11,7 +11,7 @@ interface AttachmentPickerProps {
   readonly onChange: (ids: readonly string[]) => void;
 }
 
-function Thumbnail({ id, onRemove }: { readonly id: string; readonly onRemove: () => void }) {
+function Thumbnail({ id, onRemove }: { readonly id: string; readonly onRemove?: () => void }) {
   const { url, status } = useAttachmentUrl(id);
 
   return (
@@ -25,6 +25,7 @@ function Thumbnail({ id, onRemove }: { readonly id: string; readonly onRemove: (
       </span>
       <button
         type="button"
+        disabled={!onRemove}
         aria-label={L.removePhoto}
         onClick={onRemove}
         className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border border-rule bg-card text-alert"

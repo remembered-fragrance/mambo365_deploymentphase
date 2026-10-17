@@ -16,7 +16,7 @@ Ghi thêm một mục mỗi khi kết thúc một giai đoạn. Không xoá mụ
 | | |
 |---|---|
 | Bắt đầu | 09/08/2026 |
-| Repo | `C:\Users\nino\Desktop\mambo365deployment` — nhánh `main`, chưa có remote |
+| Repo | `C:\Users\nino\Desktop\mambo365deployment` — nhánh `master`, chưa có remote |
 | Bản demo cũ | `C:\Users\nino\Desktop\mambo365-main` — **giữ nguyên**, vẫn deploy tới khi bản mới qua criteria |
 | Người làm | Tài (một mình, ghép cặp với AI) |
 
@@ -378,16 +378,248 @@ tiền. Cần Supabase thật + một lần chuyển khoản thật. Bảng ki�
 
 ---
 
-## Bốn số phải giữ trong tầm
+## Giai đoạn G — Site & pháp lý · 11/08/2026
+
+**Kết quả:** bốn trang tĩnh, và ba thứ trong app mà hai trang pháp lý phải dựa
+vào mới nói thật được.
+
+### Nguyên tắc chi phối cả giai đoạn
+
+> Điều nguy hiểm không phải văn phong nghiệp dư, mà là **viết một đằng hệ thống
+> làm một nẻo**.
+
+Vì vậy thứ tự làm bị đảo so với kế hoạch: **viết code trước, viết trang sau**.
+Ba câu dưới đây lúc bắt đầu giai đoạn G đều còn là lời hứa suông, nay mới có
+thật:
+
+| Câu trên trang pháp lý | Thứ phải xây để câu đó thành thật |
+|---|---|
+| "Bấm Xoá tài khoản là xoá hẳn, kể cả ảnh chứng từ" | `delete_own_account()` + `data/account.ts` |
+| "Quản trị viên chỉ chạm dữ liệu khi bạn yêu cầu, có ghi nhận" | Bảng `admin_access_log`, hai script quản trị bắt buộc khai tên người duyệt |
+| "Không có công cụ thống kê, không tải gì từ máy chủ ngoài" | `npm run site:check` chặn `<script>` và mọi tài nguyên ngoài |
+
+### Ba quyết định đáng ghi
+
+1. **`site:check` đứng NGOÀI `npm run verify`.** Site còn chỗ trống chờ nhóm
+   điền (tên chủ thể, địa chỉ, vùng máy chủ, ảnh chụp), mà `verify` phải xanh
+   suốt trong lúc làm. Cái này chặn **deploy**, không chặn commit — nên nó kiểm
+   được cả thứ mà lint không kiểm được: giá trên site khớp `config.ts`, số Zalo
+   khớp, không có `<script>`, không nạp gì từ máy chủ ngoài.
+2. **Chỗ trống hiện màu vàng chọc mắt** (`class="fill"`), không phải ghi chú lặng
+   lẽ trong comment. Một trang pháp lý phát hành kèm "ĐIỀN: …" là lỗi nghiêm
+   trọng hơn nhiều so với một trang chưa đẹp — nó phải khó bỏ qua.
+3. **Site dùng chữ có sẵn của máy, không tải Be Vietnam Pro từ máy chủ ngoài.**
+   Kế hoạch §4.4 chỉ đòi dùng chung **bảng màu**, và màu thì chép nguyên. Tải
+   font ngoài là gửi địa chỉ IP người đọc sang bên thứ ba, ngay trên trang vừa
+   hứa không có bên thứ ba nào theo dõi họ.
+
+### Xoá tài khoản — thứ tự không được đổi
+
+Ảnh trên Storage **xoá trước**, rồi mới xoá `auth.users`. Ảnh không đi theo
+`on delete cascade`, và ngay khi hàng người dùng mất thì không ai còn quyền xoá
+chúng nữa (policy Storage khớp `auth.uid()`). Làm ngược lại là để ảnh chứng từ
+của người ta nằm lại vĩnh viễn — đúng thứ trang Quyền riêng tư vừa hứa không xảy ra.
+
+Hai thứ **cố ý ở lại** sau khi xoá, đều không kèm tên: dòng đối soát tiền
+(`bank_transactions.user_id` là `on delete set null` — nếu xoá theo thì xoá tài
+khoản trở thành cách dùng lại một mã giao dịch ngân hàng) và dòng nhật ký hỗ trợ
+(`admin_access_log` không có khoá ngoại — nhật ký mà xoá được thì không còn là
+nhật ký). Cả hai đã nói rõ trên trang Quyền riêng tư §6.
+
+### Một điều phải khai mà suýt quên
+
+Màn chuyển khoản tải ảnh QR từ **vietqr.io**, tức là gửi số tiền và nội dung
+chuyển khoản sang một bên thứ ba. Đã liệt kê trong bảng "Bên thứ ba có thể thấy
+gì". Tìm ra bằng cách `grep https:// src/` chứ không bằng cách nhớ lại — nên
+mỗi lần thêm địa chỉ ngoài phải chạy lại phép grep đó và sửa trang.
+
+### Chạy thật đã kiểm
+
+| Việc | Kết quả |
+|---|---|
+| Ô đồng ý điều khoản | **Không tick sẵn**; không tick mà bấm đăng ký → hiện lỗi, không đăng ký |
+| Hai liên kết trong ô đồng ý | Đúng địa chỉ site, mở tab mới |
+| Nút xoá tài khoản: để trống · gõ sai tên vựa · gõ đúng | Mờ · mờ kèm "Chưa khớp tên vựa" · sáng lên |
+| Vị trí thẻ xoá tài khoản | Nằm **sau** thẻ "Dữ liệu của bạn" — đường đi ngang qua nút "Lưu ra file" |
+| Bốn trang site ở 375px và 320px | Không trang nào cuộn ngang; bảng dài cuộn trong khung của nó |
+| Liên kết giữa bốn trang | Không liên kết nào gãy |
+| `site:check` | Chặn đúng 10 chỗ còn `ĐIỀN:`; giá, số Zalo, không-script đều qua |
+| `git grep demo@thumua365` | Không có — bản dựng lại chưa từng có tài khoản demo |
+
+### 🔴 Chưa kiểm được
+
+Nút xoá tài khoản **chưa chạy lần nào** — cần Supabase thật và một tài khoản
+thử, rồi kiểm cả bảng lẫn Storage. Lighthouse trang tĩnh và việc cài PWA lên
+iPhone / Android thật cũng phải đo trên bản deploy.
+
+---
+
+## Bỏ luật 300 dòng mỗi file · 09/10/2026
+
+Theo issue #7. Luật "file trong `src/` ≤ 300 dòng" (thêm ở `5c1dcec`, giai đoạn
+A) đếm cả dòng trống, comment và dòng do formatter tách, nên chặn PR vì định
+dạng chứ không vì thiết kế: PR #6 đỏ CI vì `store.tsx` dài 312 dòng, trong khi
+phần logic thêm vào chỉ khoảng 15 dòng. Từ nay việc tách file do review quyết
+theo trách nhiệm của file.
+
+- `scripts/check-rules.mjs`: bỏ `MAX_LINES` và bước kiểm độ dài; các luật khác
+  giữ nguyên.
+- Bỏ luật khỏi `README.md`, `deploy_plan/README.md` §3.3 và §3.9, các ô kiểm
+  ở `deploy_plan/` A, D, E, H; sửa comment ở `labels.ts`, `screenLabels.ts`.
+  Mục "Chuyện nhỏ mà phải sửa" của giai đoạn E giữ nguyên như nhật ký.
+- Bảng chỉ số dưới đây còn ba số; số đo cũ ghi ở chú thích dưới bảng.
+- Repo backend bỏ chỉ số cùng loại cùng ngày (Thumua365_BE#19).
+
+---
+
+## Logo · mã kết nối dễ thấy · màn Nhân viên dạng dashboard · 14/10/2026
+
+Cần `@mambo/*` **0.13.0** (`api.reports.members`) — `package.json` đã trỏ release `v0.13.0`.
+
+- **Logo**: `public/logo.svg` (bản gốc `Logo/logo.svg` ngoài repo, thêm `viewBox` để co giãn), `favicon.svg` là
+  cùng file. PNG dựng lại từ SVG: `icon-192`, `icon-512` (nền trong), `icon-512-maskable` (nền trắng, logo
+  trong vùng an toàn 70%), `apple-touch-icon` (180px, nền trắng — iOS tô đen nền trong). Manifest tách `any` /
+  `maskable` thay vì một icon `any maskable`. `<Logo>` ở sidebar, màn đăng nhập, trang pháp lý.
+- **Mã kết nối**: vẫn mỗi nông hộ một mã (không có mã chung của vựa — nhóm chọn giữ mô hình cũ). Cột "Kết nối"
+  trên danh sách Nông hộ / Người mua: đã kết nối · mã đang chờ · nút "Lấy mã". Thẻ "Mã kết nối cho nông hộ"
+  trên Tổng quan. Danh sách và thẻ chi tiết dùng chung một `useLinks` nên lấy mã ở đâu cũng thấy ngay.
+- **Nhân viên**: chọn tháng, lọc chi nhánh, bốn số tổng, mỗi người số phiếu / tiền mua / lần ghi trả / lần làm
+  gần nhất. Thêm người chuyển vào hộp thoại. Thẻ "Nhân viên hôm nay" trên Tổng quan của chủ.
+- **Người làm không tự rời** (BE 0.13.0): bỏ nút "Rời tổ chức" của thẻ Tổ chức (#26 thêm theo BE 0.12.0) và
+  `leaveOrg`; thẻ chỉ nhắc "nhờ chủ gỡ bạn ra". `deleteAccount` bắt `STILL_MEMBER` → `L.deleteAccountStillMember`.
+
+---
+
+## Bản đồ thu mua · 16/10/2026
+
+Cần `@mambo/*` **0.14.0** (`api.places`, quyền `place:manage`). **`package.json` còn trỏ release `v0.13.0`**:
+BE phát hành `v0.14.0` xong mới đổi 3 URL rồi `npm install` để lock có integrity thật — trước đó CI đỏ ở
+typecheck. Chuyển từ prototype LiveMap (`k20elite/LiveMap`)
+sang, viết lại theo khung của app (BottomSheet, Toast, ConfirmDialog, nhãn tiếng Việt trong `i18n/mapLabels.ts`).
+
+- **Hai màn**: `/ban-do` (mọi vai trò có tổ chức; sổ của máy này không có) và `/dia-diem` "Địa điểm của tôi"
+  (chủ vựa, chủ / quản lý doanh nghiệp). Nông dân có Bản đồ ở thanh dưới, ô thứ 3. `/ban-do?xem=<id>` mở popup,
+  `?sua=<id>` mở form sửa — `mapLinks.ts` tách riêng để màn danh sách không kéo Leaflet.
+- **Leaflet chỉ nằm trong chunk `MapPage`** (170 KB, gzip 51 KB) — luật depcruise `leaflet-chi-o-ban-do` chặn
+  import từ ngoài `features/map/`. JS khởi tạo không đổi.
+- **Tải theo khung nhìn**: `GET /v1/places?bbox=` mỗi lần dừng kéo, huỷ yêu cầu cũ bằng `AbortSignal`, kẹp bbox
+  về ±180/±90 (thu nhỏ hết cỡ Leaflet trả kinh độ > 180 → máy chủ 422). Trả về chạm `PLACES_PAGE_LIMIT` (500)
+  thì báo "phóng to để thấy hết".
+- **Kiểm ở máy bằng cùng schema với máy chủ** (`PlaceInput` của contracts); lỗi 422 của máy chủ gắn vào ô,
+  `lng` gộp vào `lat` vì form chỉ có một dòng Vị trí. Vượt `PLACES_PER_ORG_LIMIT` (100) báo kèm con số.
+- **Hoàng Sa, Trường Sa**: nhãn chủ quyền vẽ đè trên nền; khung Việt Nam (`VN_BOUNDS`) gồm cả hai quần đảo.
+- **Tile**: mặc định OpenStreetMap — miễn phí, phải ghi nguồn, **không cho lưu lượng lớn**
+  (https://operations.osmfoundation.org/policies/tiles/). Đổi bằng `VITE_TILE_URL` / `VITE_TILE_ATTRIBUTION`.
+  `TileLayer` gửi `referrerPolicy="strict-origin-when-cross-origin"` vì Vercel đặt `no-referrer` cho cả trang
+  mà OSM chặn yêu cầu không có Referer.
+- **Màu ghim** là token `--color-trader` / `--color-enterprise` / `--color-me` (đủ day / sun / night); SVG ghim
+  dùng `currentColor`, không ghi cứng mã màu.
+- **Ghi đè CSS của Leaflet phải có tiền tố `.map-page`**: `leaflet.css` nạp sau `index.css` (chunk MapPage),
+  cùng độ ưu tiên là thua — popup giãn dòng, nền trắng ở chế độ đêm.
+
+### Chạy thật đã kiểm (16/10/2026)
+
+Edge thật qua Playwright, mọi thứ ở máy: FE dev · API build từ `feat/ban-do` · DB docker · Supabase Auth giả
+(JWKS ES256 tự phát) — không chạm staging; mọi yêu cầu ra host khác (trừ tile OSM) bị chặn và đếm = 0.
+26/26 bước, chạy hai lần liền: chủ vựa (xem, popup, Chỉ đường / Gọi, lọc, thêm, sửa, gỡ, "Địa điểm của
+tôi", link `?xem` / `?sua`, id lạ), nông dân trên điện thoại (thanh dưới, bố cục, popup, bị chặn `/dia-diem`),
+người cân, chủ / nhân viên doanh nghiệp, chặn quyền vị trí. Lỗi chạy thật bắt được (test đơn vị không thấy):
+CSS bị leaflet.css đè; ghim giữ tên cũ sau khi sửa (`Marker` không cập nhật `title`); bấm ghim lúc đang bay
+tới vị trí của tôi thì popup trôi khỏi màn hình; lỗi ô tên không tắt khi gõ lại.
+
+## Nháp giữ khoản cộng/trừ · `@mambo/*` 0.15.0 · 17/10/2026
+
+Trước đây khoản cộng/trừ chỉ nằm trong state của màn lập phiếu: chuyển khách hoặc "Để dành" là mất (bảng
+`drafts` không có chỗ lưu). BE v0.15.0 thêm `drafts.adjustments`. **API phải lên trước app**: app mới gửi
+`adjustments` lên API ≤ 0.14 thì op bị từ chối và nháp kẹt "xung đột".
+
+- `useDraftReceipt`: lấy khoản từ nháp đã lưu, tự lưu khi khoản đổi. `save()` luôn gửi đủ `adjustments`,
+  `note` và `counterpartyId`, kể cả khi trống.
+- `draftToPatch` gửi theo **khoá có mặt** (`'note' in patch`) chứ không theo `!== undefined`. Đây là lỗi cũ:
+  gỡ hết khoản, xoá ghi chú hay bỏ khách thì máy chủ không biết, và lần kéo về sau dựng lại đúng cái vừa gỡ.
+  Khoản trống gửi `null`, không gửi `[]`.
+- Ô số tiền của khoản làm tròn về đồng nguyên (các ô tiền khác: xem mục làm tròn tiền bên dưới).
+- Màn bản đồ có `h1` ẩn (`sr-only`) cho trình đọc màn hình. Nút xoá từng khoản có `aria-label` "Xoá <tên khoản>".
+- Chạy thật (local, hai trình duyệt chung một sổ, 1280 và 390px): 9/9. Máy 2 với sổ trống kéo về thấy đủ khoản;
+  gỡ khoản và xoá ghi chú thì máy chủ thành `null`; chốt phiếu mang khoản, số trả đúng.
+
+## Ô tiền gõ lẻ được, lưu đồng nguyên · 17/10/2026
+
+Ô tiền dùng chung `NumberField` với ô cân nên gõ được dấu phẩy. Máy chủ chỉ nhận tiền là `int`: một lần trả
+`500000,5` bị từ chối và op kẹt "xung đột". Người dùng chọn **cho gõ, app tự làm tròn** (không chặn phím phẩy).
+
+- `features/shared/money.ts`: `parseMoney` = làm tròn tới đồng gần nhất (0,5 lên). Dùng cho mọi ô tiền: khoản
+  cộng/trừ, trả một phần khi chốt, trả nợ, tiền cố định của quy tắc giá, giá đề nghị của đơn.
+- `NumberField` có prop `money`: gõ lẻ thì dòng gợi ý (và bàn phím số) báo "Tiền không có số lẻ, sẽ lưu X₫".
+  Ô tiền mới **phải** dùng `parseMoney` và bật `money`. Đơn giá, khối lượng, phần trăm được lẻ, không dùng.
+- `wireMappers` làm tròn mọi trường tiền lần nữa trước khi gửi (lưới cho dữ liệu lẻ có sẵn trong máy).
+  Op lẻ **đã kẹt** từ trước trong hàng đợi thì không sửa được bằng cách này: dữ liệu đã được map lúc xếp hàng.
+- Cùng đợt: `Dialog` có `max-h` + tự cuộn. Trước đây hộp cao hơn màn hình (form quy tắc giá ở laptop 900px
+  và điện thoại) đẩy nút **Lưu** ra ngoài màn hình, không cuộn tới được.
+- Chạy thật (local, 1280 và 390px): 7/7. Máy chủ nhận đúng 30.001 / 500.001 / 100.000 / −20.001, hàng đợi
+  trong máy rỗng. Hồi quy: khoản cộng/trừ 9/9, lập phiếu 11/11.
+
+## Quên mật khẩu · xác nhận email · mật khẩu 8–72 · `@mambo/*` 0.16.0 · 16/10/2026
+
+Trước đây không có "Quên mật khẩu": đăng nhập bằng email nội bộ `84…@id.thumua365.vn`, nên thư Supabase không
+tới ai. Email khôi phục cũng chưa từng được xác nhận. Máy chủ (BE 0.16.0) giờ gửi thư qua Brevo:
+
+- **Xác nhận email**: lưu email khôi phục thì máy chủ gửi link `/xac-nhan-email?token=…`. Thẻ Tài khoản hiện
+  "Đã xác nhận" / "Chưa xác nhận" + nút "Gửi lại thư xác nhận" (60 giây một thư). Trang xác nhận không cần đăng nhập.
+- **Quên mật khẩu**: nút ở màn đăng nhập (chỉ khi có máy chủ), gõ tên đăng nhập / SĐT / email. Luôn hiện cùng
+  một câu (không cho dò ai có tài khoản) + link Zalo kỹ thuật viên. Chỉ email **đã xác nhận** mới nhận thư.
+  Link `/dat-lai-mat-khau?token_hash=…&type=recovery` → `verifyOtp` → đặt mật khẩu mới → vào sổ.
+  Máy đang đăng nhập sẵn thì trang không đụng phiên đó, chỉ đường sang Tài khoản.
+- **Một luật mật khẩu**: 8–72 ký tự ở đăng ký, đổi mật khẩu, đặt lại, thêm nhân viên (`MIN/MAX_PASSWORD_LENGTH`
+  lấy từ contracts, `features/shared/password.ts`). Màn đăng nhập không kiểm độ dài: mật khẩu cũ 6–7 ký tự
+  vẫn vào được. Đăng ký kiểm thêm tên bắt buộc.
+- Chính sách 2.2 (16/10/2026): thêm Brevo là bên xử lý email.
+- SDK 0.16 kiểm phản hồi theo contract (`recoveryEmailVerified`) ⇒ **BE phải lên trước FE**.
+- Chạy thật (local, 1280 và 390px): 14/14.
+- Chưa có `BREVO_API_KEY` + `MAIL_FROM` trên Render thì cả hai loại thư báo "chưa gửi được thư".
+
+## Số Zalo hỗ trợ thật · nút hiện/ẩn mật khẩu · 17/10/2026
+
+- **#40**: `SUPPORT_ZALO` trong `src/config.ts` đổi từ số giả `0912345678` sang số thật `0969158913` (form Quên
+  mật khẩu, thanh toán QR, trang Gói, trang Pháp lý) và `site/*.html`. Số mẫu trong `workbookFile.ts` và test giữ
+  nguyên vì là dữ liệu giả có chủ đích. `site:check` vẫn còn 10 chỗ `ĐIỀN:` có từ trước (họ tên, địa chỉ, ảnh).
+- **#41**: `Input` dùng chung tự có nút con mắt cho mọi ô `type="password"` (đăng nhập, đăng ký, đổi/đặt lại mật
+  khẩu, tạo nhân viên). Nút `type="button"` + `aria-label` + `aria-pressed`; ô truyền `suffix` riêng thì giữ suffix đó.
+
+## PR đang chờ merge · 17/10/2026
+
+CI cả ba đều xanh, **chưa thử trên điện thoại thật / trình duyệt với tài khoản thật**.
+
+- **#36 · Điện thoại P0**: biểu đồ 7 ngày ở Tổng quan không hiện cột (thanh `height: %` trong khung cao `auto`);
+  thanh tổng tiền + nút chốt ở Tạo phiếu không dính đáy (`max-lg:contents` cho khung bọc); nút ‹ Quay lại ở màn con
+  vì app cài `display: standalone` không có nút back của trình duyệt.
+- **#37 · Điện thoại P1**: báo cáo thuế một cột dưới `sm` (số tỷ đồng tràn ô); banner dữ liệu mẫu một dòng (97/157px
+  → 57px); chạm cả thẻ để mở ở Nông hộ / Người mua / Mặt hàng / Quy tắc giá (stretched link, không lồng nút); bộ
+  lọc Phiếu 3 hàng → 2.
+- **#42 · 5 mục "Phải sửa" của audit 13/10**: hàng đợi không còn kẹt sau 5 lần lỗi mạng (thử lại 5 phút một lần,
+  op bị từ chối có banner Gửi lại / Bỏ); `syncOnce` không tự ghi sổ + con trỏ, store ghi trong một giao dịch khi
+  `run === generation` (trước đây làm mất phiếu của đồng nghiệp); thoát HTML khi xuất PDF; có máy chủ thì ẩn "Lấy
+  lại từ file" và dữ liệu mẫu không đồng bộ; đăng xuất chặn khi còn op chưa gửi, không còn thì xoá dữ liệu tổ chức
+  khỏi máy. **Kéo theo:** FAQ landing đang hướng dẫn gói miễn phí dùng "Lấy lại từ file" để đổi máy ⇒ phải sửa
+  landing. `useDeviceBook` cũng gọi `importData` không gửi op, chưa sửa.
+
+---
+
+## Ba số phải giữ trong tầm
 
 Đo lúc kết thúc mỗi giai đoạn.
 
-| Chỉ số | Ngưỡng | Cuối D | Cuối E | Cuối F |
-|---|---|---|---|---|
-| JS khởi tạo | ≤ 250KB gzip | 88KB | 89KB | **91KB** |
-| File dài nhất trong `src/` | ≤ 300 dòng | 276 | 276 | **284** |
-| Phủ test `core/` | ≥ 80% dòng | 97% (262 test) | 97% (310 test) | **98%** (357 test) |
-| Lighthouse mobile | Perf ≥85 · A11y ≥95 | chưa đo | chưa đo | **chưa đo** |
+| Chỉ số | Ngưỡng | Cuối D | Cuối E | Cuối F | Cuối G |
+|---|---|---|---|---|---|
+| JS khởi tạo | ≤ 250KB gzip | 88KB | 89KB | 91KB | **91KB** |
+| Phủ test `core/` | ≥ 80% dòng | 97% (262 test) | 97% (310 test) | 98% (357 test) | **98%** (358 test) |
+| Lighthouse mobile | Perf ≥85 · A11y ≥95 | chưa đo | chưa đo | chưa đo | **chưa đo** |
+
+Đã bỏ 09/10/2026: "File dài nhất trong `src/`" (≤ 300 dòng), đo được cuối D 276
+· E 276 · F 284 · G 284. Xem mục "Bỏ luật 300 dòng mỗi file" ở trên.
+
+`npm run site:check` là bước kiểm thứ sáu, chạy **trước khi xuất bản site**, cố
+ý không nằm trong `npm run verify`.
 
 `npm run verify` chạy đủ 5 bước: lint → typecheck → luật dự án → ranh giới tầng
 → test. Tất cả xanh.
@@ -400,8 +632,10 @@ tiền. Cần Supabase thật + một lần chuyển khoản thật. Bảng ki�
 |---|---|---|
 | Chạy migration, sinh kiểu, test chéo hai tài khoản | Tài khoản Supabase (2 project) | `supabase/VAN_HANH.md` §2–§5 |
 | Bảy kịch bản đồng bộ | Hai thiết bị thật + sóng chập chờn | `supabase/VAN_HANH.md` §6 |
-| Cấu hình Auth (tắt xác nhận email, mật khẩu 6 ký tự, rate limit) | Dashboard Supabase | `supabase/VAN_HANH.md` §3 |
+| Cấu hình Auth (tắt xác nhận email, mật khẩu **8** ký tự, rate limit) | Dashboard Supabase | `supabase/VAN_HANH.md` §3 |
 | Vercel Preview → staging, Production → prod | Tài khoản Vercel | `supabase/VAN_HANH.md` §1 |
+| Gửi thư quên mật khẩu / xác nhận email | Tài khoản Brevo + `BREVO_API_KEY`, `MAIL_FROM` trên Render | BE `ops/PRODUCTION.md` |
+| ~~Số Zalo kỹ thuật viên thật~~ | ✅ 17/10/2026 (#40) | `src/config.ts` `SUPPORT_ZALO` |
 | Lighthouse mobile | Chạy trên bản deploy | — |
 | Bộ ký hiệu 4 nông sản | Tuyến | `deploy_plan/NOTES.md` mục E |
 | Mười mục nghiệm thu luồng tiền | Supabase thật + một lần chuyển khoản thật | `supabase/VAN_HANH.md` §7.3 |

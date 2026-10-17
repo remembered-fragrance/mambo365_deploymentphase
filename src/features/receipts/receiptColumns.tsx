@@ -1,8 +1,8 @@
 import { Badge } from '@/components/ui/Badge';
 import type { Column } from '@/components/data/dataViewModel';
-import { transactionTotals } from '@/core/calc';
-import { formatDate, formatVnd } from '@/core/format';
-import type { Transaction } from '@/core/types';
+import { transactionTotals } from '@mambo/core/calc';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 
 /** Mua/bán phải phân biệt được cả khi in đen trắng: có chữ và ký hiệu, không chỉ màu. */

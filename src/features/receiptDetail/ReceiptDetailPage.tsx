@@ -7,12 +7,13 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { MoreIcon, PrintIcon, ShareIcon, TrashIcon } from '@/components/ui/icons';
-import { transactionTotals } from '@/core/calc';
-import { formatDate, formatVnd } from '@/core/format';
-import { receiptShareText } from '@/core/receiptText';
+import { transactionTotals } from '@mambo/core/calc';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import { receiptShareText } from '@mambo/core/receiptText';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
+import { useAccess } from '../shared/useAccess';
 import { ReceiptVoucher } from './ReceiptVoucher';
 
 export function ReceiptDetailPage() {
@@ -20,6 +21,7 @@ export function ReceiptDetailPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const { data, user, deleteTransaction } = useStore();
+  const { can } = useAccess();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -64,9 +66,11 @@ export function ReceiptDetailPage() {
             </Button>
             {/* Xoá nằm trong menu "⋯", không đặt cạnh nút xác nhận: tay đeo găng
                 chạm nhầm là chuyện chắc chắn xảy ra. */}
-            <Button aria-label={L.navMore} onClick={() => setMenuOpen((v) => !v)}>
-              <MoreIcon className="h-4 w-4" />
-            </Button>
+            {can('receipt:delete') && (
+              <Button aria-label={L.navMore} onClick={() => setMenuOpen((v) => !v)}>
+                <MoreIcon className="h-4 w-4" />
+              </Button>
+            )}
           </>
         }
       />

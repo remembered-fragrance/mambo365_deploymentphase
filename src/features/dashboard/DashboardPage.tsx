@@ -5,18 +5,25 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { BarChart } from '@/components/data/BarChart';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { formatVnd, formatVndShort, formatWeight } from '@/core/format';
-import { inventoryByProduct } from '@/core/inventory';
-import { dailySpend, debtsBySupplier, salesSummaryFor, summaryFor } from '@/core/selectors';
+import { formatVnd, formatVndShort, formatWeight } from '@mambo/core/format';
+import { inventoryByProduct } from '@mambo/core/inventory';
+import { dailySpend, debtsBySupplier, salesSummaryFor, summaryFor } from '@mambo/core/selectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { HelpButton } from '../help/HelpButton';
 import { WelcomeScreen } from '../onboarding/WelcomeScreen';
 import { ROUTES } from '../shared/navItems';
+import { useAccess } from '../shared/useAccess';
+import { LinkCodesCard } from './LinkCodesCard';
+import { StaffTodayCard } from './StaffTodayCard';
 import { TodayTasks } from './TodayTasks';
 
 export function DashboardPage() {
-  const { data } = useStore();
+  const { data, currentOrgId } = useStore();
+  const { can } = useAccess();
+  // Hai thẻ cần máy chủ: mã kết nối (người giữ danh bạ) và việc của nhân viên (chủ).
+  const showLinks = Boolean(currentOrgId) && can('partner:manage');
+  const showStaff = Boolean(currentOrgId) && can('staff:manage');
 
   // Sổ rỗng thì không vẽ một trang toàn số 0 — người mới cần biết bấm gì tiếp.
   const empty = data.transactions.length === 0 && data.drafts.length === 0;
@@ -119,6 +126,17 @@ export function DashboardPage() {
             </Card>
           )}
         </div>
+
+        {showStaff && (
+          <div className="lg:col-span-6">
+            <StaffTodayCard />
+          </div>
+        )}
+        {showLinks && (
+          <div className="lg:col-span-6">
+            <LinkCodesCard />
+          </div>
+        )}
       </div>
     </PageContainer>
   );

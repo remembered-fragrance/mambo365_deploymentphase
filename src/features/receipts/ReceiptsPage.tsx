@@ -10,10 +10,10 @@ import { Chip } from '@/components/ui/Chip';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Segmented } from '@/components/ui/Segmented';
 import { FilterIcon } from '@/components/ui/icons';
-import { transactionTotals } from '@/core/calc';
-import type { HistoryFilters, PaymentFilter, TimePeriod } from '@/core/filters';
-import { formatVnd, formatWeight } from '@/core/format';
-import type { Transaction } from '@/core/types';
+import { transactionTotals } from '@mambo/core/calc';
+import type { HistoryFilters, PaymentFilter, TimePeriod } from '@mambo/core/filters';
+import { formatVnd, formatWeight } from '@mambo/core/format';
+import type { Transaction } from '@mambo/core/types';
 import { useStore } from '@/data/useStore';
 import { useTransactionList } from '@/data/hooks/useTransactionList';
 import { L } from '@/i18n/labels';
@@ -75,7 +75,7 @@ const selectionColumn = (
 });
 
 export function ReceiptsPage() {
-  const { data, user } = useStore();
+  const { data, user, deleteDraft } = useStore();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [filterOpen, setFilterOpen] = useState(false);
@@ -175,8 +175,8 @@ export function ReceiptsPage() {
         )}
       </div>
 
-      {tab === 'draft' && <DraftList drafts={drafts} emptyTitle={L.noReceipts} />}
-      {tab === 'waiting' && <DraftList drafts={waiting} emptyTitle={L.noReceipts} />}
+      {tab === 'draft' && <DraftList drafts={drafts} emptyTitle={L.noReceipts} onDelete={deleteDraft} />}
+      {tab === 'waiting' && <DraftList drafts={waiting} emptyTitle={L.noReceipts} onDelete={deleteDraft} />}
 
       {tab === 'done' && (
         <MasterDetail

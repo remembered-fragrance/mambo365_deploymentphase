@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/Input';
 import { Segmented } from '@/components/ui/Segmented';
 import { Select } from '@/components/ui/Select';
 import { TrashIcon } from '@/components/ui/icons';
-import { formatVnd, formatWeight } from '@/core/format';
-import { previewRule, SAMPLE_KG, SAMPLE_PRICE } from '@/core/pricingPreview';
-import type { PricingRule, Product } from '@/core/types';
+import { formatVnd, formatWeight } from '@mambo/core/format';
+import { previewRule, SAMPLE_KG, SAMPLE_PRICE } from '@mambo/core/pricingPreview';
+import type { PricingRule, Product } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { NumberField } from '../shared/NumberField';
 import { toRule, type RuleDraft } from './ruleDraft';
@@ -116,6 +116,7 @@ export function PricingRuleEditor({
           label={L.ruleFixedAmount}
           value={draft.fixedAmount}
           spoken
+          money
           onValueChange={(fixedAmount) => set({ fixedAmount })}
         />
         <NumberField

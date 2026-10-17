@@ -6,8 +6,9 @@
  * lại giữa hai dạng nằm gọn ở đây để form chỉ lo phần hiển thị.
  */
 
-import { parseNumber } from '@/core/parseNumber';
-import type { PricingRule, PricingRuleKind } from '@/core/types';
+import { parseNumber } from '@mambo/core/parseNumber';
+import type { PricingRule, PricingRuleKind } from '@mambo/core/types';
+import { parseMoney } from '../shared/money';
 
 export type RuleDirection = 'add' | 'subtract';
 export type RuleTransport = 'both' | 'pickup' | 'bring';
@@ -62,7 +63,7 @@ export const draftFromRule = (rule: PricingRule): RuleDraft => {
 
 export const toRule = (draft: RuleDraft): Omit<PricingRule, 'id'> => {
   const sign = draft.direction === 'subtract' ? -1 : 1;
-  const fixed = parseNumber(draft.fixedAmount);
+  const fixed = parseMoney(draft.fixedAmount);
   const percent = parseNumber(draft.percent);
   const minWeight = parseNumber(draft.minWeightKg);
 

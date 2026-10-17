@@ -163,11 +163,13 @@ trong `../scripts/admin-activate.ts` trước khi chạy.
 
 ```bash
 SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… \
-  npx tsx scripts/admin-activate.ts 0905112233 149000 <mã-giao-dịch-ngân-hàng>
+  npx tsx scripts/admin-activate.ts 0905112233 149000 <mã-giao-dịch-ngân-hàng> "Tài"
 ```
 
 Mã giao dịch ngân hàng là **bắt buộc**: nó vào `bank_transactions` làm khoá
-chống trùng, nên webhook về sau cũng không cộng thêm một kỳ nữa.
+chống trùng, nên webhook về sau cũng không cộng thêm một kỳ nữa. Tên người duyệt
+cũng bắt buộc — nó vào `admin_access_log`, là thứ làm cho câu "quản trị viên chỉ
+truy cập khi được yêu cầu, có ghi nhận" trên trang Quyền riêng tư thành thật.
 
 ## 8. Đặt lại mật khẩu thủ công
 
@@ -177,8 +179,11 @@ không rút gọn.
 
 ```bash
 SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… \
-  npx tsx scripts/admin-reset-password.ts 0905112233 <mật-khẩu-mới>
+  npx tsx scripts/admin-reset-password.ts 0905112233 <mật-khẩu-mới> "Tài"
 ```
+
+Mỗi lần chạy ghi một dòng vào `admin_access_log`. Đọc lại nhật ký đó khi cần đối
+chiếu: `select * from admin_access_log order by created_at desc;`
 
 **Đây là trần khả năng mở rộng, phải theo dõi bằng số.** Khi vượt ~200 người
 dùng hoạt động, hoặc khi số yêu cầu đặt lại vượt 5 lần/tuần → bật OTP-SMS. Đó

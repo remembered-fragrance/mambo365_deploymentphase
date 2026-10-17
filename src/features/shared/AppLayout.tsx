@@ -8,14 +8,18 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
 import { OfflineBanner, SyncBadge, type SyncTone } from '@/components/feedback/SyncBadge';
 import { MoonIcon, SearchIcon, SunIcon } from '@/components/ui/icons';
-import { overdueCount } from '@/core/debtSelectors';
+import { overdueCount } from '@mambo/core/debtSelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { PlanBanner } from '../billing/PlanBanner';
+import { NotificationBell } from '../notifications/NotificationBell';
+import { NotificationsProvider } from '../notifications/NotificationsContext';
 import { DemoBanner } from '../onboarding/DemoBanner';
+import { draftHref } from '../receipt/draftSessions';
 import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
 import { navGroups, navItems, ROUTES } from './navItems';
+import { useAccess } from './useAccess';
 import { useTheme } from './useTheme';
 
 const SYNC_LABEL: Record<SyncTone, string> = {
@@ -31,20 +35,13 @@ const syncTone = (pendingCount: number, error?: string): SyncTone => {
   return 'synced';
 };
 
-const PAGE_TITLE: Record<string, string> = {
-  [ROUTES.dashboard]: L.navDashboard,
-  [ROUTES.receipts]: L.navReceipts,
-  [ROUTES.create]: L.createReceipt,
-  [ROUTES.debts]: L.navDebts,
-  [ROUTES.inventory]: L.navInventory,
-  [ROUTES.suppliers]: L.navSuppliers,
-  [ROUTES.buyers]: L.navBuyers,
-  [ROUTES.products]: L.navProducts,
-  [ROUTES.pricing]: L.navPricing,
-  [ROUTES.reports]: L.taxReport,
-  [ROUTES.utilities]: L.navUtilities,
-  [ROUTES.profile]: L.navProfile,
-  [ROUTES.more]: L.navMore,
+/**
+ * Tên trang trên header điện thoại — CHỈ cho trang không tự có `PageHeader`. Mọi trang khác đã có
+ * tiêu đề ngay dưới header (cụ thể hơn: "Tạo phiếu bán" chứ không phải "Tạo phiếu"); ghi thêm ở
+ * header là hai dòng tiêu đề chồng nhau. Trang mới không có `PageHeader` thì thêm vào đây.
+ */
+const MOBILE_TITLE: Record<string, string> = {
+  [ROUTES.map]: L.navMap,
 };
 
 export function AppLayout({ children }: { readonly children: ReactNode }) {
@@ -57,7 +54,10 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
 
   const drafts = data.drafts.filter((d) => d.status === 'draft');
   const counts = { drafts: drafts.length, overdue: overdueCount(data) };
-  const items = navItems(counts);
+  const access = useAccess();
+  const items = navItems(counts, access);
+  // Nút tạo phiếu chỉ cho vỏ có sổ và người được lập phiếu (nông dân không có).
+  const canCreate = items.some((item) => item.to === ROUTES.receipts);
   const tone = syncTone(status.pendingCount, status.error);
 
   useBookRescue(data);
@@ -106,23 +106,27 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
   );
 
   const badge = <SyncBadge tone={tone} label={SYNC_LABEL[tone]} />;
+  // Thông báo là của tổ chức trên máy chủ — sổ của máy này không có.
+  const bell = access.orgType && <NotificationBell />;
 
   return (
-    <>
+    <NotificationsProvider>
       <AppShell
         sidebar={
           <SidebarNav
             appName={L.appName}
-            groups={navGroups(counts)}
+            groups={navGroups(counts, access)}
             primaryActions={
-              <>
-                <Button tone="primary" block onClick={() => startReceipt('purchase')}>
-                  {L.createPurchase}
-                </Button>
-                <Button block onClick={() => startReceipt('sale')}>
-                  {L.createSale}
-                </Button>
-              </>
+              canCreate && (
+                <>
+                  <Button tone="primary" block onClick={() => startReceipt('purchase')}>
+                    {L.createPurchase}
+                  </Button>
+                  <Button block onClick={() => startReceipt('sale')}>
+                    {L.createSale}
+                  </Button>
+                </>
+              )
             }
             footer={badge}
           />
@@ -131,6 +135,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
           <AppTopbar
             actions={
               <>
+                {bell}
                 {searchButton}
                 {themeToggle}
               </>
@@ -140,9 +145,15 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
         }
         mobileHeader={
           <MobileHeader
-            title={PAGE_TITLE[pathname] ?? L.appName}
+            appName={L.appName}
+            title={MOBILE_TITLE[pathname]}
             themeToggle={themeToggle}
-            actions={searchButton}
+            actions={
+              <>
+                {bell}
+                {searchButton}
+              </>
+            }
             syncBadge={badge}
           />
         }
@@ -164,7 +175,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
           <BottomNav
             items={items}
             createLabel={L.createReceipt}
-            onCreate={() => setCreateOpen(true)}
+            onCreate={canCreate ? () => setCreateOpen(true) : undefined}
           />
         }
       >
@@ -179,7 +190,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
               block
               onClick={() => {
                 setCreateOpen(false);
-                navigate(`${ROUTES.create}?draft=${draft.id}`);
+                navigate(draftHref(draft));
               }}
             >
               {draft.supplierName || L.walkIn}
@@ -195,6 +206,6 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
       </BottomSheet>
 
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
-    </>
+    </NotificationsProvider>
   );
 }

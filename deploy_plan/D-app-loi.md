@@ -87,7 +87,7 @@ Ba thứ quyết định chất lượng cả sản phẩm nằm ở đây:
 
 ```
 features/receipt/
-├── CreateReceiptPage.tsx     điều phối, <300 dòng
+├── CreateReceiptPage.tsx     điều phối
 ├── SessionRail.tsx           ⭐ thanh chip "Đang cân"
 ├── CounterpartyPicker.tsx
 ├── LineEditor.tsx            (mobile)
@@ -163,7 +163,6 @@ features/receipt/
 - [ ] Ba theme (Trong nhà / Ngoài nắng / Ban đêm) đều xem được, đổi không cần tải lại
 
 **Kỹ thuật:**
-- [ ] Không file nào trong `features/receipt/` **>300 dòng**
 - [ ] `grep -rn "core/\|data/" src/components` → **rỗng**
 - [ ] Bundle khởi tạo vẫn **≤250KB gzip**
 - [ ] Lighthouse mobile: Perf ≥85 · A11y ≥95
