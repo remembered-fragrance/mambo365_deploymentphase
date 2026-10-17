@@ -25,9 +25,13 @@ export function DeviceBookNotice() {
         <Button
           tone="primary"
           onClick={() => {
-            importDeviceBook();
+            try {
+              importDeviceBook();
+              toast({ message: L.deviceBookImported });
+            } catch (err) {
+              toast({ message: err instanceof Error ? err.message : String(err), tone: 'alert' });
+            }
             setDismissed(true);
-            toast({ message: L.deviceBookImported });
           }}
         >
           {L.deviceBookImport}

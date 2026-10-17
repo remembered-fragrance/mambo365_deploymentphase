@@ -34,7 +34,19 @@ import type {
   Permission,
   PlanSummary,
 } from '@mambo/contracts';
+import { L } from '@/i18n/labels';
 import type { ProfilePatch, SignUpInput } from './auth';
+
+/** Đăng xuất bị chặn vì còn thao tác chưa lên máy chủ. Màn hình hỏi lại rồi gọi `signOut({ discardUnsent: true })`. */
+export class UnsentOpsError extends Error {
+  readonly count: number;
+
+  constructor(count: number) {
+    super(`${L.signOutUnsent} (${count})`);
+    this.name = 'UnsentOpsError';
+    this.count = count;
+  }
+}
 
 export interface StoreValue {
   readonly data: AppData;
@@ -53,6 +65,13 @@ export interface StoreValue {
   readonly features: readonly Feature[];
   readonly plan: PlanSummary | null;
   readonly needsBootstrap: boolean;
+  /** Khoá của sổ đang mở (id tổ chức, hoặc id tài khoản của máy khi không có máy chủ). */
+  readonly bookKey: string | null;
+  /**
+   * Sổ đang đồng bộ với máy chủ (có máy chủ, có quyền, gói còn hạn). Khi đó sổ là của máy chủ:
+   * không được thay cả sổ trên máy bằng file.
+   */
+  readonly syncsWithServer: boolean;
 
   bootstrap: (input: MeBootstrapInput) => Promise<Me>;
   selectOrg: (orgId: string) => Promise<void> | void;
@@ -96,12 +115,22 @@ export interface StoreValue {
    * `changePassword` đặt mật khẩu mới. Link sai / hết hạn / đã dùng → lỗi `L.resetLinkInvalid`.
    */
   openRecoverySession: (tokenHash: string) => Promise<void>;
-  signOut: () => Promise<void>;
+  /**
+   * Còn thao tác chưa gửi thì ném `UnsentOpsError`, trừ khi `discardUnsent` — người dùng đã đồng ý
+   * bỏ chúng (gói hết hạn thì hàng đợi không bao giờ rỗng, không cho bỏ là khoá họ trong app).
+   */
+  signOut: (options?: { readonly discardUnsent?: boolean }) => Promise<void>;
   updateProfile: (patch: ProfilePatch) => Promise<void>;
   changePassword: (password: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
   /** Đẩy hàng đợi và kéo thay đổi ngay, không đợi hẹn giờ. */
   syncNow: () => void;
+  /** Có thao tác bị máy chủ từ chối đang chặn hàng đợi. */
+  readonly stuck: boolean;
+  /** Bỏ cờ từ chối, gửi lại ngay. */
+  retryStuck: () => void;
+  /** Bỏ thao tác bị từ chối (máy chủ sẽ không có nó) để các thao tác sau đi tiếp. */
+  dropStuck: () => void;
 }
 
 export const StoreContext = createContext<StoreValue | null>(null);

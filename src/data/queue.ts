@@ -99,9 +99,8 @@ export const opSoftDelete = (
   };
 };
 
-/** Giãn cách giữa các lần thử lại. Hết mảng là hết lần thử. */
+/** Giãn cách giữa các lần thử lại. Hết mảng thì cứ 5 phút thử một lần, không bao giờ bỏ cuộc. */
 export const RETRY_DELAYS_MS = [1_000, 5_000, 30_000, 300_000] as const;
-export const MAX_TRIES = RETRY_DELAYS_MS.length + 1;
 
 export const enqueue = async (op: NewOp & { readonly orgId: string }): Promise<QueuedOp> => {
   if (!op.orgId?.trim()) throw new Error('Organization is required');
@@ -172,7 +171,29 @@ export const markConflict = async (
   }
 };
 
-export const isExhausted = (op: QueuedOp): boolean => op.tries >= MAX_TRIES;
+/** Người dùng bấm "Gửi lại": bỏ cờ từ chối, thử lại ngay ở lượt sau. */
+export const retryConflicts = async (orgId: string): Promise<void> => {
+  const db = await openLocalDb();
+  const now = new Date().toISOString();
+  for (const op of await pendingOps(orgId)) {
+    if (op.conflict) await db.put('queue', { ...op, conflict: undefined, tries: 0, nextAttemptAt: now });
+  }
+};
+
+/**
+ * Người dùng bấm "Bỏ thao tác này": gỡ thao tác bị từ chối đang chặn cả hàng, cùng các thao tác sau
+ * nó của CÙNG bản ghi — chúng dựa trên thay đổi máy chủ đã từ chối, gửi đi cũng bị từ chối nốt.
+ * Trả về thao tác đã gỡ để store đưa bản ghi trên máy về đúng như máy chủ.
+ */
+export const dropConflictedRecord = async (orgId: string): Promise<QueuedOp | null> => {
+  const ops = await pendingOps(orgId);
+  const stuck = ops.find((op) => op.conflict);
+  if (!stuck) return null;
+  for (const op of ops) {
+    if (op.recordId === stuck.recordId && op.seq >= stuck.seq) await removeOp(op.id, orgId);
+  }
+  return stuck;
+};
 
 export const isDue = (op: QueuedOp, now = Date.now()): boolean =>
   new Date(op.nextAttemptAt).getTime() <= now;
