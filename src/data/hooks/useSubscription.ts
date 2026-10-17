@@ -48,7 +48,7 @@ export interface SubscriptionValue {
 const SERVER: SubscriptionSnapshot = { subscription: null, intents: [], offer: null, loading: false };
 
 export function useSubscription(): SubscriptionValue {
-  const { data, currentOrgId, permissions } = useStore();
+  const { data, currentOrgId, permissions, bookKey } = useStore();
   const userId = currentOrgId;
   const billing = permissions.includes('billing:manage');
 
@@ -69,7 +69,7 @@ export function useSubscription(): SubscriptionValue {
    * lúc mở ra xem thì cái người xem thấy đầu tiên là màn đòi tiền.
    */
   const quota = quotaFor(data, new Date(), {
-    premium: plan.premium || isDemoActive(),
+    premium: plan.premium || isDemoActive(bookKey),
     limit: FREE_RECEIPTS_PER_MONTH,
   });
 

@@ -15,7 +15,9 @@ import { downloadBook } from '../shared/bookFile';
  * Ghi và đọc đều đi qua `useStore`, giao diện không tự chạm nơi lưu trữ.
  */
 export function DataCard() {
-  const { data, importData } = useStore();
+  // Sổ đang đồng bộ là sổ của máy chủ: thay trên máy bằng file thì máy chủ, máy khác không có. Gói hết hạn
+  // (không đồng bộ) thì file vẫn là cách duy nhất để đổi máy — nút phải còn.
+  const { data, importData, syncsWithServer: online } = useStore();
   const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<unknown>(null);
@@ -27,9 +29,13 @@ export function DataCard() {
   };
 
   const applyFile = () => {
-    importData(pending);
     setPending(null);
-    toast({ message: L.importedToast });
+    try {
+      importData(pending);
+      toast({ message: L.importedToast });
+    } catch (err) {
+      toast({ message: err instanceof Error ? err.message : String(err), tone: 'alert' });
+    }
   };
 
   return (
@@ -39,9 +45,11 @@ export function DataCard() {
           {L.exportToFile}
         </Button>
 
-        <Button block onClick={() => fileInput.current?.click()}>
-          {L.importFromFile}
-        </Button>
+        {!online && (
+          <Button block onClick={() => fileInput.current?.click()}>
+            {L.importFromFile}
+          </Button>
+        )}
         <input
           ref={fileInput}
           type="file"
@@ -54,7 +62,7 @@ export function DataCard() {
           }}
         />
 
-        <p className="text-sm text-ink-3">{L.importReplaceWarning}</p>
+        {!online && <p className="text-sm text-ink-3">{L.importReplaceWarning}</p>}
       </div>
 
       <ConfirmDialog

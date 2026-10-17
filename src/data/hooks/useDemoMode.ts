@@ -21,18 +21,20 @@ export interface DemoMode {
 }
 
 export function useDemoMode(): DemoMode {
-  const { importData, reset } = useStore();
-  const demo = useSyncExternalStore(subscribeDemo, isDemoActive, () => false);
+  const { importData, reset, bookKey } = useStore();
+  const demo = useSyncExternalStore(subscribeDemo, () => isDemoActive(bookKey), () => false);
 
   return {
     demo,
     startDemo: () => {
+      if (!bookKey) return;
+      // Bật cờ TRƯỚC khi nạp: store chốt cờ lúc ghi để biết thao tác có được gửi lên máy chủ không.
+      setDemoActive(bookKey, true);
       importData(demoBook());
-      setDemoActive(true);
     },
     endDemo: () => {
       reset();
-      setDemoActive(false);
+      if (bookKey) setDemoActive(bookKey, false);
     },
   };
 }

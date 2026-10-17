@@ -19,6 +19,7 @@ import { draftHref } from '../receipt/draftSessions';
 import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
 import { navGroups, navItems, ROUTES } from './navItems';
+import { StuckBanner } from './StuckBanner';
 import { useAccess } from './useAccess';
 import { useTheme } from './useTheme';
 
@@ -45,7 +46,7 @@ const MOBILE_TITLE: Record<string, string> = {
 };
 
 export function AppLayout({ children }: { readonly children: ReactNode }) {
-  const { data, status } = useStore();
+  const { data, status, stuck } = useStore();
   const { theme, cycleTheme } = useTheme();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -161,7 +162,9 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
           <>
             <DemoBanner />
             <PlanBanner />
-            {status.error &&
+            <StuckBanner />
+            {/* Banner kẹt đã nói lỗi của thao tác; hết gói thì vẫn phải nói, vì "Gửi lại" không gỡ được nó. */}
+            {status.error && (status.blocked || !stuck) &&
               (status.blocked ? (
                 // Hết gói không phải mất mạng. Nói nhầm thì người dùng đi tìm
                 // sóng trong khi thứ cần làm là mở lại gói.

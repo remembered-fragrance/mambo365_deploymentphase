@@ -45,14 +45,18 @@ function Choice({ index, title, hint, Icon, onPick }: ChoiceProps) {
 export function WelcomeScreen() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { importData } = useStore();
+  const { importData, syncsWithServer: online } = useStore();
   const { startDemo } = useDemoMode();
   const fileInput = useRef<HTMLInputElement>(null);
 
   const loadFile = async (file: File | undefined) => {
     if (!file) return;
-    importData(JSON.parse(await file.text()) as unknown);
-    toast({ message: L.importedToast });
+    try {
+      importData(JSON.parse(await file.text()) as unknown);
+      toast({ message: L.importedToast });
+    } catch (err) {
+      toast({ message: err instanceof Error ? err.message : String(err), tone: 'alert' });
+    }
   };
 
   return (
@@ -66,7 +70,7 @@ export function WelcomeScreen() {
         <DeviceBookNotice />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className={`grid gap-3 ${online ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
         <Choice
           index="1"
           title={L.welcomeCreate}
@@ -84,13 +88,13 @@ export function WelcomeScreen() {
             toast({ message: L.demoStarted });
           }}
         />
-        <Choice
+        {!online && <Choice
           index="3"
           title={L.welcomeImport}
           hint={L.welcomeImportHint}
           Icon={ToolIcon}
           onPick={() => fileInput.current?.click()}
-        />
+        />}
       </div>
 
       <input
