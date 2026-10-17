@@ -125,6 +125,7 @@ const BASE = {
   save: 'Lưu',
   cancel: 'Bỏ qua',
   close: 'Đóng',
+  showPassword: 'Hiện mật khẩu',
   confirm: 'Đồng ý',
   undo: 'Hoàn tác',
   del: 'Xoá',

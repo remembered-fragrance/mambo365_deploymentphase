@@ -89,6 +89,9 @@ export const CloudOffIcon = (p: IconProps) => (
 export const PhoneIcon = (p: IconProps) => (
   <Icon {...p} d="M5 4h4l2 5-2.5 1.5a12 12 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z" />
 );
+const EYE = 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z|M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z';
+export const EyeIcon = (p: IconProps) => <Icon {...p} d={EYE} />;
+export const EyeOffIcon = (p: IconProps) => <Icon {...p} d={`${EYE}|M4 4l16 16`} />;
 export const PencilIcon = (p: IconProps) => (
   <Icon {...p} d="M4 20h4L20 8l-4-4L4 16z|M14 6l4 4" />
 );
