@@ -578,6 +578,31 @@ tới ai. Email khôi phục cũng chưa từng được xác nhận. Máy chủ
 - Chạy thật (local, 1280 và 390px): 14/14.
 - Chưa có `BREVO_API_KEY` + `MAIL_FROM` trên Render thì cả hai loại thư báo "chưa gửi được thư".
 
+## Số Zalo hỗ trợ thật · nút hiện/ẩn mật khẩu · 17/10/2026
+
+- **#40**: `SUPPORT_ZALO` trong `src/config.ts` đổi từ số giả `0912345678` sang số thật `0969158913` (form Quên
+  mật khẩu, thanh toán QR, trang Gói, trang Pháp lý) và `site/*.html`. Số mẫu trong `workbookFile.ts` và test giữ
+  nguyên vì là dữ liệu giả có chủ đích. `site:check` vẫn còn 10 chỗ `ĐIỀN:` có từ trước (họ tên, địa chỉ, ảnh).
+- **#41**: `Input` dùng chung tự có nút con mắt cho mọi ô `type="password"` (đăng nhập, đăng ký, đổi/đặt lại mật
+  khẩu, tạo nhân viên). Nút `type="button"` + `aria-label` + `aria-pressed`; ô truyền `suffix` riêng thì giữ suffix đó.
+
+## PR đang chờ merge · 17/10/2026
+
+CI cả ba đều xanh, **chưa thử trên điện thoại thật / trình duyệt với tài khoản thật**.
+
+- **#36 · Điện thoại P0**: biểu đồ 7 ngày ở Tổng quan không hiện cột (thanh `height: %` trong khung cao `auto`);
+  thanh tổng tiền + nút chốt ở Tạo phiếu không dính đáy (`max-lg:contents` cho khung bọc); nút ‹ Quay lại ở màn con
+  vì app cài `display: standalone` không có nút back của trình duyệt.
+- **#37 · Điện thoại P1**: báo cáo thuế một cột dưới `sm` (số tỷ đồng tràn ô); banner dữ liệu mẫu một dòng (97/157px
+  → 57px); chạm cả thẻ để mở ở Nông hộ / Người mua / Mặt hàng / Quy tắc giá (stretched link, không lồng nút); bộ
+  lọc Phiếu 3 hàng → 2.
+- **#42 · 5 mục "Phải sửa" của audit 13/10**: hàng đợi không còn kẹt sau 5 lần lỗi mạng (thử lại 5 phút một lần,
+  op bị từ chối có banner Gửi lại / Bỏ); `syncOnce` không tự ghi sổ + con trỏ, store ghi trong một giao dịch khi
+  `run === generation` (trước đây làm mất phiếu của đồng nghiệp); thoát HTML khi xuất PDF; có máy chủ thì ẩn "Lấy
+  lại từ file" và dữ liệu mẫu không đồng bộ; đăng xuất chặn khi còn op chưa gửi, không còn thì xoá dữ liệu tổ chức
+  khỏi máy. **Kéo theo:** FAQ landing đang hướng dẫn gói miễn phí dùng "Lấy lại từ file" để đổi máy ⇒ phải sửa
+  landing. `useDeviceBook` cũng gọi `importData` không gửi op, chưa sửa.
+
 ---
 
 ## Ba số phải giữ trong tầm
@@ -610,7 +635,7 @@ tới ai. Email khôi phục cũng chưa từng được xác nhận. Máy chủ
 | Cấu hình Auth (tắt xác nhận email, mật khẩu **8** ký tự, rate limit) | Dashboard Supabase | `supabase/VAN_HANH.md` §3 |
 | Vercel Preview → staging, Production → prod | Tài khoản Vercel | `supabase/VAN_HANH.md` §1 |
 | Gửi thư quên mật khẩu / xác nhận email | Tài khoản Brevo + `BREVO_API_KEY`, `MAIL_FROM` trên Render | BE `ops/PRODUCTION.md` |
-| Số Zalo kỹ thuật viên thật | Nhóm | `src/config.ts` `SUPPORT_ZALO` |
+| ~~Số Zalo kỹ thuật viên thật~~ | ✅ 17/10/2026 (#40) | `src/config.ts` `SUPPORT_ZALO` |
 | Lighthouse mobile | Chạy trên bản deploy | — |
 | Bộ ký hiệu 4 nông sản | Tuyến | `deploy_plan/NOTES.md` mục E |
 | Mười mục nghiệm thu luồng tiền | Supabase thật + một lần chuyển khoản thật | `supabase/VAN_HANH.md` §7.3 |
