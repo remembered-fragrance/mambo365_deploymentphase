@@ -34,16 +34,20 @@ export function ReceiptSummary({
 }: ReceiptSummaryProps) {
   return (
     // Điện thoại: thanh dính đáy phải gọn để không che ô đang nhập — tổng một dòng, hai nút một hàng,
-    // số bằng chữ chỉ ở màn rộng (phiếu in vẫn có).
-    <div className="card sticky bottom-20 z-20 flex flex-col gap-2 p-3 lg:bottom-4 lg:gap-3 lg:p-4">
-      <div className="max-lg:flex max-lg:items-baseline max-lg:justify-between max-lg:gap-3">
-        <p className="text-sm font-semibold text-ink-3">{L.total}</p>
-        <p aria-live="polite" className="num text-2xl font-extrabold text-brand lg:text-3xl">
-          {formatVnd(total)}
-        </p>
+    // số bằng chữ một dòng chữ nhỏ (vẫn phải có: đây là câu đọc cho người bán nghe trước khi trả tiền).
+    // Đáy = thanh dưới (5rem) + vùng home indicator của iPhone, không thì thanh dưới che mép nút chốt.
+    <div className="card sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex flex-col gap-2 p-3 lg:bottom-4 lg:gap-3 lg:p-4">
+      <div>
+        <div className="max-lg:flex max-lg:items-baseline max-lg:justify-between max-lg:gap-3">
+          <p className="text-sm font-semibold text-ink-3">{L.total}</p>
+          <p aria-live="polite" className="num text-2xl font-extrabold text-brand lg:text-3xl">
+            {formatVnd(total)}
+          </p>
+        </div>
         {total > 0 && (
-          <p className="hidden text-sm text-ink-3 lg:block">
-            {L.amountInWords}: {numberToVietnameseWords(total)} đồng
+          <p className="truncate text-xs text-ink-3 lg:whitespace-normal lg:text-sm">
+            <span className="max-lg:hidden">{L.amountInWords}: </span>
+            {numberToVietnameseWords(total)} đồng
           </p>
         )}
       </div>

@@ -18,7 +18,7 @@ import { DemoBanner } from '../onboarding/DemoBanner';
 import { draftHref } from '../receipt/draftSessions';
 import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
-import { navGroups, navItems, ROUTES } from './navItems';
+import { backTarget, isTabRoot, navGroups, navItems, ROUTES } from './navItems';
 import { StuckBanner } from './StuckBanner';
 import { useAccess } from './useAccess';
 import { useTheme } from './useTheme';
@@ -49,7 +49,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
   const { data, status, stuck } = useStore();
   const { theme, cycleTheme } = useTheme();
   const navigate = useNavigate();
-  const { pathname, key: locationKey } = useLocation();
+  const { pathname } = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -107,16 +107,13 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
   );
 
   // App cài lên màn hình chính (standalone) không có nút back của trình duyệt — màn con phải tự có.
-  // Mở thẳng từ đường dẫn (key 'default' = chưa có lịch sử trong app) thì lùi về màn cha.
-  const atTab = items.some((item) => item.to === pathname);
+  // `idx` là vị trí trong lịch sử do react-router ghi; `replace` giữ nguyên nó. idx 0 = trang đầu của
+  // app trong tab này (mở thẳng từ link): lùi -1 là rời app, nên về màn cha.
+  const atTab = isTabRoot(pathname, items);
   const goBack = () => {
-    if (locationKey !== 'default') {
-      navigate(-1);
-      return;
-    }
-    const cut = pathname.lastIndexOf('/');
-    const hasMore = items.some((item) => item.to === ROUTES.more);
-    navigate(cut > 0 ? pathname.slice(0, cut) : hasMore ? ROUTES.more : ROUTES.dashboard);
+    const idx = (window.history.state as { idx?: unknown } | null)?.idx;
+    if (typeof idx === 'number' && idx > 0) navigate(-1);
+    else navigate(backTarget(pathname, items), { replace: true });
   };
   const backButton = !atTab && (
     <button

@@ -321,3 +321,11 @@ body {
 .map-picking .leaflet-container {
   cursor: crosshair;
 }
+
+/* Màn tạo phiếu ở điện thoại: thanh tổng (~10rem) dính trên thanh dưới (5rem). Ô được chạm / Tab tới phải
+   cuộn lên trên phần đó. Màn rộng thanh tổng nằm ở cột bên, không che form. */
+@media (max-width: 63.98rem) {
+  html.sticky-total {
+    scroll-padding-bottom: calc(15rem + env(safe-area-inset-bottom));
+  }
+}
