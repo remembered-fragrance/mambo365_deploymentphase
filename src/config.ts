@@ -67,7 +67,7 @@ export { PASSWORD_MAX_LENGTH as MAX_PASSWORD_LENGTH, PASSWORD_MIN_LENGTH as MIN_
 export const APP_VERSION = '1.0.0';
 
 /** Kênh liên lạc mà tệp người dùng này thật sự dùng. */
-export const SUPPORT_ZALO = '0912345678';
+export const SUPPORT_ZALO = '0868512408';
 
 /**
  * Ba trang pháp lý & hướng dẫn là route CÔNG KHAI của chính app (đọc được khi
