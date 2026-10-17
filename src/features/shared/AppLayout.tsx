@@ -7,7 +7,7 @@ import { SidebarNav } from '@/components/layout/SidebarNav';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
 import { OfflineBanner, SyncBadge, type SyncTone } from '@/components/feedback/SyncBadge';
-import { MoonIcon, SearchIcon, SunIcon } from '@/components/ui/icons';
+import { ChevronLeftIcon, MoonIcon, SearchIcon, SunIcon } from '@/components/ui/icons';
 import { overdueCount } from '@mambo/core/debtSelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
@@ -18,7 +18,7 @@ import { DemoBanner } from '../onboarding/DemoBanner';
 import { draftHref } from '../receipt/draftSessions';
 import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
-import { navGroups, navItems, ROUTES } from './navItems';
+import { backTarget, isTabRoot, navGroups, navItems, ROUTES } from './navItems';
 import { StuckBanner } from './StuckBanner';
 import { useAccess } from './useAccess';
 import { useTheme } from './useTheme';
@@ -106,6 +106,26 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
     </button>
   );
 
+  // App cài lên màn hình chính (standalone) không có nút back của trình duyệt — màn con phải tự có.
+  // `idx` là vị trí trong lịch sử do react-router ghi; `replace` giữ nguyên nó. idx 0 = trang đầu của
+  // app trong tab này (mở thẳng từ link): lùi -1 là rời app, nên về màn cha.
+  const atTab = isTabRoot(pathname, items);
+  const goBack = () => {
+    const idx = (window.history.state as { idx?: unknown } | null)?.idx;
+    if (typeof idx === 'number' && idx > 0) navigate(-1);
+    else navigate(backTarget(pathname, items), { replace: true });
+  };
+  const backButton = !atTab && (
+    <button
+      type="button"
+      onClick={goBack}
+      aria-label={L.goBack}
+      className="-ml-1 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-ink-2"
+    >
+      <ChevronLeftIcon />
+    </button>
+  );
+
   const badge = <SyncBadge tone={tone} label={SYNC_LABEL[tone]} />;
   // Thông báo là của tổ chức trên máy chủ — sổ của máy này không có.
   const bell = access.orgType && <NotificationBell />;
@@ -148,6 +168,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
           <MobileHeader
             appName={L.appName}
             title={MOBILE_TITLE[pathname]}
+            back={backButton}
             themeToggle={themeToggle}
             actions={
               <>
