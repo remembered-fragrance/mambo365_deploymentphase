@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -42,7 +42,9 @@ export function CreateReceiptPage() {
   const sessionKey = draftId ?? params.get('moi') ?? `moi-${kind}`;
 
   return (
-    <ReceiptWorkspace key={sessionKey} draftId={draftId} kind={kind} setParams={setParams} />
+    // Đổi khách thay URL chứ không thêm lịch sử: Quay lại phải ra khỏi màn cân, không nhảy về từng khách
+    // trước đó — càng không về `?draft=` của phiếu vừa chốt (gõ vào là dựng lại nháp mang id đã chốt).
+    <ReceiptWorkspace key={sessionKey} draftId={draftId} kind={kind} setParams={(next) => setParams(next, { replace: true })} />
   );
 }
 
@@ -62,6 +64,13 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   const [discardOpen, setDiscardOpen] = useState(false);
 
   const sessions = data.drafts.filter((d) => d.status === 'draft' && (d.kind ?? 'purchase') === kind);
+
+  // Thanh tổng dính đáy nổi đè lên form: trình duyệt phải coi phần nó che là ngoài màn hình, không thì
+  // chạm vào ô cân / giá ở đáy màn là gõ vào ô bị che. Xem `.sticky-total` trong index.css.
+  useEffect(() => {
+    document.documentElement.classList.add('sticky-total');
+    return () => document.documentElement.classList.remove('sticky-total');
+  }, []);
 
   const goToDraft = (id?: string) => {
     const next = new URLSearchParams();

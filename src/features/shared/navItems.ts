@@ -101,6 +101,31 @@ export const ROUTE_GATES: Readonly<Record<string, Gate>> = {
   [ROUTES.myPlaces]: { org: true, permission: 'place:manage' },
 };
 
+/**
+ * Màn cha của màn chi tiết — nút Quay lại dùng khi mở thẳng từ link (không có lịch sử trong app).
+ * Khai báo tường minh: suy từ chuỗi đường dẫn thì `/vua/:id` ra `/vua`, route không tồn tại.
+ */
+const DETAIL_PARENT: readonly (readonly [RegExp, string])[] = [
+  [/^\/phieu\/[^/]+$/, ROUTES.receipts],
+  [/^\/don-hang\/[^/]+$/, ROUTES.orders],
+  // Mở từ thẻ vựa ở Trang chủ của nông dân.
+  [/^\/vua\/[^/]+$/, ROUTES.dashboard],
+];
+
+const trimSlash = (pathname: string): string => pathname.replace(/\/+$/, '') || '/';
+
+/** Đang ở một mục của thanh dưới — không cần nút Quay lại. `/phieu/` cũng là tab Phiếu. */
+export const isTabRoot = (pathname: string, items: readonly NavItem[]): boolean =>
+  items.some((item) => item.to === trimSlash(pathname));
+
+/** Nơi nút Quay lại về khi không có lịch sử trong app: màn cha nếu có, không thì "Thêm" (hoặc Trang chủ). */
+export const backTarget = (pathname: string, items: readonly NavItem[]): string => {
+  const path = trimSlash(pathname);
+  const parent = DETAIL_PARENT.find(([pattern]) => pattern.test(path))?.[1];
+  if (parent) return parent;
+  return items.some((item) => item.to === ROUTES.more) ? ROUTES.more : ROUTES.dashboard;
+};
+
 const visible = (access: Access) => (item: NavItem): boolean => allows(access, ROUTE_GATES[item.to]);
 
 /** Hai con số duy nhất được vẽ thành huy hiệu trên điều hướng. */
