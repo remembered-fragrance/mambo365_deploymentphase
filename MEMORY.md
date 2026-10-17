@@ -586,22 +586,35 @@ tới ai. Email khôi phục cũng chưa từng được xác nhận. Máy chủ
 - **#41**: `Input` dùng chung tự có nút con mắt cho mọi ô `type="password"` (đăng nhập, đăng ký, đổi/đặt lại mật
   khẩu, tạo nhân viên). Nút `type="button"` + `aria-label` + `aria-pressed`; ô truyền `suffix` riêng thì giữ suffix đó.
 
-## PR đang chờ merge · 17/10/2026
+## Audit "Phải sửa" · điện thoại P0/P1 · #42 #36 #37 · 18/10/2026
 
-CI cả ba đều xanh, **chưa thử trên điện thoại thật / trình duyệt với tài khoản thật**.
+Đã merge và lên production (`7cf057f`). CI xanh, `verify` 211 test. **Chưa thử trên điện thoại thật / trình duyệt
+với tài khoản thật** — các luồng đồng bộ dưới đây mới qua unit test và review.
 
-- **#36 · Điện thoại P0**: biểu đồ 7 ngày ở Tổng quan không hiện cột (thanh `height: %` trong khung cao `auto`);
-  thanh tổng tiền + nút chốt ở Tạo phiếu không dính đáy (`max-lg:contents` cho khung bọc); nút ‹ Quay lại ở màn con
-  vì app cài `display: standalone` không có nút back của trình duyệt.
-- **#37 · Điện thoại P1**: báo cáo thuế một cột dưới `sm` (số tỷ đồng tràn ô); banner dữ liệu mẫu một dòng (97/157px
-  → 57px); chạm cả thẻ để mở ở Nông hộ / Người mua / Mặt hàng / Quy tắc giá (stretched link, không lồng nút); bộ
-  lọc Phiếu 3 hàng → 2.
-- **#42 · 5 mục "Phải sửa" của audit 13/10**: hàng đợi không còn kẹt sau 5 lần lỗi mạng (thử lại 5 phút một lần,
-  op bị từ chối có banner Gửi lại / Bỏ); `syncOnce` không tự ghi sổ + con trỏ, store ghi trong một giao dịch khi
-  `run === generation` (trước đây làm mất phiếu của đồng nghiệp); thoát HTML khi xuất PDF; có máy chủ thì ẩn "Lấy
-  lại từ file" và dữ liệu mẫu không đồng bộ; đăng xuất chặn khi còn op chưa gửi, không còn thì xoá dữ liệu tổ chức
-  khỏi máy. **Kéo theo:** FAQ landing đang hướng dẫn gói miễn phí dùng "Lấy lại từ file" để đổi máy ⇒ phải sửa
-  landing. `useDeviceBook` cũng gọi `importData` không gửi op, chưa sửa.
+- **#42 · 5 mục "Phải sửa" của audit 13/10**:
+  - Hàng đợi không kẹt sau 5 lần lỗi mạng (thử lại 5 phút một lần). Op bị từ chối có banner Gửi lại / Bỏ. "Bỏ" gỡ
+    op đó cùng mọi op sau nó của cùng bản ghi (`dropConflictedRecord`). Thêm mới thì xoá bản ghi khỏi sổ
+    (`forgetRecord`), sửa / xoá thì bỏ con trỏ để kéo lại bản máy chủ.
+  - `syncOnce` không tự ghi sổ / con trỏ / mốc đồng bộ. Store gộp phần kéo về vào sổ **mới nhất** trong chuỗi ghi
+    (`rebasePulled`, bảo vệ bản ghi còn op chờ + đang ghi dở) — phiếu ghi trong lúc kéo không mất. `bookEpoch` tăng
+    khi thay hẳn sổ (đổi tổ chức, nạp file, mẫu, xoá hết, bỏ op kẹt); lượt kéo cũ không gộp vào sổ mới.
+  - Thoát HTML khi xuất PDF.
+  - Chỉ khi sổ **đang đồng bộ** (`syncsWithServer`: có máy chủ + `book:sync` + gói không phải free + không bị chặn)
+    mới ẩn "Lấy lại từ file" và `importData` ném lỗi. Gói free vẫn dùng được ⇒ FAQ landing không phải sửa.
+  - Dữ liệu mẫu bật theo từng sổ (`thumua365:demo` = id sổ; giá trị cũ `'1'` vẫn hiểu là bật), không xếp op.
+  - Đăng xuất khi còn op chưa gửi: hỏi lại ("Vẫn đăng xuất" thì bỏ op), không chặn cứng. Trước đây gói free
+    (không đẩy được op) sẽ không đăng xuất được nữa — 11 tổ chức đang dùng thử hết hạn 15/11.
+- **#36 · Điện thoại P0**: biểu đồ 7 ngày hiện cột; thanh tổng tiền + nút chốt ở Tạo phiếu dính đáy, chừa
+  safe-area, cuộn ô nhập không bị thanh che (`html.sticky-total`); nút ‹ Quay lại ở màn con (app `standalone` không
+  có back). Mở thẳng từ link (`history.state.idx === 0`) thì về màn cha (`backTarget`), không rời app. Đổi khách ở
+  Tạo phiếu dùng `replace`, không thêm lịch sử.
+- **#37 · Điện thoại P1**: báo cáo thuế một cột dưới `sm`, số không tràn; banner dữ liệu mẫu một dòng; chạm cả thẻ
+  để mở ở Nông hộ / Người mua / Mặt hàng / Quy tắc giá (stretched link, nút / link / mã kết nối nổi trên lớp phủ);
+  bộ lọc Phiếu 2 hàng, chip đang chọn tự cuộn vào tầm nhìn. **Đánh đổi:** nhấn giữ để chép chữ trên thẻ không còn
+  được (trừ mã kết nối).
+- **Còn lại**: "Đưa sổ của máy vào tài khoản" (`useDeviceBook`) đi qua `importData` ⇒ với sổ đang đồng bộ giờ báo
+  lỗi thay vì trộn ngầm. Muốn hỗ trợ thật thì phải sinh op cho từng bản ghi. `esc` trong xuất PDF trùng
+  `escapeHtml` nhưng khác tầng — gộp thì phải đưa vào `@mambo/core`.
 
 ---
 
