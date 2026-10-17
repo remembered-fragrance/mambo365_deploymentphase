@@ -97,7 +97,8 @@ export const pricingColumns = (
     // Bật/tắt là một cái nút thật, KHÔNG phải lớp phủ mờ trên cả thẻ: bản demo
     // làm kiểu phủ và quên `pointer-events-none`, tắt xong không bật lại được.
     cell: (rule) => (
-      <button type="button" onClick={() => onToggle(rule)} className="min-h-11">
+      // Vùng chạm rộng hơn huy hiệu: chạm hụt sang bên là trúng lớp phủ của thẻ, mở form sửa.
+      <button type="button" onClick={() => onToggle(rule)} className="min-h-11 min-w-11 px-2">
         <Badge
           tone={rule.active ? 'in' : 'neutral'}
           mark={rule.active ? '✓' : '○'}

@@ -22,9 +22,10 @@ const PERIOD_OPTIONS = [
 /** Bốn ô số của kỳ đang chọn. Số to, nhãn nhỏ — đây là thứ người ta chép sang tờ khai. */
 function Figure({ label, value }: { readonly label: string; readonly value: string }) {
   return (
-    <div className="card p-4">
+    // `min-w-0` + ngắt bất kỳ chỗ nào: số tỷ đồng (kể cả lỗ, có dấu −) ở cột 26rem của màn xl vẫn không tràn ô.
+    <div className="card min-w-0 p-4">
       <p className="text-sm text-ink-3">{label}</p>
-      <p className="num mt-1 text-xl font-extrabold text-ink">{value}</p>
+      <p className="num mt-1 text-xl font-extrabold text-ink [overflow-wrap:anywhere]">{value}</p>
     </div>
   );
 }
@@ -73,7 +74,8 @@ export function ReportsPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,26rem)_1fr]">
         <div className="flex flex-col gap-3">
           <p className="num text-sm font-semibold text-ink-2">{range.label}</p>
-          <div className="grid grid-cols-2 gap-3">
+          {/* Một cột trên điện thoại: hai cột thì ô chỉ còn ~104px ở 320px, số hàng chục triệu đã phải ngắt dòng. */}
+          <div className="grid gap-3 sm:grid-cols-2">
             <Figure label={L.taxTotalPurchase} value={formatVnd(report.totalPurchase)} />
             <Figure label={L.taxTotalSale} value={formatVnd(report.totalSale)} />
             <Figure label={L.taxGrossProfit} value={formatVnd(report.grossProfit)} />

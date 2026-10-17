@@ -21,6 +21,8 @@ export const ONBOARDING_LABELS = {
   // ─── Chế độ trình diễn ────────────────────────────────────────────────────
   demoBanner: 'Đang xem dữ liệu mẫu — số liệu này không phải của bạn',
   demoClear: 'Xoá hết, bắt đầu thật',
+  demoBannerShort: 'Đang xem dữ liệu mẫu',
+  demoClearShort: 'Xoá hết',
   demoClearTitle: 'Xoá hết dữ liệu mẫu?',
   demoClearConsequence: 'Toàn bộ phiếu mẫu, nông hộ mẫu và ghi chú mẫu sẽ biến mất. Sổ về rỗng.',
   demoStarted: 'Đã nạp dữ liệu mẫu',
