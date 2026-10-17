@@ -9,11 +9,10 @@ import {
   clearQueue,
   enqueue as enqueueScoped,
   type NewOp,
+  dropFirstConflict,
   isDue,
-  isExhausted,
   markFailed,
   markConflict,
-  MAX_TRIES,
   opInsert,
   opSoftDelete,
   opUpdate,
@@ -21,6 +20,7 @@ import {
   pendingOps,
   pendingRecordIds,
   removeOp,
+  retryConflicts,
   RETRY_DELAYS_MS,
 } from '@/data/queue';
 
@@ -123,15 +123,28 @@ describe('thử lại có giãn cách', () => {
     );
   });
 
-  it('hết lần thử thì đánh dấu kẹt — phải báo cho người dùng, không im lặng', async () => {
+  it('lỗi mạng bao nhiêu lần cũng không bỏ cuộc — cứ 5 phút thử lại một lần', async () => {
     let op = await enqueue(opInsert('transactions', 'tx-1', { id: 'tx-1' }));
-    expect(isExhausted(op)).toBe(false);
+    for (let i = 0; i < 20; i++) op = await markFailed(op, 'mất mạng', 'org-a');
 
-    for (let i = 0; i < MAX_TRIES; i++) op = await markFailed(op, 'máy chủ từ chối', 'org-a');
-
-    expect(isExhausted(op)).toBe(true);
-    // Vẫn còn trong hàng đợi: không được lặng lẽ vứt thao tác của người dùng.
+    const wait = new Date(op.nextAttemptAt).getTime() - Date.now();
+    expect(Math.round(wait / 1000)).toBe(300);
     expect(await pendingCount('org-a')).toBe(1);
+  });
+
+  it('thao tác bị từ chối: "Gửi lại" bỏ cờ, "Bỏ" chỉ gỡ đúng thao tác đang chặn', async () => {
+    const a = await enqueue(opInsert('note', 'a', {}));
+    const b = await enqueue(opInsert('note', 'b', {}));
+    await markConflict(a.id, 'org-a', { code: 'VALIDATION_FAILED', message: 'Sai' });
+
+    await retryConflicts('org-a');
+    const [retried] = await pendingOps('org-a');
+    expect(retried?.conflict).toBeUndefined();
+    expect(retried && isDue(retried)).toBe(true);
+
+    await markConflict(a.id, 'org-a', { code: 'VALIDATION_FAILED', message: 'Sai' });
+    await dropFirstConflict('org-a');
+    expect((await pendingOps('org-a')).map((op) => op.id)).toEqual([b.id]);
   });
 });
 

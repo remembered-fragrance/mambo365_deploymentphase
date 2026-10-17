@@ -16,7 +16,6 @@ import { getDeviceId, openLocalDb, readCursor } from './localDb';
 import { mergeChanges } from './pullChanges';
 import {
   isDue,
-  isExhausted,
   markConflict,
   markFailed,
   pendingCount,
@@ -29,8 +28,13 @@ import {
 export interface SyncOutcome {
   readonly data: AppData;
   readonly status: SyncStatus;
-  /** Bản ghi đã hết lần thử — giao diện phải báo, không được im lặng. */
+  /** Bản ghi bị máy chủ từ chối — giao diện phải báo, không được im lặng. */
   readonly conflicts: readonly string[];
+  /**
+   * Con trỏ ứng với `data`. KHÔNG ghi ở đây: store chỉ ghi sổ + con trỏ khi kết quả còn dùng được
+   * (không ai ghi phiếu xen vào) — ghi con trỏ mà sổ bị đè thì phiếu của trang đó mất khỏi máy này.
+   */
+  readonly cursor?: string | null;
 }
 
 const message = (err: unknown): string => {
@@ -47,7 +51,7 @@ export const PLAN_BLOCKED = 'Gói đã hết hạn, chưa gửi lên mạng đư
 
 /**
  * Gắn cờ đồng bộ lên từng phiếu để giao diện vẽ được "đang chờ gửi" / "kẹt".
- * Hết lần thử là `conflict` — phải hiện cho người dùng, không im lặng.
+ * Bị máy chủ từ chối là `conflict` — phải hiện cho người dùng, không im lặng.
  */
 export const markSyncStates = (
   data: AppData,
@@ -76,11 +80,7 @@ export const flushQueue = async (
   for (const op of allOps) {
     if (op.conflict) {
       conflicts.push(op.recordId);
-      break;
-    }
-    if (isExhausted(op)) {
-      conflicts.push(op.recordId);
-      break;
+      return { pushed: 0, conflicts, error: op.conflict.message };
     }
     if (!isDue(op)) break;
     batch.push(op);
@@ -121,10 +121,7 @@ export const flushQueue = async (
       } else if (r.status === 'rejected') {
         if (r.error?.code === 'PLAN_EXPIRED') return { pushed, conflicts, error: PLAN_BLOCKED, blocked: true };
         if (r.error && isRetryable(r.error.code)) {
-          if (op) {
-            const failed = await markFailed(op, r.error.message, orgId);
-            if (isExhausted(failed)) conflicts.push(failed.recordId);
-          }
+          if (op) await markFailed(op, r.error.message, orgId);
         } else {
           if (op) {
             await markConflict(
@@ -145,8 +142,7 @@ export const flushQueue = async (
     const first = batch[0];
     if (first) {
       if (err instanceof TypeError || (err instanceof ApiError && err.code !== 'CONTRACT_MISMATCH' && isRetryable(err.code))) {
-        const failed = await markFailed(first, message(err), orgId);
-        if (isExhausted(failed)) conflicts.push(failed.recordId);
+        await markFailed(first, message(err), orgId);
       } else if (err instanceof ApiError) {
         await markConflict(first.id, orgId, { code: err.code, message: err.message });
         conflicts.push(first.recordId);
@@ -190,8 +186,9 @@ export const syncOnce = async (
   }
 
   let currentBook = local;
+  let currentCursor: string | null = null;
   try {
-    let currentCursor = await readCursor(orgId);
+    currentCursor = await readCursor(orgId);
 
     // Kéo các trang thay đổi về
     for (let page = 0; page < 200; page++) {
@@ -211,17 +208,10 @@ export const syncOnce = async (
 
       currentBook = mergeChanges(currentBook, res.changes, pendingIds);
       currentCursor = res.cursor;
-      const db = await openLocalDb();
-      const tx = db.transaction(['books', 'cursors'], 'readwrite');
-      await tx.objectStore('books').put(currentBook, orgId);
-      await tx.objectStore('cursors').put(res.cursor, orgId);
-      await tx.done;
-
       if (!res.hasMore) break;
     }
 
     if (!isCurrent()) throw new Error('Sync context changed');
-    await writeBook(orgId, currentBook);
     await writeSyncMark(orgId, startedAt);
 
     const stillPending = await pendingRecordIds(orgId);
@@ -234,6 +224,7 @@ export const syncOnce = async (
         pendingCount: await pendingCount(orgId),
       },
       conflicts: flush.conflicts,
+      cursor: currentCursor,
     };
   } catch (err) {
     if (err instanceof ApiError && err.code === 'PLAN_EXPIRED') {
@@ -247,6 +238,7 @@ export const syncOnce = async (
           pendingCount: await pendingCount(orgId),
         },
         conflicts: flush.conflicts,
+        cursor: currentCursor,
       };
     }
 
@@ -259,8 +251,19 @@ export const syncOnce = async (
         pendingCount: await pendingCount(orgId),
       },
       conflicts: flush.conflicts,
+      cursor: currentCursor,
     };
   }
+};
+
+/** Ghi sổ đã gộp cùng con trỏ của nó trong một giao dịch IndexedDB. */
+export const saveSyncedBook = async (orgId: string, book: AppData, cursor: string | null | undefined): Promise<void> => {
+  if (!cursor) return writeBook(orgId, book);
+  const db = await openLocalDb();
+  const tx = db.transaction(['books', 'cursors'], 'readwrite');
+  await tx.objectStore('books').put(book, orgId);
+  await tx.objectStore('cursors').put(cursor, orgId);
+  await tx.done;
 };
 
 /** Có mạng hay không — `navigator.onLine` chỉ là gợi ý, vẫn phải bắt lỗi mạng. */

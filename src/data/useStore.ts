@@ -102,6 +102,12 @@ export interface StoreValue {
   deleteAccount: () => Promise<void>;
   /** Đẩy hàng đợi và kéo thay đổi ngay, không đợi hẹn giờ. */
   syncNow: () => void;
+  /** Có thao tác bị máy chủ từ chối đang chặn hàng đợi. */
+  readonly stuck: boolean;
+  /** Bỏ cờ từ chối, gửi lại ngay. */
+  retryStuck: () => void;
+  /** Bỏ thao tác bị từ chối (máy chủ sẽ không có nó) để các thao tác sau đi tiếp. */
+  dropStuck: () => void;
 }
 
 export const StoreContext = createContext<StoreValue | null>(null);

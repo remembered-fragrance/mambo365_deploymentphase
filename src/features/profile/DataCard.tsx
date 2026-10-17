@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
+import { useBackend } from '@/data/hooks/useBackend';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { downloadBook } from '../shared/bookFile';
@@ -16,6 +17,8 @@ import { downloadBook } from '../shared/bookFile';
  */
 export function DataCard() {
   const { data, importData } = useStore();
+  // Có máy chủ thì sổ là của máy chủ: thay sổ trên máy bằng file sẽ không lên máy chủ, máy khác không thấy.
+  const online = useBackend();
   const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<unknown>(null);
@@ -39,9 +42,11 @@ export function DataCard() {
           {L.exportToFile}
         </Button>
 
-        <Button block onClick={() => fileInput.current?.click()}>
-          {L.importFromFile}
-        </Button>
+        {!online && (
+          <Button block onClick={() => fileInput.current?.click()}>
+            {L.importFromFile}
+          </Button>
+        )}
         <input
           ref={fileInput}
           type="file"
@@ -54,7 +59,7 @@ export function DataCard() {
           }}
         />
 
-        <p className="text-sm text-ink-3">{L.importReplaceWarning}</p>
+        {!online && <p className="text-sm text-ink-3">{L.importReplaceWarning}</p>}
       </div>
 
       <ConfirmDialog

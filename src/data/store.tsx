@@ -2,19 +2,22 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { User } from '@supabase/auth-js';
 import { emptyData } from '@mambo/core/normalize';
 import type { AppData, SyncStatus, UserProfile } from '@mambo/core/types';
+import { L } from '@/i18n/labels';
 import { hasBook, type Feature, type Me, type MeBootstrapInput, type MeMembership } from '@mambo/contracts';
 import type { MemberRole, OrgType, Permission, PlanSummary } from '@mambo/contracts';
-import { deleteAccount } from './account';
+import { deleteAccount, wipeOrgFromDevice } from './account';
 import * as auth from './auth';
 import { mergeProfile } from './authProfile';
 import { createBookActions } from './bookActions';
-import { clearUserCache, readBook, writeBook } from './cache';
+import { readBook, writeBook } from './cache';
 import { api, getCurrentOrgId, getSupabase, hasBackend, setCurrentOrg } from './client';
+import { isDemoActive } from './demoMode';
 import { deviceAccount } from './deviceAccount';
+import { clearCursor } from './localDb';
 import { forgetMe, recallMe, rememberMe } from './meCache';
-import { enqueue, legacyQueueCount, pendingCount, type NewOp } from './queue';
+import { dropFirstConflict, enqueue, legacyQueueCount, pendingCount, retryConflicts, type NewOp } from './queue';
 import { forgetSubscription } from './subscriptionStore';
-import { looksOnline, syncOnce } from './sync';
+import { looksOnline, saveSyncedBook, syncOnce } from './sync';
 import { StoreContext, type StoreValue } from './useStore';
 const SYNC_INTERVAL_MS = 30_000;
 const IDLE_STATUS: SyncStatus = { loading: false, pendingCount: 0 };
@@ -26,6 +29,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const [currentOrgId, setCurrentOrgIdState] = useState<string | null>(null);
   const [data, setData] = useState<AppData>(emptyData);
   const [status, setStatus] = useState<SyncStatus>({ loading: true, pendingCount: 0 });
+  /** Có thao tác bị máy chủ từ chối đang chặn cả hàng — giao diện hiện nút "Gửi lại" / "Bỏ". */
+  const [stuck, setStuck] = useState(false);
   const latest = useRef(data);
   /** Tài khoản Supabase của phiên — bù SĐT / email khôi phục mà `/v1/me` chưa trả. */
   const authUser = useRef<User | null>(null);
@@ -66,12 +71,13 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     setCurrentOrgIdState(orgId);
     show(emptyData());
     setStatus(IDLE_STATUS);
+    setStuck(false);
   }, [show]);
   const kickSync = useCallback(() => {
     const supabase = getSupabase();
     if (!supabase || !hasBackend() || !currentOrg || !activeKey ||
       selected.current !== activeKey || readyKey.current !== activeKey ||
-      !looksOnline() || syncing.current || !hasBook(currentOrg.organization.type) ||
+      !looksOnline() || syncing.current || isDemoActive() || !hasBook(currentOrg.organization.type) ||
       !currentOrg.permissions.includes('book:sync')) return;
     const run = generation.current;
     syncing.current = true;
@@ -83,6 +89,9 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         if (!outcome || run !== generation.current) return;
         show(outcome.data);
         setStatus(outcome.status);
+        setStuck(outcome.conflicts.length > 0);
+        // Ghi sổ + con trỏ chỉ khi kết quả còn dùng — commit nào xen vào sẽ xếp SAU lần ghi này.
+        persistence.current = persistence.current.then(() => saveSyncedBook(activeKey, outcome.data, outcome.cursor));
       })
       .catch((error: unknown) => {
         if (run === generation.current) setStatus((previous) => ({
@@ -98,7 +107,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     const run = ++generation.current;
     show(next);
     persistence.current = persistence.current.then(async () => {
-      for (const op of ops) {
+      // Dữ liệu mẫu chỉ sống trên máy: không xếp thao tác nào lên máy chủ.
+      if (!isDemoActive()) for (const op of ops) {
         if (currentOrgId) await enqueue({ ...op, orgId: currentOrgId });
       }
       await writeBook(activeKey, next);
@@ -252,6 +262,20 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       selectOrg,
       refreshMe,
       ...createBookActions({ book: () => latest.current, commit, userId: activeKey ?? '' }),
+      reset: () => {
+        commit(emptyData(), []);
+        // Sổ trống mà con trỏ còn thì lần kéo sau không dựng lại sổ từ máy chủ.
+        if (currentOrgId) persistence.current = persistence.current.then(() => clearCursor(currentOrgId));
+      },
+      stuck,
+      retryStuck: () => {
+        if (!currentOrgId) return;
+        void retryConflicts(currentOrgId).then(() => { setStuck(false); kickSync(); });
+      },
+      dropStuck: () => {
+        if (!currentOrgId) return;
+        void dropFirstConflict(currentOrgId).then(() => { setStuck(false); kickSync(); });
+      },
       signIn: async (identifier, password) => {
         const supabase = getSupabase();
         if (!supabase) throw new Error('Chưa cấu hình máy chủ');
@@ -284,6 +308,12 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         await enterSession(authUser.current);
       },
       signOut: async () => {
+        await persistence.current;
+        const orgIds = memberships.current.map((m) => m.organization.id);
+        let unsent = 0;
+        for (const orgId of orgIds) unsent += await pendingCount(orgId);
+        // Máy dùng chung: thao tác của người này không được gửi bằng phiên người sau, cũng không được mất.
+        if (unsent > 0) throw new Error(`${L.signOutUnsent} (${unsent})`);
         sessionEpoch.current++;
         authUser.current = null;
         activateOrg(null);
@@ -291,11 +321,12 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         await persistence.current;
         const supabase = getSupabase();
         if (supabase) await auth.signOut(supabase);
-        if (userId) {
-          await clearUserCache(userId);
-          forgetSubscription(userId);
-          forgetMe(userId);
+        for (const orgId of orgIds) {
+          await wipeOrgFromDevice(orgId);
+          forgetSubscription(orgId);
         }
+        if (!supabase && userId) await wipeOrgFromDevice(userId);
+        if (userId) forgetMe(userId);
         setCurrentOrg(null);
         setCurrentOrgIdState(null);
         setUser(null);
@@ -323,7 +354,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       syncNow: kickSync,
     }),
     [
-      activateOrg, data, status, user, me, currentOrgId, currentOrg, orgType,
+      activateOrg, data, status, stuck, user, me, currentOrgId, currentOrg, orgType,
       userRole, permissions, features, plan, needsBootstrap, bootstrap,
       selectOrg, refreshMe, enterSession, activeKey, commit, kickSync, userId, show,
     ],

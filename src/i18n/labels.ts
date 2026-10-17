@@ -180,6 +180,11 @@ const BASE = {
   syncOfflineBanner: 'Đang làm việc không có mạng',
   syncOfflineDetail: 'Phiếu vẫn ghi bình thường, có mạng lại sẽ tự gửi đi.',
   syncStuck: 'Có phiếu chưa gửi được',
+  syncStuckRetry: 'Gửi lại',
+  syncStuckDrop: 'Bỏ thao tác này',
+  syncStuckDropTitle: 'Bỏ thao tác máy chủ đã từ chối?',
+  syncStuckDropConsequence: 'Máy chủ và các máy khác sẽ không có thao tác này. Các thao tác sau nó sẽ được gửi tiếp.',
+  signOutUnsent: 'Còn thao tác chưa gửi lên máy chủ. Đợi có mạng cho gửi xong rồi hãy đăng xuất.',
   rowPending: 'Chưa gửi',
   rowConflict: 'Cần xem lại',
 

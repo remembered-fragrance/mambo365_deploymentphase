@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { useToast } from '@/components/ui/Toast';
 import { PlusIcon, ReceiptIcon, ToolIcon } from '@/components/ui/icons';
+import { useBackend } from '@/data/hooks/useBackend';
 import { useDemoMode } from '@/data/hooks/useDemoMode';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
@@ -47,6 +48,7 @@ export function WelcomeScreen() {
   const toast = useToast();
   const { importData } = useStore();
   const { startDemo } = useDemoMode();
+  const online = useBackend();
   const fileInput = useRef<HTMLInputElement>(null);
 
   const loadFile = async (file: File | undefined) => {
@@ -66,7 +68,7 @@ export function WelcomeScreen() {
         <DeviceBookNotice />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className={`grid gap-3 ${online ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
         <Choice
           index="1"
           title={L.welcomeCreate}
@@ -84,13 +86,13 @@ export function WelcomeScreen() {
             toast({ message: L.demoStarted });
           }}
         />
-        <Choice
+        {!online && <Choice
           index="3"
           title={L.welcomeImport}
           hint={L.welcomeImportHint}
           Icon={ToolIcon}
           onPick={() => fileInput.current?.click()}
-        />
+        />}
       </div>
 
       <input

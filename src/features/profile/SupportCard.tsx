@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/components/ui/Toast';
 import { PhoneIcon } from '@/components/ui/icons';
 import { APP_VERSION, SUPPORT_ZALO } from '@/config';
 import { useStore } from '@/data/useStore';
@@ -10,6 +11,7 @@ import { L } from '@/i18n/labels';
 /** Kênh liên lạc + số phiên bản (để hỗ trợ từ xa hỏi "bạn đang dùng bản nào"). */
 export function SupportCard() {
   const { signOut } = useStore();
+  const toast = useToast();
   const [confirmOut, setConfirmOut] = useState(false);
 
   return (
@@ -43,7 +45,7 @@ export function SupportCard() {
         confirmLabel={L.signOut}
         onConfirm={() => {
           setConfirmOut(false);
-          void signOut();
+          signOut().catch((err: unknown) => toast({ message: err instanceof Error ? err.message : L.signOutUnsent }));
         }}
         onCancel={() => setConfirmOut(false)}
       />
