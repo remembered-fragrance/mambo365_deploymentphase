@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { DataView } from '@/components/data/DataView';
-import { STRETCH_TITLE, type Column, type SortState } from '@/components/data/dataViewModel';
+import type { Column, SortState } from '@/components/data/dataViewModel';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -38,7 +38,7 @@ const productColumns = (
           <button
             type="button"
             onClick={() => onEdit(p)}
-            className={`text-left font-bold text-ink underline decoration-rule underline-offset-4 ${STRETCH_TITLE}`}
+            className="text-left font-bold text-ink underline decoration-rule underline-offset-4"
           >
             {p.name}
           </button>
