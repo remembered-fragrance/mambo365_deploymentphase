@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -159,6 +159,9 @@ export function App() {
                         <Route path={ROUTES.map} element={<Gated route={ROUTES.map}><MapPage /></Gated>} />
                         <Route path={ROUTES.myPlaces} element={<Gated route={ROUTES.myPlaces}><MyPlacesPage /></Gated>} />
                         <Route path={ROUTES.more} element={<MorePage />} />
+                        {/* Màn đăng nhập hiện ở MỌI đường dẫn khi chưa đăng nhập (`RequireAccount`); vào bằng
+                            link /dang-nhap thì đăng nhập xong URL vẫn là /dang-nhap — đưa về Trang chủ, không 404. */}
+                        <Route path={ROUTES.auth} element={<Navigate to={ROUTES.dashboard} replace />} />
                         <Route path="*" element={<NotFoundPage />} />
                       </Routes>
                     </Suspense>

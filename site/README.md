@@ -47,9 +47,10 @@ Project Vercel **thứ hai**, cùng repo:
 | Framework Preset | Other (không build) |
 | Build Command | *(để trống)* |
 | Output Directory | *(để trống)* |
-| Domain | `thumua365.vn` |
+| Domain | chưa chốt — `thumua365.id.vn` (apex) đang chuyển sang app |
 
-App vẫn là project thứ nhất, domain `app.thumua365.vn`. Hai project tách nhau để
+App vẫn là project thứ nhất, domain `www.thumua365.id.vn` (domain chính của nhóm;
+`thumua365.vn` / `app.thumua365.vn` là của người khác, đừng dùng). Hai project tách nhau để
 một lần deploy hỏng bên này không kéo bên kia xuống theo.
 
 ## Sửa nội dung
