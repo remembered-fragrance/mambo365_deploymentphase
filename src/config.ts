@@ -72,7 +72,7 @@ export const SUPPORT_ZALO = '0969158913';
 /**
  * Ba trang pháp lý & hướng dẫn là route CÔNG KHAI của chính app (đọc được khi
  * chưa đăng nhập, vừa xoá tài khoản, hay mở từ ô đồng ý lúc đăng ký) — không
- * phụ thuộc site `thumua365.vn` chưa có. Nội dung: `src/i18n/legal/`.
+ * phụ thuộc landing `site/` chưa xuất bản. Nội dung: `src/i18n/legal/`.
  */
 export const LEGAL_LINKS = {
   terms: '/dieu-khoan',

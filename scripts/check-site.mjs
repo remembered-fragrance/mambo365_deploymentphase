@@ -53,7 +53,7 @@ const main = () => {
     if (/<script/i.test(html)) report('Site tĩnh không được có <script>', path, '');
     for (const match of html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)) {
       const url = match[1];
-      if (!url.startsWith('https://app.thumua365.vn')) {
+      if (!url.startsWith('https://www.thumua365.id.vn')) {
         report('Nạp tài nguyên từ máy chủ ngoài', path, url);
       }
     }

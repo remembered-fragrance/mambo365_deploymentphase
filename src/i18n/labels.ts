@@ -187,7 +187,7 @@ const BASE = {
   syncStuckDropConsequence: 'Máy chủ và các máy khác sẽ không có thay đổi này. Trên máy này, bản ghi đó trở về đúng như trên máy chủ; các thao tác khác được gửi tiếp.',
   signOutUnsent: 'Còn thao tác chưa gửi lên máy chủ',
   signOutUnsentTitle: 'Còn thao tác chưa gửi lên máy chủ',
-  signOutUnsentConsequence: 'thao tác này sẽ mất hẳn nếu đăng xuất bây giờ: máy chủ và các máy khác không có chúng. Muốn giữ thì bấm Huỷ, lưu sổ ra file ở thẻ Dữ liệu, hoặc đợi có mạng / gia hạn gói cho gửi xong.',
+  signOutUnsentConsequence: 'thao tác này sẽ mất hẳn nếu đăng xuất bây giờ: máy chủ và các máy khác không có chúng. Muốn giữ thì bấm Bỏ qua, lưu sổ ra file ở thẻ Dữ liệu, hoặc đợi có mạng / gia hạn gói cho gửi xong.',
   signOutDiscard: 'Vẫn đăng xuất',
   importWhileSyncing: 'Sổ đang đồng bộ với máy chủ nên không thay bằng file được. Đăng nhập trên máy mới là sổ tự về.',
   rowPending: 'Chưa gửi',
