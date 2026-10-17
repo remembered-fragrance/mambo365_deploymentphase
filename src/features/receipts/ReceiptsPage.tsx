@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -83,6 +83,11 @@ export function ReceiptsPage() {
   const wide = useWideScreen();
 
   const tab = (params.get('tab') as Tab | null) ?? 'done';
+  const chipRow = useRef<HTMLDivElement>(null);
+  // Mở thẳng `?tab=waiting` ở 320px: chip đang chọn có thể nằm khuất bên phải hàng cuộn ngang.
+  useEffect(() => {
+    chipRow.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [tab]);
   const previewId = params.get('xem');
   const preview = wide ? data.transactions.find((t) => t.id === previewId) : undefined;
 
@@ -154,7 +159,8 @@ export function ReceiptsPage() {
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {/* Chip trạng thái luôn một hàng (cuộn ngang nếu thiếu chỗ): xuống hai hàng
             thì bộ lọc chiếm nửa màn điện thoại trước phiếu đầu tiên. */}
-        <div className="flex max-w-full gap-2 overflow-x-auto [&>*]:shrink-0">
+        {/* `py-1`: cuộn ngang thì cuộn dọc cũng thành auto, viền focus của chip bị cắt nếu không chừa chỗ. */}
+        <div ref={chipRow} className="-my-1 flex max-w-full gap-2 overflow-x-auto py-1 *:shrink-0">
           <Chip label={L.tabDone} selected={tab === 'done'} onSelect={() => patch({ tab: 'done' })} />
           <Chip
             label={`${L.draftWeighing} (${drafts.length})`}

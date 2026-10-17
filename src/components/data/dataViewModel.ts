@@ -53,13 +53,6 @@ export const HIDE_BELOW: Record<NonNullable<Column<unknown>['hideBelow']>, strin
   xl: 'hidden xl:table-cell',
 };
 
-/**
- * Gắn vào nút ở cột `title` để chạm chỗ nào trên thẻ điện thoại cũng mở được
- * ("stretched link"). Dùng cho danh sách không có `onRowClick` vì thẻ còn chứa
- * nút khác — bọc cả thẻ trong <button> thì thành nút lồng nút.
- */
-export const STRETCH_TITLE = 'max-md:after:absolute max-md:after:inset-0';
-
 export const pickColumn = <TRow>(
   columns: readonly Column<TRow>[],
   role: MobileRole,

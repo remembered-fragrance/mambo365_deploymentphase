@@ -35,6 +35,7 @@ export function DemoBanner() {
         <button
           type="button"
           onClick={() => setConfirm(true)}
+          aria-label={L.demoClear}
           className="min-h-11 rounded-lg border border-alert px-3 text-sm font-bold text-alert"
         >
           <span className="sm:hidden">{L.demoClearShort}</span>

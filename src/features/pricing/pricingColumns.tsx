@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/Badge';
-import { STRETCH_TITLE, type Column } from '@/components/data/dataViewModel';
+import type { Column } from '@/components/data/dataViewModel';
 import { PencilIcon } from '@/components/ui/icons';
 import { formatVnd, formatWeight } from '@mambo/core/format';
 import { previewRule } from '@mambo/core/pricingPreview';
@@ -36,7 +36,7 @@ export const pricingColumns = (
       <button
         type="button"
         onClick={() => onEdit(rule)}
-        className={`text-left font-bold text-ink underline decoration-rule underline-offset-4 ${STRETCH_TITLE}`}
+        className="text-left font-bold text-ink underline decoration-rule underline-offset-4"
       >
         {rule.name}
       </button>
@@ -97,7 +97,8 @@ export const pricingColumns = (
     // Bật/tắt là một cái nút thật, KHÔNG phải lớp phủ mờ trên cả thẻ: bản demo
     // làm kiểu phủ và quên `pointer-events-none`, tắt xong không bật lại được.
     cell: (rule) => (
-      <button type="button" onClick={() => onToggle(rule)} className="min-h-11">
+      // Vùng chạm rộng hơn huy hiệu: chạm hụt sang bên là trúng lớp phủ của thẻ, mở form sửa.
+      <button type="button" onClick={() => onToggle(rule)} className="min-h-11 min-w-11 px-2">
         <Badge
           tone={rule.active ? 'in' : 'neutral'}
           mark={rule.active ? '✓' : '○'}
