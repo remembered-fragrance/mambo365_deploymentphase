@@ -9,7 +9,7 @@ import {
   clearQueue,
   enqueue as enqueueScoped,
   type NewOp,
-  dropFirstConflict,
+  dropConflictedRecord,
   isDue,
   markFailed,
   markConflict,
@@ -132,9 +132,10 @@ describe('thử lại có giãn cách', () => {
     expect(await pendingCount('org-a')).toBe(1);
   });
 
-  it('thao tác bị từ chối: "Gửi lại" bỏ cờ, "Bỏ" chỉ gỡ đúng thao tác đang chặn', async () => {
+  it('thao tác bị từ chối: "Gửi lại" bỏ cờ, "Bỏ" gỡ thao tác đang chặn cùng các thao tác sau của bản ghi đó', async () => {
     const a = await enqueue(opInsert('note', 'a', {}));
     const b = await enqueue(opInsert('note', 'b', {}));
+    await enqueue(opUpdate('note', 'a', { body: 'sửa tiếp' }));
     await markConflict(a.id, 'org-a', { code: 'VALIDATION_FAILED', message: 'Sai' });
 
     await retryConflicts('org-a');
@@ -143,8 +144,10 @@ describe('thử lại có giãn cách', () => {
     expect(retried && isDue(retried)).toBe(true);
 
     await markConflict(a.id, 'org-a', { code: 'VALIDATION_FAILED', message: 'Sai' });
-    await dropFirstConflict('org-a');
+    const dropped = await dropConflictedRecord('org-a');
+    expect(dropped?.id).toBe(a.id);
     expect((await pendingOps('org-a')).map((op) => op.id)).toEqual([b.id]);
+    expect(await dropConflictedRecord('org-a')).toBeNull();
   });
 });
 

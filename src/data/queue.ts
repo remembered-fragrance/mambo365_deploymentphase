@@ -180,10 +180,19 @@ export const retryConflicts = async (orgId: string): Promise<void> => {
   }
 };
 
-/** Người dùng bấm "Bỏ thao tác này": gỡ thao tác bị từ chối đang chặn cả hàng. */
-export const dropFirstConflict = async (orgId: string): Promise<void> => {
-  const stuck = (await pendingOps(orgId)).find((op) => op.conflict);
-  if (stuck) await removeOp(stuck.id, orgId);
+/**
+ * Người dùng bấm "Bỏ thao tác này": gỡ thao tác bị từ chối đang chặn cả hàng, cùng các thao tác sau
+ * nó của CÙNG bản ghi — chúng dựa trên thay đổi máy chủ đã từ chối, gửi đi cũng bị từ chối nốt.
+ * Trả về thao tác đã gỡ để store đưa bản ghi trên máy về đúng như máy chủ.
+ */
+export const dropConflictedRecord = async (orgId: string): Promise<QueuedOp | null> => {
+  const ops = await pendingOps(orgId);
+  const stuck = ops.find((op) => op.conflict);
+  if (!stuck) return null;
+  for (const op of ops) {
+    if (op.recordId === stuck.recordId && op.seq >= stuck.seq) await removeOp(op.id, orgId);
+  }
+  return stuck;
 };
 
 export const isDue = (op: QueuedOp, now = Date.now()): boolean =>

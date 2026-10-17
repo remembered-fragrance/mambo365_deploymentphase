@@ -163,7 +163,8 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
             <DemoBanner />
             <PlanBanner />
             <StuckBanner />
-            {status.error && !stuck &&
+            {/* Banner kẹt đã nói lỗi của thao tác; hết gói thì vẫn phải nói, vì "Gửi lại" không gỡ được nó. */}
+            {status.error && (status.blocked || !stuck) &&
               (status.blocked ? (
                 // Hết gói không phải mất mạng. Nói nhầm thì người dùng đi tìm
                 // sóng trong khi thứ cần làm là mở lại gói.

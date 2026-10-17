@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { useToast } from '@/components/ui/Toast';
 import { PlusIcon, ReceiptIcon, ToolIcon } from '@/components/ui/icons';
-import { useBackend } from '@/data/hooks/useBackend';
 import { useDemoMode } from '@/data/hooks/useDemoMode';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
@@ -46,15 +45,18 @@ function Choice({ index, title, hint, Icon, onPick }: ChoiceProps) {
 export function WelcomeScreen() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { importData } = useStore();
+  const { importData, syncsWithServer: online } = useStore();
   const { startDemo } = useDemoMode();
-  const online = useBackend();
   const fileInput = useRef<HTMLInputElement>(null);
 
   const loadFile = async (file: File | undefined) => {
     if (!file) return;
-    importData(JSON.parse(await file.text()) as unknown);
-    toast({ message: L.importedToast });
+    try {
+      importData(JSON.parse(await file.text()) as unknown);
+      toast({ message: L.importedToast });
+    } catch (err) {
+      toast({ message: err instanceof Error ? err.message : String(err), tone: 'alert' });
+    }
   };
 
   return (

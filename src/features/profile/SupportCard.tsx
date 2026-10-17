@@ -5,7 +5,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { PhoneIcon } from '@/components/ui/icons';
 import { APP_VERSION, SUPPORT_ZALO } from '@/config';
-import { useStore } from '@/data/useStore';
+import { UnsentOpsError, useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 
 /** Kênh liên lạc + số phiên bản (để hỗ trợ từ xa hỏi "bạn đang dùng bản nào"). */
@@ -13,6 +13,9 @@ export function SupportCard() {
   const { signOut } = useStore();
   const toast = useToast();
   const [confirmOut, setConfirmOut] = useState(false);
+  /** Số thao tác chưa gửi — khác 0 thì hỏi lần hai trước khi bỏ chúng. */
+  const [unsent, setUnsent] = useState(0);
+  const failed = (err: unknown) => toast({ message: err instanceof Error ? err.message : L.signOutUnsent });
 
   return (
     <Card title={L.supportTitle}>
@@ -45,9 +48,24 @@ export function SupportCard() {
         confirmLabel={L.signOut}
         onConfirm={() => {
           setConfirmOut(false);
-          signOut().catch((err: unknown) => toast({ message: err instanceof Error ? err.message : L.signOutUnsent }));
+          signOut().catch((err: unknown) => {
+            if (err instanceof UnsentOpsError) setUnsent(err.count);
+            else failed(err);
+          });
         }}
         onCancel={() => setConfirmOut(false)}
+      />
+
+      <ConfirmDialog
+        open={unsent > 0}
+        title={L.signOutUnsentTitle}
+        consequence={`${unsent} ${L.signOutUnsentConsequence}`}
+        confirmLabel={L.signOutDiscard}
+        onConfirm={() => {
+          setUnsent(0);
+          signOut({ discardUnsent: true }).catch(failed);
+        }}
+        onCancel={() => setUnsent(0)}
       />
     </Card>
   );

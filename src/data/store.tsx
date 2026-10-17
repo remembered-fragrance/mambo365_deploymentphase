@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { User } from '@supabase/auth-js';
-import { emptyData } from '@mambo/core/normalize';
+import { emptyData, normalize } from '@mambo/core/normalize';
 import type { AppData, SyncStatus, UserProfile } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { hasBook, type Feature, type Me, type MeBootstrapInput, type MeMembership } from '@mambo/contracts';
@@ -9,20 +9,28 @@ import { deleteAccount, wipeOrgFromDevice } from './account';
 import * as auth from './auth';
 import { mergeProfile } from './authProfile';
 import { createBookActions } from './bookActions';
-import { readBook, writeBook } from './cache';
+import { readBook, writeBook, writeSyncMark } from './cache';
 import { api, getCurrentOrgId, getSupabase, hasBackend, setCurrentOrg } from './client';
-import { isDemoActive } from './demoMode';
+import { forgetDemo, isDemoActive } from './demoMode';
 import { deviceAccount } from './deviceAccount';
+import { forgetRecord } from './forgetRecord';
 import { clearCursor } from './localDb';
 import { forgetMe, recallMe, rememberMe } from './meCache';
-import { dropFirstConflict, enqueue, legacyQueueCount, pendingCount, retryConflicts, type NewOp } from './queue';
+import {
+  dropConflictedRecord, enqueue, legacyQueueCount, pendingCount, pendingRecordIds, retryConflicts, type NewOp,
+} from './queue';
 import { forgetSubscription } from './subscriptionStore';
-import { looksOnline, saveSyncedBook, syncOnce } from './sync';
-import { StoreContext, type StoreValue } from './useStore';
+import { looksOnline, markSyncStates, rebasePulled, saveSyncedBook, syncOnce } from './sync';
+import { StoreContext, UnsentOpsError, type StoreValue } from './useStore';
 const SYNC_INTERVAL_MS = 30_000;
 const IDLE_STATUS: SyncStatus = { loading: false, pendingCount: 0 };
 const NO_PERMISSIONS: readonly Permission[] = [];
 const NO_FEATURES: readonly Feature[] = [];
+/** Bản ghi một thao tác chạm tới — lần trả tiền chạm cả phiếu cha (như `pendingRecordIds`). */
+const touchedIds = (op: NewOp): string[] => {
+  const parentId = op.entity === 'payment' ? op.data?.transactionId : undefined;
+  return typeof parentId === 'string' ? [op.recordId, parentId] : [op.recordId];
+};
 export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [me, setMe] = useState<Me | null>(null);
@@ -38,6 +46,18 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const selected = useRef<string | null>(null);
   const readyKey = useRef<string | null>(null);
   const generation = useRef(0);
+  /**
+   * Tăng mỗi khi sổ trên màn hình được THAY hẳn (đổi tổ chức, nạp file, dữ liệu mẫu, xoá hết, bỏ thao
+   * tác kẹt). Lượt đồng bộ bắt đầu trước đó không được gộp vào sổ mới. Ghi thêm phiếu thì không tăng:
+   * phần kéo về được gộp lại vào sổ mới nhất, không bỏ cả lượt.
+   */
+  const bookEpoch = useRef(0);
+  /** Tăng khi người dùng bấm Gửi lại / Bỏ: lượt đồng bộ đang chạy dở không được bật lại banner kẹt. */
+  const stuckEpoch = useRef(0);
+  /** Có người gọi đồng bộ trong lúc đang chạy — chạy thêm một lượt ngay khi xong. */
+  const rerun = useRef(false);
+  /** Bản ghi của các commit đã lên màn hình nhưng thao tác chưa vào hàng đợi. */
+  const inflight = useRef(new Map<string, number>());
   const persistence = useRef<Promise<void>>(Promise.resolve());
   const memberships = useRef<readonly MeMembership[]>([]);
   const sessionEpoch = useRef(0);
@@ -57,6 +77,14 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     setData(next);
   }, []);
   const activeKey = currentOrg?.organization.id ?? (!getSupabase() ? userId : null);
+  const syncsWithServer = Boolean(getSupabase() && hasBackend() && currentOrg && hasBook(currentOrg.organization.type) &&
+    currentOrg.permissions.includes('book:sync') && plan && plan.tier !== 'free' && !status.blocked);
+  /** Nối một việc ghi xuống máy vào chuỗi. Chuỗi không bao giờ được reject: reject một lần là mọi commit sau bị bỏ qua. */
+  const persist = useCallback((task: () => Promise<void>) => {
+    persistence.current = persistence.current.then(task).catch((error: unknown) => {
+      setStatus((previous) => ({ ...previous, error: error instanceof Error ? error.message : 'Local save failed' }));
+    });
+  }, []);
   /**
    * Bản `kickSync` mới nhất cho effect nạp sổ. `kickSync` đổi danh tính mỗi lần `/v1/me` trả
    * lời (kể cả trả y hệt); effect nạp sổ phụ thuộc thẳng vào nó thì mỗi lần như thế lại xoá
@@ -65,6 +93,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const kickSyncRef = useRef<() => void>(() => undefined);
   const activateOrg = useCallback((orgId: string | null) => {
     generation.current++;
+    bookEpoch.current++;
     readyKey.current = null;
     selected.current = orgId;
     setCurrentOrg(orgId);
@@ -77,41 +106,77 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     const supabase = getSupabase();
     if (!supabase || !hasBackend() || !currentOrg || !activeKey ||
       selected.current !== activeKey || readyKey.current !== activeKey ||
-      !looksOnline() || syncing.current || isDemoActive() || !hasBook(currentOrg.organization.type) ||
+      !looksOnline() || isDemoActive(activeKey) || !hasBook(currentOrg.organization.type) ||
       !currentOrg.permissions.includes('book:sync')) return;
-    const run = generation.current;
+    // Bấm "Gửi lại" đúng lúc đang đồng bộ thì không phải đợi 30 giây cho lượt hẹn giờ.
+    if (syncing.current) {
+      rerun.current = true;
+      return;
+    }
+    const epoch = bookEpoch.current;
+    const stuckMark = stuckEpoch.current;
+    const isCurrent = () => epoch === bookEpoch.current;
     syncing.current = true;
     void persistence.current.then(() => {
-      if (run !== generation.current) return;
-      return syncOnce(supabase, activeKey, latest.current, () => run === generation.current);
+      if (!isCurrent()) return;
+      return syncOnce(supabase, activeKey, latest.current, isCurrent);
     })
       .then((outcome) => {
-        if (!outcome || run !== generation.current) return;
-        show(outcome.data);
-        setStatus(outcome.status);
-        setStuck(outcome.conflicts.length > 0);
-        // Ghi sổ + con trỏ chỉ khi kết quả còn dùng — commit nào xen vào sẽ xếp SAU lần ghi này.
-        persistence.current = persistence.current.then(() => saveSyncedBook(activeKey, outcome.data, outcome.cursor));
+        if (!outcome || !isCurrent()) return;
+        // Ghi trong chuỗi, sau mọi commit đã có: gộp phần kéo về vào sổ MỚI NHẤT chứ không đè bằng
+        // ảnh chụp lúc bắt đầu kéo — phiếu ghi trong lúc kéo vẫn còn, tiến độ kéo cũng không mất.
+        persist(async () => {
+          if (!isCurrent()) return;
+          const pending = await pendingRecordIds(activeKey);
+          for (const id of inflight.current.keys()) pending.add(id);
+          if (stuckMark === stuckEpoch.current) setStuck(outcome.conflicts.length > 0);
+          setStatus(outcome.status);
+          const rebased = rebasePulled(latest.current, outcome.pulled, pending);
+          if (!rebased) return;
+          const book = markSyncStates(rebased, pending, outcome.conflicts);
+          show(book);
+          await saveSyncedBook(activeKey, book, outcome.cursor);
+          if (outcome.syncedAt) await writeSyncMark(activeKey, outcome.syncedAt);
+        });
       })
       .catch((error: unknown) => {
-        if (run === generation.current) setStatus((previous) => ({
+        if (isCurrent()) setStatus((previous) => ({
           ...previous, loading: false, error: error instanceof Error ? error.message : 'Sync failed',
         }));
       })
-      .finally(() => { syncing.current = false; });
-  }, [activeKey, currentOrg, show]);
+      .finally(() => {
+        syncing.current = false;
+        if (rerun.current) {
+          rerun.current = false;
+          kickSyncRef.current();
+        }
+      });
+  }, [activeKey, currentOrg, persist, show]);
   useEffect(() => { kickSyncRef.current = kickSync; }, [kickSync]);
   const commit = useCallback((next: AppData, ops: NewOp[]) => {
     if (!activeKey || readyKey.current !== activeKey ||
       (getSupabase() && selected.current !== activeKey)) throw new Error('Organization book is not ready');
     const run = ++generation.current;
+    const epoch = bookEpoch.current;
+    // Dữ liệu mẫu chỉ sống trên máy: không xếp thao tác nào lên máy chủ. Chốt cờ ngay lúc ghi —
+    // bật / tắt mẫu sau đó không được đổi số phận của thao tác này.
+    const queued = isDemoActive(activeKey) || !currentOrgId ? [] : ops;
+    const ids = queued.flatMap(touchedIds);
+    for (const id of ids) inflight.current.set(id, (inflight.current.get(id) ?? 0) + 1);
     show(next);
     persistence.current = persistence.current.then(async () => {
-      // Dữ liệu mẫu chỉ sống trên máy: không xếp thao tác nào lên máy chủ.
-      if (!isDemoActive()) for (const op of ops) {
-        if (currentOrgId) await enqueue({ ...op, orgId: currentOrgId });
+      try {
+        for (const op of queued) if (currentOrgId) await enqueue({ ...op, orgId: currentOrgId });
+      } finally {
+        for (const id of ids) {
+          const left = (inflight.current.get(id) ?? 1) - 1;
+          if (left > 0) inflight.current.set(id, left);
+          else inflight.current.delete(id);
+        }
       }
-      await writeBook(activeKey, next);
+      // Sổ mới nhất chứ không phải `next`: phần kéo về có thể đã gộp vào sau `next`. Đã sang sổ khác thì
+      // `latest` là sổ kia, ghi `next` như cũ.
+      await writeBook(activeKey, epoch === bookEpoch.current ? latest.current : next);
       const count = currentOrgId ? await pendingCount(currentOrgId) : 0;
       if (run === generation.current) setStatus((previous) => ({ ...previous, pendingCount: count }));
     }).catch((error: unknown) => {
@@ -121,6 +186,12 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     });
     void persistence.current.then(kickSync);
   }, [activeKey, currentOrgId, kickSync, show]);
+  /** Thay cả sổ. `rebuild`: bỏ con trỏ để lần kéo sau dựng lại sổ từ máy chủ. */
+  const replaceBook = useCallback((next: AppData, rebuild: boolean) => {
+    bookEpoch.current++;
+    commit(next, []);
+    if (rebuild && currentOrgId) persist(() => clearCursor(currentOrgId));
+  }, [commit, currentOrgId, persist]);
   const applyMe = useCallback((result: Me) => {
     memberships.current = result.memberships;
     setMe(result);
@@ -258,23 +329,42 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       features,
       plan,
       needsBootstrap,
+      bookKey: activeKey,
+      syncsWithServer,
       bootstrap,
       selectOrg,
       refreshMe,
       ...createBookActions({ book: () => latest.current, commit, userId: activeKey ?? '' }),
-      reset: () => {
-        commit(emptyData(), []);
-        // Sổ trống mà con trỏ còn thì lần kéo sau không dựng lại sổ từ máy chủ.
-        if (currentOrgId) persistence.current = persistence.current.then(() => clearCursor(currentOrgId));
+      importData: (payload) => {
+        // Sổ đang đồng bộ là sổ của máy chủ: thay trên máy bằng file thì máy chủ, máy khác không có,
+        // lần kéo sau còn trộn hai sổ vào nhau. Dữ liệu mẫu thì được — nó không bao giờ rời máy.
+        if (syncsWithServer && !isDemoActive(activeKey)) throw new Error(L.importWhileSyncing);
+        replaceBook(normalize(payload), false);
       },
+      // Sổ trống mà con trỏ còn thì lần kéo sau không dựng lại sổ từ máy chủ.
+      reset: () => replaceBook(emptyData(), true),
       stuck,
       retryStuck: () => {
         if (!currentOrgId) return;
-        void retryConflicts(currentOrgId).then(() => { setStuck(false); kickSync(); });
+        stuckEpoch.current++;
+        setStuck(false);
+        void retryConflicts(currentOrgId).then(kickSync);
       },
       dropStuck: () => {
         if (!currentOrgId) return;
-        void dropFirstConflict(currentOrgId).then(() => { setStuck(false); kickSync(); });
+        stuckEpoch.current++;
+        setStuck(false);
+        void dropConflictedRecord(currentOrgId).then((dropped) => {
+          // Máy chủ không có thao tác này: bản ghi trên máy phải về đúng như máy chủ. Thêm mới thì bỏ
+          // hẳn; sửa / xoá thì dựng lại sổ từ máy chủ (bản ghi hết thao tác chờ nên bản máy chủ thắng).
+          if (dropped) replaceBook(
+            dropped.kind === 'insert' ? forgetRecord(latest.current, dropped.entity, dropped.recordId) : latest.current,
+            true,
+          );
+          kickSync();
+        }).catch((error: unknown) => {
+          setStatus((previous) => ({ ...previous, error: error instanceof Error ? error.message : 'Cannot drop operation' }));
+        });
       },
       signIn: async (identifier, password) => {
         const supabase = getSupabase();
@@ -307,13 +397,22 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         authUser.current = await auth.openRecoverySession(supabase, tokenHash);
         await enterSession(authUser.current);
       },
-      signOut: async () => {
-        await persistence.current;
+      signOut: async (options) => {
+        // Khoá commit trong lúc đếm: thao tác lọt vào giữa lúc đếm và lúc dọn sẽ bị xoá mà không ai biết.
+        const key = readyKey.current;
+        const book = selected.current;
+        readyKey.current = null;
         const orgIds = memberships.current.map((m) => m.organization.id);
-        let unsent = 0;
-        for (const orgId of orgIds) unsent += await pendingCount(orgId);
-        // Máy dùng chung: thao tác của người này không được gửi bằng phiên người sau, cũng không được mất.
-        if (unsent > 0) throw new Error(`${L.signOutUnsent} (${unsent})`);
+        try {
+          await persistence.current;
+          let unsent = 0;
+          for (const orgId of orgIds) unsent += await pendingCount(orgId);
+          // Máy dùng chung: thao tác của người này không được gửi bằng phiên người sau. Bỏ thì phải hỏi.
+          if (unsent > 0 && !options?.discardUnsent) throw new UnsentOpsError(unsent);
+        } catch (error) {
+          if (readyKey.current === null && selected.current === book) readyKey.current = key;
+          throw error;
+        }
         sessionEpoch.current++;
         authUser.current = null;
         activateOrg(null);
@@ -326,6 +425,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
           forgetSubscription(orgId);
         }
         if (!supabase && userId) await wipeOrgFromDevice(userId);
+        forgetDemo(userId ? [...orgIds, userId] : orgIds);
         if (userId) forgetMe(userId);
         setCurrentOrg(null);
         setCurrentOrgIdState(null);
@@ -349,14 +449,15 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         // Ghi dở phải xong trước — không thì một lần ghi sổ đang chờ dựng lại đúng cái sổ vừa dọn.
         await persistence.current;
         await deleteAccount(memberships.current.map((m) => m.organization.id));
-        await value.signOut();
+        // Tài khoản đã xoá trên máy chủ: thao tác còn lại (nếu có) không còn chỗ nào để gửi.
+        await value.signOut({ discardUnsent: true });
       },
       syncNow: kickSync,
     }),
     [
       activateOrg, data, status, stuck, user, me, currentOrgId, currentOrg, orgType,
-      userRole, permissions, features, plan, needsBootstrap, bootstrap,
-      selectOrg, refreshMe, enterSession, activeKey, commit, kickSync, userId, show,
+      userRole, permissions, features, plan, needsBootstrap, syncsWithServer, bootstrap,
+      selectOrg, refreshMe, enterSession, activeKey, commit, replaceBook, kickSync, userId, show,
     ],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

@@ -7,10 +7,10 @@
 
 import { emptyData } from '@mambo/core/normalize';
 import type { AppData, SyncStatus } from '@mambo/core/types';
-import { isRetryable, SYNC_PUSH_MAX_OPS, type SyncOp } from '@mambo/contracts';
+import { isRetryable, SYNC_PUSH_MAX_OPS, type SyncChanges, type SyncOp } from '@mambo/contracts';
 import { ApiError, type Client } from '@mambo/sdk';
 import { flushAttachments } from './attachments';
-import { readSyncMark, writeBook, writeSyncMark } from './cache';
+import { readSyncMark, writeBook } from './cache';
 import { apiForOrg } from './client';
 import { getDeviceId, openLocalDb, readCursor } from './localDb';
 import { mergeChanges } from './pullChanges';
@@ -25,8 +25,19 @@ import {
   type QueuedOp,
 } from './queue';
 
+/** Các trang đã kéo về, giữ nguyên dạng máy chủ trả — store gộp lại vào sổ MỚI NHẤT lúc ghi. */
+export interface PulledChanges {
+  /** Máy chủ bảo dựng lại sổ từ đầu: `pages` là các trang kể từ lần đó. */
+  readonly reset: boolean;
+  readonly pages: readonly SyncChanges[];
+}
+
 export interface SyncOutcome {
+  /** `local` đã gộp các trang kéo về — đúng khi không ai ghi xen vào trong lúc kéo. */
   readonly data: AppData;
+  readonly pulled: PulledChanges;
+  /** Mốc của lượt kéo trọn vẹn. Chỉ ghi "đã đồng bộ lúc…" khi store thực sự lưu kết quả. */
+  readonly syncedAt?: string;
   readonly status: SyncStatus;
   /** Bản ghi bị máy chủ từ chối — giao diện phải báo, không được im lặng. */
   readonly conflicts: readonly string[];
@@ -182,11 +193,14 @@ export const syncOnce = async (
         pendingCount: await pendingCount(orgId),
       },
       conflicts: flush.conflicts,
+      pulled: { reset: false, pages: [] },
     };
   }
 
   let currentBook = local;
   let currentCursor: string | null = null;
+  let reset = false;
+  let pages: SyncChanges[] = [];
   try {
     currentCursor = await readCursor(orgId);
 
@@ -203,16 +217,18 @@ export const syncOnce = async (
         }
         currentBook = emptyData();
         currentCursor = res.cursor;
+        reset = true;
+        pages = [];
         continue;
       }
 
       currentBook = mergeChanges(currentBook, res.changes, pendingIds);
+      pages.push(res.changes);
       currentCursor = res.cursor;
       if (!res.hasMore) break;
     }
 
     if (!isCurrent()) throw new Error('Sync context changed');
-    await writeSyncMark(orgId, startedAt);
 
     const stillPending = await pendingRecordIds(orgId);
     return {
@@ -225,6 +241,8 @@ export const syncOnce = async (
       },
       conflicts: flush.conflicts,
       cursor: currentCursor,
+      pulled: { reset, pages },
+      syncedAt: startedAt,
     };
   } catch (err) {
     if (err instanceof ApiError && err.code === 'PLAN_EXPIRED') {
@@ -239,6 +257,7 @@ export const syncOnce = async (
         },
         conflicts: flush.conflicts,
         cursor: currentCursor,
+        pulled: { reset, pages },
       };
     }
 
@@ -252,8 +271,23 @@ export const syncOnce = async (
       },
       conflicts: flush.conflicts,
       cursor: currentCursor,
+      pulled: { reset, pages },
     };
   }
+};
+
+/**
+ * Gộp các trang đã kéo vào sổ `book` (sổ mới nhất trên màn hình, có thể đã có phiếu ghi xen vào
+ * trong lúc kéo). `protectedIds`: bản ghi còn thao tác chưa gửi — giữ bản trên máy.
+ * `null`: máy chủ bảo dựng lại sổ mà trên máy còn thao tác chưa gửi — để lượt sau.
+ */
+export const rebasePulled = (
+  book: AppData,
+  pulled: PulledChanges,
+  protectedIds: ReadonlySet<string>,
+): AppData | null => {
+  if (pulled.reset && protectedIds.size > 0) return null;
+  return pulled.pages.reduce((merged, changes) => mergeChanges(merged, changes, protectedIds), pulled.reset ? emptyData() : book);
 };
 
 /** Ghi sổ đã gộp cùng con trỏ của nó trong một giao dịch IndexedDB. */

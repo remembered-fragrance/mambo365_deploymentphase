@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
-import { useBackend } from '@/data/hooks/useBackend';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { downloadBook } from '../shared/bookFile';
@@ -16,9 +15,9 @@ import { downloadBook } from '../shared/bookFile';
  * Ghi và đọc đều đi qua `useStore`, giao diện không tự chạm nơi lưu trữ.
  */
 export function DataCard() {
-  const { data, importData } = useStore();
-  // Có máy chủ thì sổ là của máy chủ: thay sổ trên máy bằng file sẽ không lên máy chủ, máy khác không thấy.
-  const online = useBackend();
+  // Sổ đang đồng bộ là sổ của máy chủ: thay trên máy bằng file thì máy chủ, máy khác không có. Gói hết hạn
+  // (không đồng bộ) thì file vẫn là cách duy nhất để đổi máy — nút phải còn.
+  const { data, importData, syncsWithServer: online } = useStore();
   const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<unknown>(null);
@@ -30,9 +29,13 @@ export function DataCard() {
   };
 
   const applyFile = () => {
-    importData(pending);
     setPending(null);
-    toast({ message: L.importedToast });
+    try {
+      importData(pending);
+      toast({ message: L.importedToast });
+    } catch (err) {
+      toast({ message: err instanceof Error ? err.message : String(err), tone: 'alert' });
+    }
   };
 
   return (
