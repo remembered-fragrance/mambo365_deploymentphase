@@ -28,13 +28,20 @@ export const orderLine = (o: Pick<OrderSummary, 'crop' | 'estQuantity' | 'unit' 
     .filter(Boolean)
     .join(' · ');
 
+/**
+ * Tên bên kia. Bên kia đã xoá tài khoản (`counterpart` null) thì lấy tên trong danh bạ của mình —
+ * đơn vẫn ở trong sổ, chỉ tổ chức bên kia không còn.
+ */
+export const counterpartName = (o: Pick<OrderSummary, 'counterpart' | 'partnerName'>): string =>
+  o.counterpart?.name ?? `${o.partnerName ?? L.notifySomeone} ${L.orderCounterpartGone}`;
+
 /** Một dòng trong danh sách đơn. Bấm vào xem chi tiết và làm bước tiếp theo. */
 export function OrderCard({ order }: { readonly order: OrderSummary }) {
   return (
     <Link to={ROUTES.orderDetail(order.id)} className="card flex flex-col gap-1 p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 truncate font-bold text-ink">
-          {order.role === 'seller' ? L.orderSellTo : L.orderBuyFrom} {order.counterpart.name}
+          {order.role === 'seller' ? L.orderSellTo : L.orderBuyFrom} {counterpartName(order)}
         </p>
         <OrderStatusBadge status={order.status} />
       </div>

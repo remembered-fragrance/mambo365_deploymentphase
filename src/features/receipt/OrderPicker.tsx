@@ -3,7 +3,7 @@ import type { OrderSummary } from '@mambo/contracts';
 import { Select } from '@/components/ui/Select';
 import { useOrders } from '@/data/hooks/useOrders';
 import { L } from '@/i18n/labels';
-import { orderLine } from '../orders/OrderCard';
+import { counterpartName, orderLine } from '../orders/OrderCard';
 
 interface OrderPickerProps {
   readonly data: AppData;
@@ -34,7 +34,7 @@ export function OrderPicker({ data, kind, orderId, onPick, onCounterparty }: Ord
     onPick(order?.id);
     if (!order?.partnerId) return;
     const parties = kind === 'purchase' ? data.suppliers : data.buyers;
-    const name = parties.find((p) => p.id === order.partnerId)?.name ?? order.counterpart.name;
+    const name = parties.find((p) => p.id === order.partnerId)?.name ?? order.partnerName ?? counterpartName(order);
     onCounterparty(order.partnerId, name);
   };
 
@@ -45,7 +45,7 @@ export function OrderPicker({ data, kind, orderId, onPick, onCounterparty }: Ord
       value={orderId ?? ''}
       options={[
         { value: '', label: L.orderPickNone },
-        ...pickable.map((o) => ({ value: o.id, label: `${o.counterpart.name} · ${orderLine(o)}` })),
+        ...pickable.map((o) => ({ value: o.id, label: `${counterpartName(o)} · ${orderLine(o)}` })),
       ]}
       onValueChange={pick}
     />

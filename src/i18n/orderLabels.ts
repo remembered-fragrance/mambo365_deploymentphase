@@ -42,6 +42,8 @@ export const ORDER_LABELS = {
   orderSaved: 'Đã cập nhật đơn',
   orderChanged: 'Bên kia vừa đổi đơn — đã tải lại, bạn xem rồi làm lại',
   orderMissing: 'Không tìm thấy đơn này',
+  orderCounterpartGone: '(đã xoá tài khoản)',
+  orderCounterpartGoneHint: 'Bên kia đã xoá tài khoản. Đơn và lịch sử đơn vẫn giữ trong sổ của bạn, không làm thêm bước nào được.',
   orderFulfilledHint: 'Đơn tự chuyển "Đã cân xong" khi vựa lập phiếu theo đơn.',
   orderPick: 'Theo đơn',
   orderPickNone: 'Không theo đơn',

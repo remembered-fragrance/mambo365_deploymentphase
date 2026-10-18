@@ -616,6 +616,24 @@ với tài khoản thật** — các luồng đồng bộ dưới đây mới qu
   lỗi thay vì trộn ngầm. Muốn hỗ trợ thật thì phải sinh op cho từng bản ghi. `esc` trong xuất PDF trùng
   `escapeHtml` nhưng khác tầng — gộp thì phải đưa vào `@mambo/core`.
 
+## Đơn còn lại khi bên kia xoá tài khoản · `@mambo/*` 0.17.0 · 18/10/2026
+
+App dành cho vựa ghi sổ; nông dân chỉ vào xem. Trước đây nông dân xoá tài khoản thì đơn của vựa với họ bị xoá theo.
+BE 0.17.0 (PR BE #36) giữ đơn trong sổ bên còn lại. Bên đã xoá được đưa về null, đơn còn mở tự huỷ với ghi chú
+"Bên kia đã xoá tài khoản — đơn tự huỷ", và kết nối chuyển `revoked` nên vựa mời lại được.
+
+- `OrderSummary.counterpart` có thể null. Thêm `partnerName` (tên trong danh bạ của mình, null nếu không có dòng).
+- `counterpartName(o)` (`OrderCard.tsx`): có `counterpart` thì lấy tên đó, không thì
+  "`partnerName` (đã xoá tài khoản)". Thẻ đơn, tiêu đề, lịch sử đơn và ô "Theo đơn" đều dùng hàm này. Trang chi
+  tiết hiện thêm dòng giải thích `orderCounterpartGoneHint`.
+- `orderActions`: `counterpart === null` thì tắt mọi nút. Đơn như vậy luôn đã đóng (huỷ / cân xong); đây là lớp
+  chặn thứ hai.
+- **Thứ tự deploy ngược với 0.16**: FE trước, API sau. SDK 0.17 đọc được phản hồi của API cũ nhờ
+  `partnerName` có `.default(null)`. SDK 0.16 thì không đọc được `counterpart: null` của API mới.
+- **Chưa làm**: `linkState` chưa có trạng thái "đã kết thúc". Chưa phân biệt được kết nối bị huỷ vì bên kia
+  xoá tài khoản với lời mời bị huỷ khi chưa ai nhận, vì cả hai đều có `counterpart` null. Vựa vẫn thấy "Lấy mã"
+  để mời lại, kèm thông báo `link.revoked`.
+
 ---
 
 ## Ba số phải giữ trong tầm

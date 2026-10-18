@@ -16,7 +16,7 @@ import { scheduleOrder, stepOrder, useOrder, type OrderStep } from '@/data/hooks
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
 import { useAccess } from '../shared/useAccess';
-import { orderLine, OrderStatusBadge } from './OrderCard';
+import { counterpartName, orderLine, OrderStatusBadge } from './OrderCard';
 import { orderActions } from './orderActions';
 
 /** `datetime-local` cần giờ địa phương dạng `2026-10-13T08:30`. */
@@ -86,7 +86,7 @@ export function OrderDetailPage() {
   return (
     <PageContainer width="content">
       <PageHeader
-        title={`${o.role === 'seller' ? L.orderSellTo : L.orderBuyFrom} ${o.counterpart.name}`}
+        title={`${o.role === 'seller' ? L.orderSellTo : L.orderBuyFrom} ${counterpartName(o)}`}
         actions={
           <Link to={ROUTES.orders} className="flex min-h-11 items-center font-semibold text-brand underline">
             {L.navOrders}
@@ -107,6 +107,7 @@ export function OrderDetailPage() {
             </p>
           )}
           {o.status === 'scheduled' && <p className="mt-2 text-sm text-ink-3">{L.orderFulfilledHint}</p>}
+          {!o.counterpart && <p className="mt-2 text-sm text-ink-3">{L.orderCounterpartGoneHint}</p>}
         </Card>
 
         {(actions.accept || actions.reject) && (
@@ -164,7 +165,7 @@ export function OrderDetailPage() {
             {o.events.map((e, i) => (
               <li key={i} className="flex flex-col">
                 <span className="text-ink">
-                  <span className="font-bold">{e.by === 'me' ? L.orderByMe : o.counterpart.name}</span> ·{' '}
+                  <span className="font-bold">{e.by === 'me' ? L.orderByMe : counterpartName(o)}</span> ·{' '}
                   {L[`orderStatus_${e.toStatus}`]}
                 </span>
                 <span className="num text-ink-3">{formatDateTime(e.at)}</span>
