@@ -127,6 +127,8 @@ export interface StoreValue {
   syncNow: () => void;
   /** Có thao tác bị máy chủ từ chối đang chặn hàng đợi. */
   readonly stuck: boolean;
+  /** Số thao tác đã tự bỏ vì chủ đổi chi nhánh của người này (cộng dồn trong phiên). */
+  readonly branchDropped: number;
   /** Bỏ cờ từ chối, gửi lại ngay. */
   retryStuck: () => void;
   /** Bỏ thao tác bị từ chối (máy chủ sẽ không có nó) để các thao tác sau đi tiếp. */

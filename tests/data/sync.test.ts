@@ -2,7 +2,8 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, type Client } from '@mambo/sdk';
 import { apiForOrg } from '@/data/client';
-import { clearQueue, enqueue, opInsert, pendingOps } from '@/data/queue';
+import { openLocalDb } from '@/data/localDb';
+import { clearQueue, enqueue, MAX_REJECTED_TRIES, opInsert, opUpdate, pendingOps, type QueuedOp } from '@/data/queue';
 import { flushQueue } from '@/data/sync';
 
 beforeEach(clearQueue);
@@ -58,4 +59,64 @@ describe('sync organization and retry handling', () => {
     expect(push).toHaveBeenCalledTimes(1);
     expect(await pendingOps('org-a')).toHaveLength(2);
   });
+
+  it.each(['INTERNAL', 'PARENT_MISSING'] as const)('máy chủ trả %s mãi thì thành kẹt, không thử lại im lặng', async (code) => {
+    const op = await enqueue({ ...opInsert('note', 'a', {}), orgId: 'org-a' });
+    const push = vi.fn<Client['sync']['push']>().mockResolvedValue({
+      results: [{ opId: op.opId, status: 'rejected', error: { code, message: 'Lỗi' } }],
+    });
+    const client = clientWithPush(push);
+    expect((await flushQueue('device', 'org-a', client)).conflicts).toEqual([]);
+    expect((await pendingOps('org-a'))[0]?.tries).toBe(1);
+
+    await dueAgain(MAX_REJECTED_TRIES - 1);
+    expect((await flushQueue('device', 'org-a', client)).conflicts).toEqual(['a']);
+    expect((await pendingOps('org-a'))[0]?.conflict?.code).toBe(code);
+  });
+
+  it('máy chủ bận (RATE_LIMITED) thì thử lại mãi', async () => {
+    const op = await enqueue({ ...opInsert('note', 'a', {}), orgId: 'org-a' });
+    const push = vi.fn<Client['sync']['push']>().mockResolvedValue({
+      results: [{ opId: op.opId, status: 'rejected', error: { code: 'RATE_LIMITED', message: 'Bận' } }],
+    });
+    await dueAgain(MAX_REJECTED_TRIES + 3);
+    expect((await flushQueue('device', 'org-a', clientWithPush(push))).conflicts).toEqual([]);
+    expect((await pendingOps('org-a'))[0]?.conflict).toBeUndefined();
+  });
+
+  it('phiếu của chi nhánh cũ: tự bỏ thao tác đó, gửi tiếp các thao tác sau ngay trong lượt', async () => {
+    const old = await enqueue({ ...opUpdate('transaction', 'old', { note: 'x' }), orgId: 'org-a' });
+    await enqueue({ ...opUpdate('transaction', 'old', { note: 'y' }), orgId: 'org-a' });
+    const fresh = await enqueue({ ...opInsert('note', 'fresh', {}), orgId: 'org-a' });
+    const push = vi.fn<Client['sync']['push']>()
+      .mockResolvedValueOnce({
+        results: [{
+          opId: old.opId, status: 'rejected',
+          error: { code: 'FORBIDDEN', message: 'Chi nhánh khác', details: { reason: 'BRANCH_SCOPE' } },
+        }],
+      })
+      .mockResolvedValueOnce({ results: [{ opId: fresh.opId, status: 'applied' }] });
+    const result = await flushQueue('device', 'org-a', clientWithPush(push));
+    expect(result).toMatchObject({ dropped: 2, pushed: 1, conflicts: [] });
+    expect(await pendingOps('org-a')).toEqual([]);
+  });
 });
+
+describe('op mặt hàng mẫu kiểu cũ', () => {
+  it('bản app cũ lỡ xếp vào hàng đợi thì tự gỡ, không gửi, không chặn op sau', async () => {
+    await enqueue({ ...opUpdate('product', 'prod-rubber', { lastPricePerUnit: 1 }), orgId: 'org-a' });
+    const note = await enqueue({ ...opInsert('note', 'n', {}), orgId: 'org-a' });
+    const push = vi.fn<Client['sync']['push']>().mockResolvedValue({ results: [{ opId: note.opId, status: 'applied' }] });
+    expect((await flushQueue('device', 'org-a', clientWithPush(push))).pushed).toBe(1);
+    expect(push.mock.calls[0]?.[0].ops.map((op) => op.recordId)).toEqual(['n']);
+    expect(await pendingOps('org-a')).toEqual([]);
+  });
+});
+
+/** Đưa mọi thao tác về hạn gửi, như đã thử `tries` lần. */
+const dueAgain = async (tries: number): Promise<void> => {
+  const db = await openLocalDb();
+  for (const op of await pendingOps('org-a')) {
+    await db.put('queue', { ...op, tries, nextAttemptAt: new Date(0).toISOString() } satisfies QueuedOp);
+  }
+};

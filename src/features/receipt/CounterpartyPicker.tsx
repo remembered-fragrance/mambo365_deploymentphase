@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { Input } from '@/components/ui/Input';
 import { formatDate, formatVnd } from '@mambo/core/format';
 import { supplierSummaries } from '@mambo/core/supplierSelectors';
@@ -56,6 +57,7 @@ export function CounterpartyPicker({
         value={name}
         placeholder={L.walkIn}
         autoComplete="off"
+        maxLength={RECEIPT_LIMITS.partyName}
         onFocus={() => setOpen(true)}
         onChange={(e) => onPick(undefined, e.target.value)}
       />

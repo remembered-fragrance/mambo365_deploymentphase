@@ -5,9 +5,10 @@
  * hoặc nổi lên `status.error` để người dùng thấy.
  */
 
+import { isLegacyProductId } from '@mambo/core/catalog';
 import { emptyData } from '@mambo/core/normalize';
 import type { AppData, SyncStatus } from '@mambo/core/types';
-import { isRetryable, SYNC_PUSH_MAX_OPS, type SyncChanges, type SyncOp } from '@mambo/contracts';
+import { isRetryable, SYNC_PUSH_MAX_OPS, type SyncChanges, type SyncOp, type SyncOpResult } from '@mambo/contracts';
 import { ApiError, type Client } from '@mambo/sdk';
 import { flushAttachments } from './attachments';
 import { readSyncMark, writeBook } from './cache';
@@ -15,7 +16,9 @@ import { apiForOrg } from './client';
 import { getDeviceId, openLocalDb, readCursor } from './localDb';
 import { mergeChanges } from './pullChanges';
 import {
+  dropWithDependents,
   isDue,
+  MAX_REJECTED_TRIES,
   markConflict,
   markFailed,
   pendingCount,
@@ -41,6 +44,8 @@ export interface SyncOutcome {
   readonly status: SyncStatus;
   /** Bản ghi bị máy chủ từ chối — giao diện phải báo, không được im lặng. */
   readonly conflicts: readonly string[];
+  /** Số thao tác đã tự bỏ vì chủ vừa đổi chi nhánh của người này (xem `isBranchScope`). */
+  readonly dropped: number;
   /**
    * Con trỏ ứng với `data`. KHÔNG ghi ở đây: store chỉ ghi sổ + con trỏ khi kết quả còn dùng được
    * (không ai ghi phiếu xen vào) — ghi con trỏ mà sổ bị đè thì phiếu của trang đó mất khỏi máy này.
@@ -78,20 +83,48 @@ export const markSyncStates = (
 
 // ─── Đẩy lên ─────────────────────────────────────────────────────────────────
 
+type OpError = NonNullable<SyncOpResult['error']>;
+
+/**
+ * Bị từ chối vì phiếu thuộc chi nhánh khác: chủ vừa đổi chi nhánh của người này mà máy còn thao tác
+ * trên phiếu chi nhánh cũ. Gửi lại bao nhiêu lần cũng vậy, mà bắt bấm "Bỏ" từng phiếu thì hàng đợi
+ * không bao giờ trống để dựng lại sổ theo chi nhánh mới — tự bỏ và báo số đã bỏ.
+ */
+const isBranchScope = (error: OpError | undefined): boolean =>
+  error?.code === 'FORBIDDEN' && error.details?.reason === 'BRANCH_SCOPE';
+
+/** Máy chủ nhận op mà vẫn trả lỗi thử-lại-được: thử tiếp, hay coi là kẹt (xem `MAX_REJECTED_TRIES`). */
+const keepRetrying = (op: QueuedOp, error: OpError): boolean =>
+  isRetryable(error.code) && (error.code === 'RATE_LIMITED' || op.tries + 1 < MAX_REJECTED_TRIES);
+
+export interface FlushResult {
+  pushed: number;
+  conflicts: string[];
+  error?: string;
+  blocked?: boolean;
+  dropped: number;
+}
+
 export const flushQueue = async (
   deviceId: string,
   orgId: string,
   client: Client = apiForOrg(orgId),
-): Promise<{ pushed: number; conflicts: string[]; error?: string; blocked?: boolean }> => {
+): Promise<FlushResult> => {
   const allOps = await pendingOps(orgId);
   const conflicts: string[] = [];
   let pushed = 0;
 
   const batch: QueuedOp[] = [];
   for (const op of allOps) {
+    // Op của mặt hàng mẫu `prod-…` do bản app cũ xếp vào: máy chủ không bao giờ nhận, mà cũng chẳng có gì
+    // để giữ (chỉ là giá gần nhất của mặt hàng mẫu) — gỡ luôn, đừng bắt người dùng bấm "Bỏ".
+    if (op.entity === 'product' && isLegacyProductId(op.recordId)) {
+      await removeOp(op.id, orgId);
+      continue;
+    }
     if (op.conflict) {
       conflicts.push(op.recordId);
-      return { pushed: 0, conflicts, error: op.conflict.message };
+      return { pushed: 0, conflicts, error: op.conflict.message, dropped: 0 };
     }
     if (!isDue(op)) break;
     batch.push(op);
@@ -99,7 +132,7 @@ export const flushQueue = async (
   }
 
   if (batch.length === 0) {
-    return { pushed: 0, conflicts };
+    return { pushed: 0, conflicts, dropped: 0 };
   }
 
   const wireOps = batch.map((op) => {
@@ -127,28 +160,28 @@ export const flushQueue = async (
       const op = batch.find((b) => b.opId === r.opId);
       if (!op) throw new Error('Unknown operation in sync response');
       if (r.status === 'applied' || r.status === 'duplicate') {
-        if (op) await removeOp(op.id, orgId);
+        await removeOp(op.id, orgId);
         pushed++;
       } else if (r.status === 'rejected') {
-        if (r.error?.code === 'PLAN_EXPIRED') return { pushed, conflicts, error: PLAN_BLOCKED, blocked: true };
-        if (r.error && isRetryable(r.error.code)) {
-          if (op) await markFailed(op, r.error.message, orgId);
-        } else {
-          if (op) {
-            await markConflict(
-              op.id,
-              orgId,
-              r.error ?? { code: 'VALIDATION_FAILED', message: 'Thao tác bị từ chối' },
-            );
-            conflicts.push(op.recordId);
-          }
+        if (r.error?.code === 'PLAN_EXPIRED') return { pushed, conflicts, error: PLAN_BLOCKED, blocked: true, dropped: 0 };
+        if (isBranchScope(r.error)) {
+          // Mỗi lần bỏ ít nhất một op nên vòng này dừng; các op sau nó vẫn được gửi ngay trong lượt.
+          const dropped = await dropWithDependents(orgId, op);
+          const rest = await flushQueue(deviceId, orgId, client);
+          return { ...rest, pushed: pushed + rest.pushed, dropped: dropped + rest.dropped };
         }
-        return { pushed, conflicts, error: r.error?.message };
+        if (r.error && keepRetrying(op, r.error)) {
+          await markFailed(op, r.error.message, orgId);
+        } else {
+          await markConflict(op.id, orgId, r.error ?? { code: 'VALIDATION_FAILED', message: 'Thao tác bị từ chối' });
+          conflicts.push(op.recordId);
+        }
+        return { pushed, conflicts, error: r.error?.message, dropped: 0 };
       }
     }
   } catch (err) {
     if (err instanceof ApiError && err.code === 'PLAN_EXPIRED') {
-      return { pushed, conflicts, error: PLAN_BLOCKED, blocked: true };
+      return { pushed, conflicts, error: PLAN_BLOCKED, blocked: true, dropped: 0 };
     }
     const first = batch[0];
     if (first) {
@@ -159,10 +192,10 @@ export const flushQueue = async (
         conflicts.push(first.recordId);
       }
     }
-    return { pushed, conflicts, error: message(err) };
+    return { pushed, conflicts, error: message(err), dropped: 0 };
   }
 
-  return { pushed, conflicts };
+  return { pushed, conflicts, dropped: 0 };
 };
 
 // ─── Một lượt đồng bộ đầy đủ ────────────────────────────────────────────────
@@ -182,20 +215,8 @@ export const syncOnce = async (
   await flushAttachments(orgId).catch(() => 0);
   const pendingIds = await pendingRecordIds(orgId);
 
-  if (flush.error && flush.blocked) {
-    return {
-      data: markSyncStates(local, pendingIds, flush.conflicts),
-      status: {
-        loading: false,
-        error: flush.error,
-        blocked: true,
-        lastSyncedAt: (await readSyncMark(orgId)) ?? undefined,
-        pendingCount: await pendingCount(orgId),
-      },
-      conflicts: flush.conflicts,
-      pulled: { reset: false, pages: [] },
-    };
-  }
+  // Gói hết hạn chỉ chặn GHI: vẫn kéo về để máy này thấy thay đổi từ máy khác — sổ vẫn đọc được.
+  const blocked = flush.blocked ? { error: PLAN_BLOCKED, blocked: true } : {};
 
   let currentBook = local;
   let currentCursor: string | null = null;
@@ -238,8 +259,10 @@ export const syncOnce = async (
         error: flush.error,
         lastSyncedAt: startedAt,
         pendingCount: await pendingCount(orgId),
+        ...blocked,
       },
       conflicts: flush.conflicts,
+      dropped: flush.dropped,
       cursor: currentCursor,
       pulled: { reset, pages },
       syncedAt: startedAt,
@@ -256,6 +279,7 @@ export const syncOnce = async (
           pendingCount: await pendingCount(orgId),
         },
         conflicts: flush.conflicts,
+        dropped: flush.dropped,
         cursor: currentCursor,
         pulled: { reset, pages },
       };
@@ -268,8 +292,10 @@ export const syncOnce = async (
         error: flush.error || message(err),
         lastSyncedAt: (await readSyncMark(orgId)) ?? undefined,
         pendingCount: await pendingCount(orgId),
+        ...blocked,
       },
       conflicts: flush.conflicts,
+      dropped: flush.dropped,
       cursor: currentCursor,
       pulled: { reset, pages },
     };

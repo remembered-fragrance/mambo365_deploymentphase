@@ -18,6 +18,7 @@ import { DemoBanner } from '../onboarding/DemoBanner';
 import { draftHref } from '../receipt/draftSessions';
 import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
+import { BranchDropNotice } from './BranchDropNotice';
 import { backTarget, isTabRoot, navGroups, navItems, ROUTES } from './navItems';
 import { StuckBanner } from './StuckBanner';
 import { useAccess } from './useAccess';
@@ -184,6 +185,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
             <DemoBanner />
             <PlanBanner />
             <StuckBanner />
+            <BranchDropNotice />
             {/* Banner kẹt đã nói lỗi của thao tác; hết gói thì vẫn phải nói, vì "Gửi lại" không gỡ được nó. */}
             {status.error && (status.blocked || !stuck) &&
               (status.blocked ? (

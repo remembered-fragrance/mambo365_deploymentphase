@@ -99,8 +99,15 @@ export const opSoftDelete = (
   };
 };
 
-/** Giãn cách giữa các lần thử lại. Hết mảng thì cứ 5 phút thử một lần, không bao giờ bỏ cuộc. */
+/** Giãn cách giữa các lần thử lại. Hết mảng thì cứ 5 phút thử một lần. */
 export const RETRY_DELAYS_MS = [1_000, 5_000, 30_000, 300_000] as const;
+
+/**
+ * Máy chủ đã nhận op mà vẫn trả PARENT_MISSING / INTERNAL chừng này lần liền (~6 phút) thì coi là kẹt:
+ * thử nữa cũng vậy, phải hiện banner cho người dùng "Gửi lại" / "Bỏ". Mất mạng, máy chủ bận
+ * (RATE_LIMITED) hay cả lượt gửi hỏng thì vẫn thử lại mãi — không phải lỗi của op này.
+ */
+export const MAX_REJECTED_TRIES = RETRY_DELAYS_MS.length + 1;
 
 export const enqueue = async (op: NewOp & { readonly orgId: string }): Promise<QueuedOp> => {
   if (!op.orgId?.trim()) throw new Error('Organization is required');
@@ -181,17 +188,31 @@ export const retryConflicts = async (orgId: string): Promise<void> => {
 };
 
 /**
- * Người dùng bấm "Bỏ thao tác này": gỡ thao tác bị từ chối đang chặn cả hàng, cùng các thao tác sau
- * nó của CÙNG bản ghi — chúng dựa trên thay đổi máy chủ đã từ chối, gửi đi cũng bị từ chối nốt.
+ * Gỡ `from` cùng các thao tác sau nó của CÙNG bản ghi — chúng dựa trên thay đổi máy chủ không nhận,
+ * gửi đi cũng bị từ chối nốt. Bỏ thêm mới một phiếu thì gỡ cả các lần trả của phiếu đó: phiếu cha không
+ * còn, máy chủ trả PARENT_MISSING mãi. Trả về số thao tác đã gỡ.
+ */
+export const dropWithDependents = async (orgId: string, from: QueuedOp): Promise<number> => {
+  const dropsReceipt = from.kind === 'insert' && from.entity === 'transaction';
+  let dropped = 0;
+  for (const op of await pendingOps(orgId)) {
+    if (op.seq < from.seq) continue;
+    const childPayment = dropsReceipt && op.entity === 'payment' && op.data?.transactionId === from.recordId;
+    if (op.recordId !== from.recordId && !childPayment) continue;
+    await removeOp(op.id, orgId);
+    dropped++;
+  }
+  return dropped;
+};
+
+/**
+ * Người dùng bấm "Bỏ thao tác này": gỡ thao tác bị từ chối đang chặn cả hàng (xem `dropWithDependents`).
  * Trả về thao tác đã gỡ để store đưa bản ghi trên máy về đúng như máy chủ.
  */
 export const dropConflictedRecord = async (orgId: string): Promise<QueuedOp | null> => {
-  const ops = await pendingOps(orgId);
-  const stuck = ops.find((op) => op.conflict);
+  const stuck = (await pendingOps(orgId)).find((op) => op.conflict);
   if (!stuck) return null;
-  for (const op of ops) {
-    if (op.recordId === stuck.recordId && op.seq >= stuck.seq) await removeOp(op.id, orgId);
-  }
+  await dropWithDependents(orgId, stuck);
   return stuck;
 };
 

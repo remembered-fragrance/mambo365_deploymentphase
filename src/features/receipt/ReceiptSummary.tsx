@@ -16,6 +16,7 @@ const SAVE_LABEL: Record<SaveState, string> = {
   idle: '',
   saving: L.savingDraft,
   saved: L.savedDraft,
+  failed: L.draftNotSaved,
 };
 
 /**
