@@ -100,3 +100,13 @@ describe('dòng đủ thông tin để tính tiền', () => {
     expect(isUsable({ ...line, quality: '31' })).toBe(true);
   });
 });
+
+describe('số vượt mức máy chủ nhận', () => {
+  it('nháp cũ lỡ lưu % trên 100 thì kẹp về 100 — không để op bị từ chối chặn hàng đợi', () => {
+    const latex = { ...filled(), formulaType: 'rubberLatex' as const, quality: '120' };
+    const loss = { ...filled(), formulaType: 'lossPercent' as const, loss: '150' };
+    expect(toLine(latex).qualityPercent).toBe(100);
+    expect(toLine(loss).lossPercent).toBe(100);
+    expect(toLine({ ...filled(), gross: '2000000000' }).grossWeight).toBe(1e9);
+  });
+});

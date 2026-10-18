@@ -7,13 +7,15 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { AUTOSAVE_MS } from '@/config';
 import { computeReceiptTotal, totalAdjustments } from '@mambo/core/calc';
 import type { DraftStatus, PriceAdjustment, Transaction, TransactionKind } from '@mambo/core/types';
 import { useStore } from '@/data/useStore';
 import { emptyLine, fromLine, isUsable, toLine, type LineDraft } from './lineDraft';
 
-export type SaveState = 'idle' | 'saving' | 'saved';
+/** `failed`: máy không nhận bản nháp (số vượt mức máy chủ nhận) — xem `opCheck.ts`. */
+export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
 
 export interface DraftReceiptState {
   readonly draftId?: string;
@@ -36,6 +38,8 @@ export interface DraftReceiptState {
   setPartyName: (name: string) => void;
   setCounterparty: (id: string | undefined, name: string) => void;
   updateLine: (id: string, patch: Partial<LineDraft>) => void;
+  /** Còn thêm dòng được không — máy chủ nhận tối đa `RECEIPT_LIMITS.lines` dòng một phiếu. */
+  readonly canAddLine: boolean;
   addLine: () => void;
   removeLine: (id: string) => void;
   setAdjustments: (next: readonly PriceAdjustment[]) => void;
@@ -108,8 +112,12 @@ export function useDraftReceipt(
     if (timer.current) clearTimeout(timer.current);
 
     timer.current = setTimeout(() => {
-      setId(save(status).id);
-      setSaveState('saved');
+      try {
+        setId(save(status).id);
+        setSaveState('saved');
+      } catch {
+        setSaveState('failed');
+      }
     }, AUTOSAVE_MS);
 
     return () => {
@@ -135,7 +143,7 @@ export function useDraftReceipt(
       if (timer.current) clearTimeout(timer.current);
 
       const debt = linesTotal + adjustmentTotal - amountPaid;
-      const tx = addTransaction({
+      const record = () => addTransaction({
         date: new Date().toISOString(),
         kind,
         counterpartyId: counterpartyId ?? '',
@@ -153,6 +161,14 @@ export function useDraftReceipt(
         attachmentIds: attachmentIds.length > 0 ? [...attachmentIds] : undefined,
         orderId,
       });
+      let tx: Transaction;
+      try {
+        tx = record();
+      } catch (error) {
+        // Chưa chốt được thì vẫn là nháp: bật lại tự lưu, để lỗi nổi lên chỗ vừa bấm.
+        finished.current = false;
+        throw error;
+      }
 
       if (id) deleteDraft(id);
       return tx;
@@ -200,9 +216,10 @@ export function useDraftReceipt(
       touched.current = true;
       setLines((cur) => cur.map((l) => (l.id === lineId ? { ...l, ...patch } : l)));
     },
+    canAddLine: lines.length < RECEIPT_LIMITS.lines,
     addLine: () => {
       touched.current = true;
-      setLines((cur) => [...cur, emptyLine()]);
+      setLines((cur) => (cur.length >= RECEIPT_LIMITS.lines ? cur : [...cur, emptyLine()]));
     },
     removeLine: (lineId) => {
       touched.current = true;
@@ -223,7 +240,12 @@ export function useDraftReceipt(
     saveForLater: () => {
       finished.current = true;
       if (timer.current) clearTimeout(timer.current);
-      setId(save('waiting').id);
+      try {
+        setId(save('waiting').id);
+      } catch (error) {
+        finished.current = false;
+        throw error;
+      }
       setStatus('waiting');
     },
     backToWeighing: () => {

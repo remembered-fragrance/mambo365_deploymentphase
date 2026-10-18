@@ -634,6 +634,28 @@ BE 0.17.0 (PR BE #36) giữ đơn trong sổ bên còn lại. Bên đã xoá đ�
   xoá tài khoản với lời mời bị huỷ khi chưa ai nhận, vì cả hai đều có `counterpart` null. Vựa vẫn thấy "Lấy mã"
   để mời lại, kèm thông báo `link.revoked`.
 
+## Rà soát đồng bộ · `@mambo/*` 0.18.0 · 19/10/2026
+
+Theo báo cáo rà soát hai repo (cùng đợt với BE `v0.18.0`). Ba lỗi làm kẹt hàng đợi và vài lỗi đồng bộ:
+
+- **Mặt hàng mẫu `prod-…`**: sổ của tổ chức nạp lên thì bỏ mặt hàng mẫu (`withoutLegacyProducts`); chỉ sổ trên
+  máy (không có máy chủ) mới có sẵn mặt hàng mẫu (`starterData`). `derivedOps` không sinh op cho id `prod-…`.
+- **Chặn op hỏng trước khi vào hàng đợi**: `opCheck.ts` dùng đúng `parseSyncOp` của máy chủ; `commit` ném lỗi
+  trước khi sổ đổi. Tạo phiếu / để dành báo bằng toast, tự lưu nháp hiện "Chưa lưu được".
+- **Ô nhập**: `NumberField` có `max` (phím làm số vượt mức thì không ăn); % chất lượng / hao hụt ≤ 100, số cân /
+  đơn giá ≤ 1 tỷ; `toLine` kẹp lại cho nháp cũ. Tối đa 100 dòng, 20 khoản cộng/trừ, nhãn 120, ghi chú 2000, tên
+  khách 200 — đều lấy từ `RECEIPT_LIMITS`.
+- **"Bỏ thao tác này"** trên phiếu thêm mới: bỏ luôn các lần trả của phiếu đó (`dropWithDependents`), không thì
+  máy chủ trả `PARENT_MISSING` mãi.
+- **Lỗi lặp lại**: op bị máy chủ trả `PARENT_MISSING` / `INTERNAL` `MAX_REJECTED_TRIES` lần (~6 phút) thì thành kẹt,
+  có banner "Gửi lại" / "Bỏ". `RATE_LIMITED`, mất mạng, cả lượt gửi hỏng (502/503 lúc Render khởi động) vẫn thử mãi.
+- **Đổi chi nhánh**: op bị từ chối `BRANCH_SCOPE` tự bỏ (kèm op sau của cùng bản ghi), gửi tiếp ngay trong lượt;
+  toast `BranchDropNotice` báo số đã bỏ. Hàng đợi trống thì lần kéo dựng lại sổ theo chi nhánh mới.
+- **Gói hết hạn**: vẫn kéo về (trước đây dừng hẳn khi còn op chờ) — `status.blocked` vẫn bật.
+- Op `prod-…` bản app cũ đã xếp vào hàng đợi: `flushQueue` tự gỡ, không gửi.
+- Test 232 (+ `opCheck`, kẹp số, bỏ lần trả theo phiếu, kẹt sau N lần, `RATE_LIMITED`, `BRANCH_SCOPE`, op `prod-…`,
+  kéo về khi hết gói).
+
 ---
 
 ## Ba số phải giữ trong tầm

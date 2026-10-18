@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { User } from '@supabase/auth-js';
-import { emptyData, normalize } from '@mambo/core/normalize';
+import { emptyData, normalize, starterData, withoutLegacyProducts } from '@mambo/core/normalize';
 import type { AppData, SyncStatus, UserProfile } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { hasBook, type Feature, type Me, type MeBootstrapInput, type MeMembership } from '@mambo/contracts';
@@ -14,6 +14,7 @@ import { api, getCurrentOrgId, getSupabase, hasBackend, setCurrentOrg } from './
 import { forgetDemo, isDemoActive } from './demoMode';
 import { deviceAccount } from './deviceAccount';
 import { forgetRecord } from './forgetRecord';
+import { opProblem } from './opCheck';
 import { clearCursor } from './localDb';
 import { forgetMe, recallMe, rememberMe } from './meCache';
 import {
@@ -39,6 +40,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const [status, setStatus] = useState<SyncStatus>({ loading: true, pendingCount: 0 });
   /** Có thao tác bị máy chủ từ chối đang chặn cả hàng — giao diện hiện nút "Gửi lại" / "Bỏ". */
   const [stuck, setStuck] = useState(false);
+  /** Số thao tác đã tự bỏ vì chủ đổi chi nhánh (cộng dồn) — giao diện báo mỗi khi số này tăng. */
+  const [branchDropped, setBranchDropped] = useState(0);
   const latest = useRef(data);
   /** Tài khoản Supabase của phiên — bù SĐT / email khôi phục mà `/v1/me` chưa trả. */
   const authUser = useRef<User | null>(null);
@@ -123,6 +126,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     })
       .then((outcome) => {
         if (!outcome || !isCurrent()) return;
+        if (outcome.dropped > 0) setBranchDropped((n) => n + outcome.dropped);
         // Ghi trong chuỗi, sau mọi commit đã có: gộp phần kéo về vào sổ MỚI NHẤT chứ không đè bằng
         // ảnh chụp lúc bắt đầu kéo — phiếu ghi trong lúc kéo vẫn còn, tiến độ kéo cũng không mất.
         persist(async () => {
@@ -161,6 +165,9 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     // Dữ liệu mẫu chỉ sống trên máy: không xếp thao tác nào lên máy chủ. Chốt cờ ngay lúc ghi —
     // bật / tắt mẫu sau đó không được đổi số phận của thao tác này.
     const queued = isDemoActive(activeKey) || !currentOrgId ? [] : ops;
+    // Chặn trước khi sổ đổi: lỗi nổi lên chỗ người dùng vừa bấm, sổ trên máy không lệch với máy chủ.
+    const problem = queued.map(opProblem).find((p) => p !== null);
+    if (problem) throw new Error(`${L.cannotSaveInvalid} (${problem})`);
     const ids = queued.flatMap(touchedIds);
     for (const id of ids) inflight.current.set(id, (inflight.current.get(id) ?? 0) + 1);
     show(next);
@@ -287,7 +294,9 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     show(emptyData());
     void persistence.current.then(() => readBook(activeKey)).then(async (cached) => {
       if (cancelled || (currentOrgId && selected.current !== currentOrgId)) return;
-      show(cached ?? emptyData());
+      // Sổ chỉ nằm trên máy (không có máy chủ) mới có sẵn mặt hàng mẫu. Sổ của tổ chức thì không:
+      // id `prod-…` máy chủ không nhận, lập phiếu bằng chúng là kẹt hàng đợi.
+      show(currentOrgId ? withoutLegacyProducts(cached ?? emptyData()) : (cached ?? starterData()));
       readyKey.current = activeKey;
       const count = currentOrgId ? await pendingCount(currentOrgId) : 0;
       const legacyCount = await legacyQueueCount();
@@ -342,8 +351,9 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         replaceBook(normalize(payload), false);
       },
       // Sổ trống mà con trỏ còn thì lần kéo sau không dựng lại sổ từ máy chủ.
-      reset: () => replaceBook(emptyData(), true),
+      reset: () => replaceBook(currentOrgId ? emptyData() : starterData(), true),
       stuck,
+      branchDropped,
       retryStuck: () => {
         if (!currentOrgId) return;
         stuckEpoch.current++;
@@ -455,7 +465,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       syncNow: kickSync,
     }),
     [
-      activateOrg, data, status, stuck, user, me, currentOrgId, currentOrg, orgType,
+      activateOrg, data, status, stuck, branchDropped, user, me, currentOrgId, currentOrg, orgType,
       userRole, permissions, features, plan, needsBootstrap, syncsWithServer, bootstrap,
       selectOrg, refreshMe, enterSession, activeKey, commit, replaceBook, kickSync, userId, show,
     ],

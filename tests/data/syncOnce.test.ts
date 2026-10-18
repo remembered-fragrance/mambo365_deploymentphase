@@ -1,15 +1,18 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it, vi } from 'vitest';
 import { emptyData } from '@mambo/core/normalize';
+import { ApiError } from '@mambo/sdk';
 import type { AppData } from '@mambo/core/types';
 
 const NO_CHANGES = { suppliers: [], buyers: [], products: [], transactions: [], payments: [], drafts: [], pricingRules: [], notes: [] };
 const pull = vi.fn().mockResolvedValue({ changes: NO_CHANGES, cursor: 'c-1', hasMore: false });
-vi.mock('@/data/client', () => ({ apiForOrg: () => ({ sync: { pull, push: vi.fn() } }) }));
+const push = vi.fn();
+vi.mock('@/data/client', () => ({ apiForOrg: () => ({ sync: { pull, push } }) }));
 
 const { rebasePulled, syncOnce } = await import('@/data/sync');
 const { readCursor } = await import('@/data/localDb');
 const { readSyncMark } = await import('@/data/cache');
+const { enqueue, opInsert } = await import('@/data/queue');
 
 describe('syncOnce — con trỏ đi cùng sổ, store mới là nơi ghi', () => {
   it('trả con trỏ mới nhưng không tự ghi — kết quả bị bỏ thì lần sau kéo lại đúng trang đó', async () => {
@@ -47,5 +50,17 @@ describe('syncOnce không tự ghi mốc "đã đồng bộ"', () => {
     const outcome = await syncOnce(null, 'org-mark', emptyData());
     expect(outcome.syncedAt).toBeTruthy();
     expect(await readSyncMark('org-mark')).toBeNull();
+  });
+});
+
+describe('gói hết hạn', () => {
+  it('chưa gửi lên được nhưng vẫn kéo thay đổi từ máy khác về', async () => {
+    await enqueue({ ...opInsert('note', 'n-1', {}), orgId: 'org-expired' });
+    push.mockRejectedValueOnce(new ApiError('PLAN_EXPIRED', 403, 'Hết gói'));
+    pull.mockClear();
+    const outcome = await syncOnce(null, 'org-expired', emptyData());
+    expect(pull).toHaveBeenCalled();
+    expect(outcome.status).toMatchObject({ blocked: true, pendingCount: 1 });
+    expect(outcome.cursor).toBe('c-1');
   });
 });

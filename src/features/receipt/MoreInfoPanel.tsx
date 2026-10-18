@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { newId } from '@mambo/core/id';
@@ -40,9 +41,12 @@ export function MoreInfoPanel({
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
 
+  // Máy chủ nhận tối đa chừng này khoản một phiếu — quá thì op bị từ chối, kẹt cả hàng đợi.
+  const full = adjustments.length >= RECEIPT_LIMITS.adjustments;
+
   const add = (sign: 1 | -1) => {
     const value = parseMoney(amount);
-    if (value <= 0) return;
+    if (value <= 0 || full) return;
     onAdjustmentsChange([
       ...adjustments,
       {
@@ -102,19 +106,30 @@ export function MoreInfoPanel({
         </ul>
       )}
 
-      <Input label={L.adjustmentLabel} value={label} onChange={(e) => setLabel(e.target.value)} />
+      <Input
+        label={L.adjustmentLabel}
+        value={label}
+        maxLength={RECEIPT_LIMITS.adjustmentLabel}
+        hint={full ? L.adjustmentsFull : undefined}
+        onChange={(e) => setLabel(e.target.value)}
+      />
       <NumberField label={L.adjustmentAmount} value={amount} spoken money onValueChange={setAmount} />
 
       <div className="flex gap-2">
-        <Button block onClick={() => add(1)}>
+        <Button block disabled={full} onClick={() => add(1)}>
           {L.addAmount}
         </Button>
-        <Button block onClick={() => add(-1)}>
+        <Button block disabled={full} onClick={() => add(-1)}>
           {L.subtractAmount}
         </Button>
       </div>
 
-      <Input label={L.note} value={note} onChange={(e) => onNoteChange(e.target.value)} />
+      <Input
+        label={L.note}
+        value={note}
+        maxLength={RECEIPT_LIMITS.note}
+        onChange={(e) => onNoteChange(e.target.value)}
+      />
 
       <AttachmentPicker ids={attachmentIds} onChange={onAttachmentsChange} />
     </div>

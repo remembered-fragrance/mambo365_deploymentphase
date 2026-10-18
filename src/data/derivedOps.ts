@@ -4,6 +4,7 @@
  * File này so hai bản sổ trước/sau để tìm những thay đổi kéo theo đó.
  */
 
+import { isLegacyProductId } from '@mambo/core/catalog';
 import type { AppData } from '@mambo/core/types';
 import { partyToInsert, productToInsert, productToPatch } from './mappers';
 import { opInsert, opUpdate, type NewOp } from './queue';
@@ -22,6 +23,8 @@ export const derivedOps = (before: AppData, after: AppData, _userId?: string): N
   }
 
   for (const product of after.products) {
+    // Mặt hàng mẫu kiểu cũ (`prod-…`) không bao giờ lên máy chủ: máy chủ chỉ nhận id UUID.
+    if (isLegacyProductId(product.id)) continue;
     const old = before.products.find((p) => p.id === product.id);
     if (!old) {
       ops.push(opInsert('product', product.id, productToInsert(product)));

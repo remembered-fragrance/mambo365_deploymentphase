@@ -149,6 +149,16 @@ describe('thử lại có giãn cách', () => {
     expect((await pendingOps('org-a')).map((op) => op.id)).toEqual([b.id]);
     expect(await dropConflictedRecord('org-a')).toBeNull();
   });
+
+  it('bỏ phiếu thêm mới bị từ chối thì bỏ cả các lần trả của phiếu đó', async () => {
+    const receipt = await enqueue(opInsert('transaction', 'tx-1', { id: 'tx-1' }));
+    await enqueue(opInsert('payment', 'pay-1', { transactionId: 'tx-1', amount: 1 }));
+    const other = await enqueue(opInsert('payment', 'pay-2', { transactionId: 'tx-2', amount: 1 }));
+
+    await markConflict(receipt.id, 'org-a', { code: 'VALIDATION_FAILED', message: 'Sai' });
+    expect((await dropConflictedRecord('org-a'))?.id).toBe(receipt.id);
+    expect((await pendingOps('org-a')).map((op) => op.id)).toEqual([other.id]);
+  });
 });
 
 describe('cờ đang chờ gửi', () => {

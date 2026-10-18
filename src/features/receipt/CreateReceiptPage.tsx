@@ -80,8 +80,18 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
     setParams(next);
   };
 
+  /** Máy không nhận phiếu (số vượt mức máy chủ nhận — `opCheck.ts`): nói ngay, phiếu vẫn là nháp. */
+  const attempt = <T,>(action: () => T): T | null => {
+    try {
+      return action();
+    } catch (error) {
+      toast({ message: error instanceof Error ? error.message : L.cannotSaveInvalid, tone: 'alert' });
+      return null;
+    }
+  };
+
   const finish = (amountPaid: number, dueDate?: string) => {
-    const tx = receipt.finish(amountPaid, dueDate);
+    const tx = attempt(() => receipt.finish(amountPaid, dueDate));
     if (!tx) return;
     setPayPartOpen(false);
     toast({ message: `${L.total}: ${formatVnd(amountPaid)} · ${tx.supplierName}` });
@@ -107,7 +117,11 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
    */
   const saveForLater = () => {
     const name = receipt.partyName;
-    receipt.saveForLater();
+    const saved = attempt(() => {
+      receipt.saveForLater();
+      return true;
+    });
+    if (!saved) return;
     toast({ message: `${L.savedForLater} · ${name.trim() || L.walkIn}` });
     navigate(`${ROUTES.receipts}?tab=waiting`);
   };
@@ -184,9 +198,9 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
             />
           ))}
 
-          <Button block onClick={receipt.addLine}>
+          <Button block disabled={!receipt.canAddLine} onClick={receipt.addLine}>
             <PlusIcon className="h-4 w-4" />
-            {L.addLine}
+            {receipt.canAddLine ? L.addLine : L.linesFull}
           </Button>
 
           <MoreInfoPanel
