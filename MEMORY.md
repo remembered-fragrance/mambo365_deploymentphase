@@ -655,6 +655,8 @@ Theo báo cáo rà soát hai repo (cùng đợt với BE `v0.18.0`). Ba lỗi l�
 - Op `prod-…` bản app cũ đã xếp vào hàng đợi: `flushQueue` tự gỡ, không gửi.
 - Test 232 (+ `opCheck`, kẹp số, bỏ lần trả theo phiếu, kẹt sau N lần, `RATE_LIMITED`, `BRANCH_SCOPE`, op `prod-…`,
   kéo về khi hết gói).
+- **Phát hành 19/10:** API trước (BE #38 `fa568e4`, `/v1/health` `0.18.0`), rồi #48 (lock theo release `v0.18.0`,
+  CI xanh, merge `3c40db7`); bundle production có code mới.
 
 ---
 
