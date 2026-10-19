@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { PlusIcon } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toast';
 import { formatVnd } from '@mambo/core/format';
+import { partiesNamed } from '@mambo/core/partyActions';
 import { partySummaries, partyTransactions, type PartyRole, type PartySummary } from '@mambo/core/partySelectors';
 import { useLinks } from '@/data/hooks/useLinked';
 import { useStore } from '@/data/useStore';
@@ -20,7 +21,7 @@ import { HelpButton } from '../help/HelpButton';
 import { useWideScreen } from '../shared/useWideScreen';
 import { PartnerDetail } from './PartnerDetail';
 import { useAccess } from '../shared/useAccess';
-import { PartnerFormDialog, emptyParty, type PartyDraft } from './PartnerFormDialog';
+import { PartnerFormDialog, emptyParty, partyFromDraft, type PartyDraft } from './PartnerFormDialog';
 import { LinkCodeCell } from './LinkCodeCell';
 import { linkStateOf } from './linkState';
 import { partnerColumns } from './partnerColumns';
@@ -58,29 +59,34 @@ export function PartnerListPage({ role }: { readonly role: PartyRole }) {
     setParams(merged, { replace: true });
   };
 
+  const profiles = supplierSide ? data.suppliers : data.buyers;
+
+  // `PartySummary` không mang ghi chú: lấy từ hồ sơ, không thì mở form sửa là ghi chú cũ biến mất (B5).
   const openEdit = (party: PartySummary) =>
     setForm({
       id: party.id,
       name: party.name,
       phone: party.phone ?? '',
       location: party.location ?? '',
-      note: '',
+      note: profiles.find((p) => p.id === party.id)?.note ?? '',
     });
 
   const save = (draft: PartyDraft) => {
-    const patch = {
-      name: draft.name.trim(),
-      phone: draft.phone.trim() || undefined,
-      location: draft.location.trim() || undefined,
-      note: draft.note.trim() || undefined,
-    };
-    if (draft.id) {
-      if (supplierSide) updateSupplier(draft.id, patch);
-      else updateBuyer(draft.id, patch);
-    } else if (supplierSide) {
-      addSupplier(patch);
-    } else {
-      addBuyer(patch);
+    const patch = partyFromDraft(draft);
+    try {
+      if (draft.id) {
+        if (supplierSide) updateSupplier(draft.id, patch);
+        else updateBuyer(draft.id, patch);
+      } else if (supplierSide) {
+        // Bấm "Thêm" là thêm người mới, kể cả trùng tên người đã có — không âm thầm trả về người cũ (B3).
+        addSupplier(patch, { asNew: true });
+      } else {
+        addBuyer(patch, { asNew: true });
+      }
+    } catch (error) {
+      // Máy không nhận (`opProblem`, B4): nói ngay, form còn mở để sửa.
+      toast({ message: error instanceof Error ? error.message : L.cannotSaveInvalid, tone: 'alert' });
+      return;
     }
     setForm(null);
     toast({ message: `${L.save}: ${patch.name}` });
@@ -89,8 +95,13 @@ export function PartnerListPage({ role }: { readonly role: PartyRole }) {
   const remove = () => {
     const party = confirmDelete;
     if (!party) return;
-    if (supplierSide) deleteSupplier(party.id);
-    else deleteBuyer(party.id);
+    try {
+      if (supplierSide) deleteSupplier(party.id);
+      else deleteBuyer(party.id);
+    } catch (error) {
+      toast({ message: error instanceof Error ? error.message : L.cannotSaveInvalid, tone: 'alert' });
+      return;
+    }
     setConfirmDelete(null);
     setForm(null);
     select(undefined);
@@ -176,6 +187,7 @@ export function PartnerListPage({ role }: { readonly role: PartyRole }) {
         open={form !== null}
         role={role}
         initial={form ?? emptyParty()}
+        hasNamesake={(name) => partiesNamed(profiles, name).some((p) => p.id !== form?.id)}
         onSave={save}
         onDelete={
           form?.id

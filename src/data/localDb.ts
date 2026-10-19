@@ -27,6 +27,12 @@ export interface QueuedOp {
   /** Dữ liệu op theo schema zod của contracts (camelCase) */
   readonly data?: Record<string, unknown>;
   readonly orgId: string;
+  /**
+   * Người ghi op (B8). Chỉ gửi bằng phiên của chính người này: máy dùng chung, người sau đăng nhập mà đẩy op
+   * của người trước thì máy chủ ghi `createdBy` là người sau. Thiếu = op của bản app trước — không đoán là của
+   * ai, cách ly (`isolateOtherUsers`) chờ người dùng nhận.
+   */
+  readonly userId?: string;
 
   /** Tương thích ngược với code cũ */
   readonly table?: TableName;
@@ -76,8 +82,8 @@ interface LocalDbSchema extends DBSchema {
   cursors: { key: string; value: string };
   /** Ảnh chứng từ. Khoá = attachmentId. */
   attachments: { key: string; value: Blob };
-  /** Ảnh chờ đẩy lên máy chủ — riêng với hàng đợi op sổ. Khoá = attachmentId, giá trị = orgId. */
-  attachmentQueue: { key: string; value: string };
+  /** Ảnh chờ đẩy lên máy chủ — riêng với hàng đợi op sổ. Khoá = attachmentId. Xem `AttachmentQueueEntry`. */
+  attachmentQueue: { key: string; value: string | { readonly orgId: string; readonly tries: number; readonly userId?: string } };
   /** Mốc đồng bộ gần nhất theo tài khoản / tổ chức. */
   syncMarks: { key: string; value: string };
 }
@@ -85,7 +91,8 @@ interface LocalDbSchema extends DBSchema {
 let dbPromise: Promise<IDBPDatabase<LocalDbSchema>> | null = null;
 
 export const openLocalDb = (): Promise<IDBPDatabase<LocalDbSchema>> => {
-  dbPromise ??= openDB<LocalDbSchema>(DB_NAME, DB_VERSION, {
+  if (dbPromise) return dbPromise;
+  const opening = openDB<LocalDbSchema>(DB_NAME, DB_VERSION, {
     upgrade(db, _oldVersion, _newVersion, transaction) {
       if (!db.objectStoreNames.contains('books')) db.createObjectStore('books');
       if (!db.objectStoreNames.contains('attachments')) db.createObjectStore('attachments');
@@ -114,10 +121,41 @@ export const openLocalDb = (): Promise<IDBPDatabase<LocalDbSchema>> => {
     // Tab khác vừa mở bản app mới (DB_VERSION tăng): nhường kết nối, không thì tab mới treo chờ nâng cấp.
     blocking(_current, _blocked, event) {
       (event.target as IDBDatabase).close();
-      dbPromise = null;
+      if (dbPromise === opening) dbPromise = null;
+    },
+    // Trình duyệt tự đóng kết nối (dọn bộ nhớ, người dùng xoá dữ liệu trang): lần sau phải mở lại.
+    terminated() {
+      if (dbPromise === opening) dbPromise = null;
     },
   });
-  return dbPromise;
+  dbPromise = opening;
+  // Mở hỏng (VersionError: tab khác đã nâng DB lên bản mới hơn) thì lần gọi sau mở lại, không trả mãi lỗi cũ.
+  opening.catch(() => {
+    if (dbPromise === opening) dbPromise = null;
+  });
+  return opening;
+};
+
+/**
+ * Lỗi vì kết nối đã đóng / DB đã lên bản mới hơn bản app này — không phải lỗi của dữ liệu đang ghi (B7).
+ * `InvalidStateError`: mở giao dịch trên kết nối đã đóng. `VersionError`: mở lại bằng `DB_VERSION` cũ.
+ */
+export const isClosedDb = (error: unknown): boolean =>
+  typeof error === 'object' && error !== null && 'name' in error &&
+  (error.name === 'InvalidStateError' || error.name === 'VersionError');
+
+/**
+ * Chạy `task`; hỏng vì kết nối đã đóng thì mở lại DB và chạy lại MỘT lần. `task` phải chạy lại được mà không
+ * ghi trùng phần đã ghi xong (xem `commit` trong store.tsx). Kết nối đóng thì `blocking` / `terminated` đã bỏ
+ * kết nối cũ, nên lần chạy lại tự mở kết nối mới.
+ */
+export const withReopen = async <T>(task: () => Promise<T>): Promise<T> => {
+  try {
+    return await task();
+  } catch (error) {
+    if (!isClosedDb(error)) throw error;
+    return task();
+  }
 };
 
 const DEVICE_KEY = 'thumua365_device_id';

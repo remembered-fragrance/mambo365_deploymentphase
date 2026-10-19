@@ -21,6 +21,8 @@ import { useBookRescue } from './bookFile';
 import { SyncNotices } from './SyncNotices';
 import { backTarget, isTabRoot, navGroups, navItems, ROUTES } from './navItems';
 import { StuckBanner } from './StuckBanner';
+import { BranchDropCard } from './BranchDropCard';
+import { UnownedOpsCard } from './UnownedOpsCard';
 import { useAccess } from './useAccess';
 import { useTheme } from './useTheme';
 
@@ -185,6 +187,8 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
             <DemoBanner />
             <PlanBanner />
             <StuckBanner />
+            <BranchDropCard />
+            <UnownedOpsCard />
             <SyncNotices />
             {/* Banner kẹt đã nói lỗi của thao tác; hết gói thì vẫn phải nói, vì "Gửi lại" không gỡ được nó. */}
             {status.error && (status.blocked || !stuck) &&

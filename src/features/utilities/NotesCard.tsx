@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NOTE_LIMITS } from '@mambo/contracts';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -7,11 +8,13 @@ import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@mambo/core/format';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { useAttempt } from '../shared/useAttempt';
 
 /** Ghi chú: giá thoả thuận, số xe, lời hẹn — thứ hay quên nhất. */
 export function NotesCard() {
   const { data, addNote, updateNote, deleteNote } = useStore();
   const toast = useToast();
+  const attempt = useAttempt();
   const [body, setBody] = useState('');
 
   const notes = [...data.notes].sort((a, b) => {
@@ -21,12 +24,13 @@ export function NotesCard() {
 
   const submit = () => {
     if (!body.trim()) return;
-    addNote(body);
+    // Không nhận thì giữ chữ trong ô, để sửa rồi lưu lại (B4).
+    if (!attempt(() => addNote(body))) return;
     setBody('');
   };
 
   const remove = (id: string, text: string) => {
-    deleteNote(id);
+    if (!attempt(() => deleteNote(id))) return;
     toast({ message: `${L.del}: ${text.slice(0, 30)}`, tone: 'alert' });
   };
 
@@ -37,6 +41,7 @@ export function NotesCard() {
           <Input
             label={L.noteBody}
             value={body}
+            maxLength={NOTE_LIMITS.body}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') submit();
@@ -63,7 +68,7 @@ export function NotesCard() {
                   <input
                     type="checkbox"
                     checked={note.pinned}
-                    onChange={(e) => updateNote(note.id, { pinned: e.target.checked })}
+                    onChange={(e) => attempt(() => updateNote(note.id, { pinned: e.target.checked }))}
                     className="h-5 w-5 accent-[var(--color-brand)]"
                   />
                   {L.notePin}
@@ -72,7 +77,7 @@ export function NotesCard() {
                   <input
                     type="checkbox"
                     checked={note.done}
-                    onChange={(e) => updateNote(note.id, { done: e.target.checked })}
+                    onChange={(e) => attempt(() => updateNote(note.id, { done: e.target.checked }))}
                     className="h-5 w-5 accent-[var(--color-brand)]"
                   />
                   {L.noteDone}

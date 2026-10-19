@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
@@ -81,6 +82,8 @@ export function PricingRuleEditor({
         <Input
           label={L.ruleName}
           value={draft.name}
+          // Tên quy tắc thành nhãn khoản cộng/trừ trên phiếu — cùng giới hạn với nhãn (B4).
+          maxLength={RECEIPT_LIMITS.adjustmentLabel}
           error={touched && nameMissing ? L.nameRequired : undefined}
           onChange={(e) => set({ name: e.target.value })}
         />

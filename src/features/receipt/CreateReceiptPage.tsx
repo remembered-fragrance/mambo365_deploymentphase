@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -19,6 +19,8 @@ import { CounterpartyPicker } from './CounterpartyPicker';
 import { discardConsequence, nextSession } from './draftSessions';
 import { finishMessage } from './finishText';
 import { LineEditor } from './LineEditor';
+import { NamesakeDialog } from './NamesakeDialog';
+import { namesakesOf, type PartyChoice } from './namesakes';
 import { MoreInfoPanel } from './MoreInfoPanel';
 import { OrderPicker } from './OrderPicker';
 import { PayPartDialog } from './PayPartDialog';
@@ -62,6 +64,12 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   const receipt = useDraftReceipt(draftId, kind);
   const [payPartOpen, setPayPartOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  /** Lần bấm chốt đang chờ người dùng trả lời "người này hay người mới?" (B3). */
+  const [askParty, setAskParty] = useState<{ readonly amountPaid: number; readonly dueDate?: string } | null>(null);
+  const namesakes = useMemo(
+    () => namesakesOf(data, kind, receipt.partyName, receipt.counterpartyId),
+    [data, kind, receipt.partyName, receipt.counterpartyId],
+  );
 
   const sessions = data.drafts.filter((d) => d.status === 'draft' && (d.kind ?? 'purchase') === kind);
 
@@ -90,8 +98,15 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
     }
   };
 
-  const finish = (amountPaid: number, dueDate?: string) => {
-    const tx = attempt(() => receipt.finish(amountPaid, dueDate));
+  const finish = (amountPaid: number, dueDate?: string, party?: PartyChoice) => {
+    // Gõ tên trùng người đã có mà chưa chọn ai: hỏi trước, không tự gộp vào người cũ (B3).
+    if (!party && namesakes.length > 0) {
+      setPayPartOpen(false);
+      setAskParty({ amountPaid, dueDate });
+      return;
+    }
+    setAskParty(null);
+    const tx = attempt(() => receipt.finish(amountPaid, dueDate, party));
     if (!tx) return;
     setPayPartOpen(false);
     toast({ message: finishMessage(tx) });
@@ -252,8 +267,16 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
       <PayPartDialog
         open={payPartOpen}
         total={receipt.finalTotal}
-        onConfirm={finish}
+        onConfirm={(amountPaid, dueDate) => finish(amountPaid, dueDate)}
         onCancel={() => setPayPartOpen(false)}
+      />
+
+      <NamesakeDialog
+        open={askParty !== null && namesakes.length > 0}
+        name={receipt.partyName}
+        namesakes={namesakes}
+        onPick={(choice) => askParty && finish(askParty.amountPaid, askParty.dueDate, choice)}
+        onCancel={() => setAskParty(null)}
       />
 
       <ConfirmDialog

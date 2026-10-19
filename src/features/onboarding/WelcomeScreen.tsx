@@ -45,7 +45,8 @@ function Choice({ index, title, hint, Icon, onPick }: ChoiceProps) {
 export function WelcomeScreen() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { importData, syncsWithServer: online } = useStore();
+  // Chỉ sổ nằm riêng trên máy mới nạp từ file (B1) — sổ tổ chức tự về khi đăng nhập.
+  const { importData, importsFromFile } = useStore();
   const { startDemo } = useDemoMode();
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -70,7 +71,7 @@ export function WelcomeScreen() {
         <DeviceBookNotice />
       </div>
 
-      <div className={`grid gap-3 ${online ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+      <div className={`grid gap-3 ${importsFromFile ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
         <Choice
           index="1"
           title={L.welcomeCreate}
@@ -88,7 +89,7 @@ export function WelcomeScreen() {
             toast({ message: L.demoStarted });
           }}
         />
-        {!online && <Choice
+        {importsFromFile && <Choice
           index="3"
           title={L.welcomeImport}
           hint={L.welcomeImportHint}

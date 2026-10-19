@@ -16,6 +16,7 @@ import { L } from '@/i18n/labels';
 import { HelpButton } from '../help/HelpButton';
 import { ROUTES } from '../shared/navItems';
 import { useAccess } from '../shared/useAccess';
+import { useAttempt } from '../shared/useAttempt';
 import {
   draftFromProduct,
   emptyProduct,
@@ -119,6 +120,7 @@ export function ProductsPage() {
   const { data, addProduct, updateProduct } = useStore();
   const { can } = useAccess();
   const toast = useToast();
+  const attempt = useAttempt();
   const [draft, setDraft] = useState<ProductDraft | null>(null);
   const [sort, setSort] = useState<SortState>({ columnId: 'state', desc: false });
 
@@ -133,8 +135,9 @@ export function ProductsPage() {
       trackInventory: next.trackInventory,
       isActive: next.isActive,
     };
-    if (next.id) updateProduct(next.id, patch);
-    else addProduct(patch);
+    const id = next.id;
+    // Không nhận (B4): form còn mở để sửa.
+    if (!attempt(() => (id ? updateProduct(id, patch) : addProduct(patch)))) return;
     setDraft(null);
     toast({ message: `${L.save}: ${patch.name}` });
   };

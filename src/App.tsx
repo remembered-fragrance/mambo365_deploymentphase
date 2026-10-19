@@ -13,6 +13,8 @@ import { Gated } from '@/features/shared/Gated';
 import { ROUTES } from '@/features/shared/navItems';
 import { NotFoundPage } from '@/features/NotFoundPage';
 import { saveBookToFile } from '@/features/shared/bookFile';
+import { LeftOrgsDialog } from '@/features/shared/LeftOrgsDialog';
+import { ReloadRequiredOverlay } from '@/features/shared/ReloadRequiredOverlay';
 
 // Tách bundle theo route: mở app chỉ tải màn Tổng quan, không tải cả app.
 const DashboardPage = lazy(() =>
@@ -110,6 +112,9 @@ export function App() {
     <ErrorBoundary onExportFile={saveBookToFile}>
       <StoreProvider>
         <ToastProvider>
+          {/* Ngoài cổng đăng nhập: bị gỡ khỏi tổ chức duy nhất thì người dùng đang ở màn tạo tổ chức (B8). */}
+          <ReloadRequiredOverlay />
+          <LeftOrgsDialog />
           <BrowserRouter>
             <Routes>
               {/* Pháp lý & hướng dẫn: công khai, ngoài cổng đăng nhập và ngoài khung app. */}

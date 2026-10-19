@@ -718,6 +718,74 @@ Theo `prompt-sua-loi-thumua365.md` (đợt 1: lỗi gốc chung, A1, A2, A3, B2,
 
 ---
 
+## Trùng tên, ô nhập, ảnh, nhiều tab, đổi tài khoản · `@mambo/*` 0.20.0 · 20/10/2026 · đợt 2, chưa phát hành
+
+Theo `prompt-sua-loi-thumua365.md` (đợt 2: B1, B3, B4, B5, B6, B7, B8, B10, C1, C4). C2, C3 chỉ đề xuất — xem
+`docs/DE_XUAT_C2_C3.md` của BE. Nhánh `fix/dot2`, `package.json` khoá theo release `v0.20.0` của BE.
+
+- **B1**: sổ của tổ chức là sổ máy chủ, kể cả lúc hết gói — chỉ sổ riêng trên máy mới có nút lấy lại từ file
+  (`DataCard`, `ImportDataPage`). Nhập file vào sổ tổ chức từng làm sổ máy lệch với server.
+- **B3**: không bao giờ gộp theo tên.
+  - Lập phiếu gõ tên trùng người đã có mà chưa chọn ⇒ `NamesakeDialog` hỏi "người này hay người mới" (kèm SĐT,
+    khu vực, số phiếu); trả lời đi vào `finish` dưới dạng `PartyChoice` → core `PartyMatch.asNew`.
+  - Chip gợi ý ở ô người bán kèm SĐT / khu vực / ngày phiếu gần nhất khi tên trùng (`chipHint`) — hai chip
+    "Anh Ba" giống hệt nhau thì bấm cũng như đoán (thấy lúc chạy thử).
+  - Thêm ở danh bạ: luôn tạo người mới, chỉ nhắc `partyNamesakeHint`. Nhập file: hồ sơ đang kết nối
+    (`linkedPartnerIds`) vào `keepApart`; không biết kết nối (lỗi mạng) thì không gộp ai.
+- **B4**: `useAttempt` bọc mọi action của store ở form — `commit` ném (`opProblem`, sổ chưa sẵn sàng) thì toast
+  thay vì im. Ô nhập đặt `maxLength` theo `PARTY_LIMITS` / `PRODUCT_LIMITS` / `NOTE_LIMITS` của contracts.
+- **B5**: sửa đối tác xoá được SĐT, khu vực, ghi chú (gửi `null`, không bỏ trường); ghi chú cũ hiện khi mở sửa.
+- **B6**: hàng đợi ảnh lưu `{ orgId, tries }` (bản cũ chuỗi `orgId` vẫn đọc được). Chỉ 413 / 415 / 400 có lý do mới
+  bỏ ảnh; 401/403/429/5xx giữ ảnh, cộng `tries`, đủ `MAX_PHOTO_TRIES` thì báo một lần và không chặn ảnh sau nữa.
+  SDK 0.20 đọc `statusCode` trong thân lỗi Storage.
+- **B7** (tab khác mở bản app mới, nâng `DB_VERSION`):
+  - `openLocalDb`: `blocking` / `terminated` / mở hỏng đều bỏ promise đã cache — lần sau mở lại, không dùng mãi
+    kết nối đã đóng. `withReopen` thử lại một lần khi `InvalidStateError` / `VersionError`.
+  - Vẫn không ghi được ⇒ `rescue.ts` cất op (kèm `opId` cấp sẵn) và phần sổ đã đổi (`bookChanges`) vào
+    localStorage `thumua365_rescue`, store bật `reloadRequired` ⇒ `ReloadRequiredOverlay` che app ("Tải lại app
+    để lưu"; cất cũng hỏng thì cho lưu sổ ra file). Lần mở sổ sau `drainRescued` đưa op vào hàng đợi với đúng
+    `opId` (gửi trùng thì máy chủ báo `duplicate`) rồi áp lại phần sổ.
+  - DB đóng hẳn ở lượt đồng bộ / ghi phần kéo về / mở sổ (không phải lần ghi của người dùng) ⇒ `noticeClosedDb`
+    thử mở lại; không được thì `reloadRequired = 'idle'` ("không có gì bị mất"), không báo nhầm "không có mạng".
+- **B8** (đổi tài khoản trên cùng máy, bị gỡ khỏi tổ chức):
+  - `QueuedOp.userId`. `flushQueue` gọi `isolateOtherUsers` trước: op của người khác (và op bản cũ không có
+    `userId`) sang `legacyQueue`, op của chính người này trở về. Op không chủ hiện ở `UnownedOpsCard` — chỉ gửi khi
+    người dùng bấm "Của tôi — gửi đi" (`claimUnownedOps`); không đoán chủ.
+  - `knownBooks.ts` (`thumua365_books:<userId>`) nhớ các sổ từng mở. `applyMe` so với membership: sổ bị gỡ mà không
+    còn gì chưa gửi thì dọn ngay; còn thì giữ, `LeftOrgsDialog` cho xuất file rồi dọn. `NOT_A_MEMBER` lúc đồng bộ ⇒
+    hỏi lại `/v1/me`, không gắn cờ kẹt. Đăng xuất dọn cả sổ đã bị gỡ (hợp membership + `knownBooks`).
+  - `wipeOrgFromDevice` / `removeOpsOf` chỉ xoá op của người đó.
+  - Ảnh chờ đẩy mang người chụp (`attachmentQueue` `{ orgId, userId, tries }`). `wipeOrgPhotos`: dọn sổ của một
+    người chỉ xoá ảnh đã lên máy chủ và ảnh chờ của chính người đó; ảnh chờ của người khác hay chưa rõ người chụp
+    (bản cũ) ở lại. Xoá tài khoản (`orgGone`) thì xoá hết. Đăng xuất đếm cả ảnh chưa gửi (`queuedPhotoCount`) — chỉ
+    còn ảnh cũng phải hỏi. Sổ tổ chức mà chưa biết người dùng thì không nhận ảnh (`bookNotReady`).
+  - `sweepOrphanBooks` sau mỗi lần `/v1/me` mới (có Supabase): dọn sổ không ai nhận — không nằm trong membership
+    hiện tại, `knownBooks` hay bản `/v1/me` đã lưu của bất kỳ tài khoản nào trên máy, không phải sổ tài khoản máy,
+    không còn op (của ai cũng vậy, cả cách ly) hay phần cất tạm. Đọc localStorage hỏng ⇒ không dọn gì. Đây là sổ bị
+    gỡ từ trước bản này (chưa có `knownBooks`).
+- **B10**: op bị bỏ vì đổi chi nhánh liệt kê từng phiếu / lần trả (người, ngày, tiền) ở `BranchDropCard`, ở yên tới
+  khi bấm "Đã ghi lại"; toast chỉ đếm.
+- **C4**: `EMAIL_TAKEN` (422 `details.reason`) ⇒ câu `L.emailTaken` "đổi sang email khác", không gộp vào "link
+  hỏng". Trang Tài khoản hiện email khôi phục lấy từ máy chủ.
+- Ảnh không lưu được vào máy (nén hỏng, hết chỗ) ⇒ `AttachmentPicker` toast `photoSaveFailed`, không im.
+- **Test**: verify xanh, 47 file / 312 test. Mỗi lỗi có test đỏ trước khi sửa (`reopenDb`, `reloadRequired`,
+  `storeFlows` B8 + sổ mồ côi, `deleteAccount` máy dùng chung, `sync` B8, `namesakes`, `saveErrors`,
+  `attachmentQueue`, `recovery` C4, `syncNoticeText`).
+- **Chạy thử local 19–20/10** (Docker DB + API 0.20 + Vite `--force` — không `--force` thì prebundle cũ báo "does not
+  provide an export named 'PARTY_LIMITS'"; tài khoản thật, sổ "Vựa Thử Đợt 2" chỉ ở DB local):
+  - B3: hai "Anh Ba" (Xóm Trên / Xóm Dưới), gõ tên không chọn → hộp hỏi, chọn Xóm Dưới → phiếu gắn đúng người (DB).
+  - B7: mở `indexedDB.open('thumua365', 99)` trong trang → app nhường kết nối; thêm "Chị Tư" → overlay, op nằm ở
+    `thumua365_rescue`; xoá DB v99, bấm tải lại → Chị Tư lên máy chủ đúng id, phần cất tạm đã dọn.
+  - B5: thêm rồi xoá SĐT, khu vực → máy chủ `null`, ghi chú giữ, mở sửa thấy ghi chú cũ.
+  - Sổ mồ côi: cài một sổ giả không ai nhận vào IndexedDB, tải lại → bị dọn, sổ thật giữ nguyên.
+  - DB đóng lúc đồng bộ: mở v99 → overlay "Tải lại app", không có băng "không có mạng".
+  - Ảnh (chặn `fetch` để không lên Storage staging): hàng đợi có `userId`; đăng xuất bị chặn "1 thao tác…"; đã gỡ
+    ảnh thử, Storage staging không có object nào.
+  - B1, B4, B6, B10 chỉ kiểm bằng test (cần gói hết hạn / chi nhánh doanh nghiệp).
+  - Để ý: `npm run test:db` của BE dùng chung DB dev và `truncateAll()` — chạy là mất sổ thử local (đã dựng lại).
+
+---
+
 ## Ba số phải giữ trong tầm
 
 Đo lúc kết thúc mỗi giai đoạn.

@@ -6,6 +6,13 @@ export type LinkState =
   | { readonly kind: 'none' };
 
 /**
+ * Hồ sơ đang kết nối (hay đã phát mã mời) với tài khoản bên kia. Không bao giờ được gộp tự động theo tên (B3):
+ * bên kia thấy mọi phiếu ghi cho hồ sơ này, gộp nhầm là lộ phiếu của người khác.
+ */
+export const linkedPartnerIds = (links: readonly LinkSummary[]): ReadonlySet<string> =>
+  new Set(links.filter((l) => l.side === 'owner' && (l.status === 'active' || l.status === 'pending')).map((l) => l.partner.id));
+
+/**
  * Một dòng danh bạ đang ở đâu trên đường kết nối, nhìn từ phía sổ. Mã đã hết hạn coi như chưa có:
  * bấm "Lấy mã" thì máy chủ cấp mã mới cho đúng lời mời cũ.
  */

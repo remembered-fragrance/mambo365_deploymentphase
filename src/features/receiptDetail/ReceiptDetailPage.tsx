@@ -14,12 +14,14 @@ import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
 import { useAccess } from '../shared/useAccess';
+import { useAttempt } from '../shared/useAttempt';
 import { ReceiptVoucher } from './ReceiptVoucher';
 
 export function ReceiptDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const attempt = useAttempt();
   const { data, user, deleteTransaction } = useStore();
   const { can } = useAccess();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -44,7 +46,7 @@ export function ReceiptDetailPage() {
 
   const remove = () => {
     setConfirmOpen(false);
-    deleteTransaction(tx.id);
+    if (!attempt(() => deleteTransaction(tx.id))) return;
     toast({ message: `${L.del}: ${tx.supplierName}`, tone: 'alert' });
     navigate(ROUTES.receipts);
   };

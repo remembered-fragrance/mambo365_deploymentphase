@@ -7,8 +7,10 @@ import { Segmented } from '@/components/ui/Segmented';
 import { useToast } from '@/components/ui/Toast';
 import { parseReceipts, parseSuppliers } from '@mambo/core/sheetImport';
 import type { ImportError, ImportKind, ReceiptImport, SupplierImport } from '@mambo/core/sheetImport';
+import { useLinks } from '@/data/hooks/useLinked';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { linkedPartnerIds } from '../partners/linkState';
 import { ImportErrorList } from './ImportErrorList';
 import { ImportPreview } from './ImportPreview';
 
@@ -31,7 +33,8 @@ const TEMPLATE_FILE: Record<ImportKind, string> = {
  *      ở dòng 701 là trạng thái không ai gỡ được: chạy lại thì trùng, bỏ thì thiếu.
  */
 export function ImportDataPage() {
-  const { importSuppliers, importReceipts } = useStore();
+  const { importSuppliers, importReceipts, currentOrgId, data } = useStore();
+  const links = useLinks(Boolean(currentOrgId));
   const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -65,10 +68,26 @@ export function ImportDataPage() {
     }
   };
 
+  /**
+   * Dòng trong file trùng tên hồ sơ đang kết nối thì tạo người riêng, không gộp (B3). Không biết được kết nối nào
+   * (lỗi mạng) thì không gộp vào ai cả — thà thừa một hồ sơ trùng tên còn hơn lộ phiếu sang tài khoản khác.
+   */
+  const keepApart = (): ReadonlySet<string> => {
+    if (!currentOrgId) return new Set();
+    if (links.data) return linkedPartnerIds(links.data);
+    return new Set([...data.suppliers, ...data.buyers].map((p) => p.id));
+  };
+
   const apply = () => {
     if (!parsed) return;
-    const added =
-      parsed.kind === 'suppliers' ? importSuppliers(parsed.rows) : importReceipts(parsed.rows);
+    const match = { keepApart: keepApart() };
+    let added: number;
+    try {
+      added = parsed.kind === 'suppliers' ? importSuppliers(parsed.rows, match) : importReceipts(parsed.rows, match);
+    } catch (error) {
+      toast({ message: error instanceof Error ? error.message : L.cannotSaveInvalid, tone: 'alert' });
+      return;
+    }
     reset();
     toast({ message: `${L.importDone}: ${added}` });
   };
@@ -125,7 +144,7 @@ export function ImportDataPage() {
           <Card title={L.importPreviewTitle} subtitle={`${parsed.rows.length} ${L.importRowsFound}`}>
             <div className="flex flex-col gap-3">
               <ImportPreview parsed={parsed} />
-              <Button tone="primary" size="lg" block onClick={apply}>
+              <Button tone="primary" size="lg" block disabled={links.loading} onClick={apply}>
                 {L.importConfirm}
               </Button>
             </div>

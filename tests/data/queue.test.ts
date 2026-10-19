@@ -24,7 +24,7 @@ import {
   RETRY_DELAYS_MS,
 } from '@/data/queue';
 
-const enqueue = (op: NewOp) => enqueueScoped({ ...op, orgId: 'org-a' });
+const enqueue = (op: NewOp) => enqueueScoped({ ...op, orgId: 'org-a', userId: 'u-1' });
 
 beforeEach(async () => {
   await clearQueue();
@@ -188,9 +188,9 @@ describe('đổi tài khoản', () => {
 
 describe('organization isolation', () => {
   it('counts and flags only the requested organization, even for matching record IDs', async () => {
-    const a = await enqueueScoped({ ...opUpdate('note', 'same', { body: 'A' }), orgId: 'org-a' });
-    const b = await enqueueScoped({ ...opUpdate('note', 'same', { body: 'B' }), orgId: 'org-b' });
-    await enqueueScoped({ ...opInsert('note', 'only-b', { body: 'B' }), orgId: 'org-b' });
+    const a = await enqueueScoped({ ...opUpdate('note', 'same', { body: 'A' }), orgId: 'org-a', userId: 'u-1' });
+    const b = await enqueueScoped({ ...opUpdate('note', 'same', { body: 'B' }), orgId: 'org-b', userId: 'u-1' });
+    await enqueueScoped({ ...opInsert('note', 'only-b', { body: 'B' }), orgId: 'org-b', userId: 'u-1' });
     expect(await pendingCount('org-a')).toBe(1);
     expect(await pendingCount('org-b')).toBe(2);
     expect(await pendingRecordIds('org-a')).toEqual(new Set(['same']));
@@ -203,6 +203,6 @@ describe('organization isolation', () => {
     expect((await pendingOps('org-a'))[0]?.tries).toBe(0);
   });
   it('refuses unscoped operations', async () => {
-    await expect(enqueueScoped({ ...opInsert('note', 'n', {}), orgId: '' })).rejects.toThrow();
+    await expect(enqueueScoped({ ...opInsert('note', 'n', {}), orgId: '', userId: 'u-1' })).rejects.toThrow();
   });
 });

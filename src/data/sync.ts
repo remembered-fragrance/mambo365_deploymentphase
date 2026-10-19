@@ -5,6 +5,7 @@
  * hoặc nổi lên `status.error` để người dùng thấy.
  */
 
+import { computeReceiptTotal, transactionTotals } from '@mambo/core/calc';
 import { isLegacyProductId } from '@mambo/core/catalog';
 import { emptyData } from '@mambo/core/normalize';
 import type { AppData, SyncStatus } from '@mambo/core/types';
@@ -22,7 +23,7 @@ import {
   type SyncWarning,
 } from '@mambo/contracts';
 import { ApiError, type Client } from '@mambo/sdk';
-import { flushAttachments } from './attachments';
+import { flushAttachments, type PhotoAlert } from './attachments';
 import { readSyncMark, writeBook } from './cache';
 import { apiForOrg } from './client';
 import { getDeviceId, openLocalDb, readCursor } from './localDb';
@@ -30,6 +31,7 @@ import { mergeChanges } from './pullChanges';
 import {
   dropWithDependents,
   isDue,
+  isolateOtherUsers,
   MAX_REJECTED_TRIES,
   markConflict,
   markFailed,
@@ -56,16 +58,25 @@ export interface SyncOutcome {
   readonly status: SyncStatus;
   /** Bản ghi bị máy chủ từ chối — giao diện phải báo, không được im lặng. */
   readonly conflicts: readonly string[];
-  /** Số thao tác đã tự bỏ vì chủ vừa đổi chi nhánh của người này (xem `isBranchScope`). */
-  readonly dropped: number;
+  /** Thứ đã tự bỏ vì chủ vừa đổi chi nhánh của người này (xem `isBranchScope`), từng cái một (B10). */
+  readonly dropped: readonly DroppedItem[];
   /** Op máy chủ đã nhận kèm cảnh báo — phải báo người dùng (phiếu bị gỡ khỏi đơn…). */
   readonly warnings: readonly SyncNotice[];
+  /** Ảnh chứng từ bị từ chối hẳn, hay thử mãi không lên (B6). */
+  readonly photoAlerts: readonly PhotoAlert[];
   /**
    * Con trỏ ứng với `data`. KHÔNG ghi ở đây: store chỉ ghi sổ + con trỏ khi kết quả còn dùng được
    * (không ai ghi phiếu xen vào) — ghi con trỏ mà sổ bị đè thì phiếu của trang đó mất khỏi máy này.
    */
   readonly cursor?: string | null;
+  /**
+   * Máy chủ trả `NOT_A_MEMBER` (bị gỡ khỏi tổ chức sau lần `/v1/me` gần nhất). Store hỏi lại `/v1/me` để
+   * `applyMe` thấy tổ chức đã mất và dọn sổ (B8) — không để người dùng ghi tiếp vào sổ không còn gửi được.
+   */
+  readonly notMember?: boolean;
 }
+
+const isNotMember = (err: unknown): boolean => err instanceof ApiError && err.code === 'NOT_A_MEMBER';
 
 const message = (err: unknown): string => {
   if (err instanceof ApiError) {
@@ -136,15 +147,72 @@ const noticeOf = (code: SyncWarning, op: QueuedOp): SyncNotice => {
   };
 };
 
+/**
+ * Một thứ đã tự bỏ vì chủ đổi chi nhánh (B10). Toast cũ chỉ nói "N thay đổi đã bị bỏ", trong khi thứ bị bỏ có
+ * thể là lần trả tiền thật — người cân cần đủ người, ngày, số tiền để nhập lại.
+ */
+export interface DroppedItem {
+  readonly entity: SyncEntity;
+  readonly kind: SyncOpKind;
+  readonly recordId: string;
+  /** Người bán / mua (lần trả: của phiếu cha). */
+  readonly name?: string;
+  readonly date?: string;
+  /** Tổng phiếu / nháp, hoặc số tiền của lần trả. */
+  readonly amount?: number;
+}
+
+const textOf = (value: unknown): string | undefined => (typeof value === 'string' && value.trim() ? value : undefined);
+const amountOf = (value: unknown): number | undefined => (typeof value === 'number' ? value : undefined);
+
+/** Mỗi bản ghi kể một lần (nháp tự lưu là nhiều op của cùng một nháp); tra tên / ngày / tiền theo `book`. */
+export const droppedItems = (ops: readonly QueuedOp[], book: AppData): DroppedItem[] => {
+  const seen = new Set<string>();
+  const items: DroppedItem[] = [];
+  for (const op of ops) {
+    const key = `${op.entity}:${op.recordId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const base = { entity: op.entity, kind: op.kind, recordId: op.recordId };
+    if (op.entity === 'payment') {
+      const receipt = book.transactions.find((t) => t.id === op.data?.transactionId)
+        ?? book.transactions.find((t) => t.payments.some((p) => p.id === op.recordId));
+      const paid = receipt?.payments.find((p) => p.id === op.recordId);
+      items.push({ ...base, name: receipt?.supplierName, date: receipt?.date, amount: amountOf(op.data?.amount) ?? paid?.amount });
+    } else if (op.entity === 'transaction') {
+      const receipt = book.transactions.find((t) => t.id === op.recordId);
+      items.push({
+        ...base,
+        name: receipt?.supplierName ?? textOf(op.data?.supplierName),
+        date: receipt?.date ?? textOf(op.data?.date),
+        amount: receipt ? transactionTotals(receipt).total : undefined,
+      });
+    } else if (op.entity === 'draft') {
+      const draft = book.drafts.find((d) => d.id === op.recordId);
+      items.push({
+        ...base,
+        name: draft?.supplierName ?? textOf(op.data?.supplierName),
+        date: draft?.updatedAt,
+        amount: draft ? computeReceiptTotal(draft.lines).total : undefined,
+      });
+    } else {
+      items.push(base);
+    }
+  }
+  return items;
+};
+
 export interface FlushResult {
   pushed: number;
   conflicts: string[];
   error?: string;
   blocked?: boolean;
-  dropped: number;
+  dropped: QueuedOp[];
   warnings: SyncNotice[];
   /** Cả lượt bị từ chối vì lý do không phải mạng — xem `SyncStatus.refused`. */
   refused?: boolean;
+  /** Máy chủ bảo người này không còn ở tổ chức — xem `SyncOutcome.notMember`. */
+  notMember?: boolean;
 }
 
 /**
@@ -239,9 +307,11 @@ const isTooLarge = (err: unknown): boolean =>
 const MAX_BATCHES_PER_FLUSH = 50;
 
 /** Các op đầu hàng tới hạn gửi, đúng thứ tự; dừng ở op chưa tới hạn hoặc op đã kẹt (trả riêng). */
-const readyOps = async (orgId: string): Promise<{ ready: QueuedOp[]; stuck?: QueuedOp }> => {
+const readyOps = async (orgId: string, userId: string): Promise<{ ready: QueuedOp[]; stuck?: QueuedOp }> => {
   const ready: QueuedOp[] = [];
   for (const op of await pendingOps(orgId)) {
+    // Op người khác vừa ghi ở tab khác sau lúc cách ly: không gửi bằng phiên này (B8); lượt sau cách ly nó.
+    if (op.userId !== userId) continue;
     // Op của mặt hàng mẫu `prod-…` do bản app cũ xếp vào: máy chủ không bao giờ nhận, mà cũng chẳng có gì
     // để giữ (chỉ là giá gần nhất của mặt hàng mẫu) — gỡ luôn, đừng bắt người dùng bấm "Bỏ".
     if (op.entity === 'product' && isLegacyProductId(op.recordId)) {
@@ -278,13 +348,16 @@ const withPushLock = async <T>(orgId: string, task: (exclusive: boolean) => Prom
 export const flushQueue = (
   deviceId: string,
   orgId: string,
+  userId: string,
   client: Client = apiForOrg(orgId),
 ): Promise<FlushResult> =>
   withPushLock(orgId, async (exclusive) => {
+    // Chỉ gửi op của người đang đăng nhập (B8): op người khác ghi trên máy này sang khu cách ly.
+    await isolateOtherUsers(orgId, userId);
     const conflicts: string[] = [];
     const warnings: SyncNotice[] = [];
     let pushed = 0;
-    let dropped = 0;
+    const dropped: QueuedOp[] = [];
     let stuck: QueuedOp | undefined;
     const done = (rest: Partial<FlushResult> = {}): FlushResult => {
       // Op kẹt từ trước vẫn chặn hàng: lượt này hỏng vì lý do khác cũng không được làm mất nút "Gửi lại" / "Bỏ".
@@ -296,7 +369,7 @@ export const flushQueue = (
     for (let round = 0; round < MAX_BATCHES_PER_FLUSH; round++) {
       // Đọc lại mỗi lô: op mới ghi trong lúc gửi được đi luôn; op người dùng vừa bỏ / đăng xuất vừa xoá
       // không bị gửi theo ảnh chụp cũ.
-      const next = await readyOps(orgId);
+      const next = await readyOps(orgId, userId);
       stuck = next.stuck;
       const queue = exclusive ? coalesce(next.ready) : next.ready.map((op) => outgoing([op]));
       let batch = takeBatch(deviceId, queue, maxOps);
@@ -336,7 +409,7 @@ export const flushQueue = (
           if (r.error?.code === 'PLAN_EXPIRED') return done({ error: PLAN_BLOCKED, blocked: true });
           if (isBranchScope(r.error)) {
             // Mỗi lần bỏ ít nhất một op nên vòng này dừng; các op sau nó vẫn được gửi ngay trong lượt.
-            dropped += await dropWithDependents(orgId, op);
+            dropped.push(...await dropWithDependents(orgId, op));
             break;
           }
           if (r.error && keepRetrying(op, r.error)) {
@@ -362,7 +435,7 @@ export const flushQueue = (
         // Cả lượt hỏng: hẹn lại từ op đầu (giãn cách theo `tries`), không cộng `rejectedTries`, không kẹt.
         await markFailed(head, message(err), orgId);
         const refused = err instanceof ApiError && (err.code === 'CONTRACT_MISMATCH' || !isRetryable(err.code));
-        return done({ error: message(err), ...(refused ? { refused } : {}) });
+        return done({ error: message(err), ...(refused ? { refused } : {}), ...(isNotMember(err) ? { notMember: true } : {}) });
       }
     }
     return done();
@@ -373,6 +446,7 @@ export const flushQueue = (
 export const syncOnce = async (
   _supabaseClient: unknown,
   orgId: string,
+  userId: string,
   local: AppData,
   isCurrent: () => boolean = () => true,
 ): Promise<SyncOutcome> => {
@@ -380,9 +454,11 @@ export const syncOnce = async (
   const deviceId = getDeviceId();
   const client = apiForOrg(orgId);
 
-  const flush = await flushQueue(deviceId, orgId, client);
+  const flush = await flushQueue(deviceId, orgId, userId, client);
+  // Chụp NGAY, theo sổ lúc bắt đầu lượt: sổ sắp tải lại theo chi nhánh mới, phiếu đã bỏ không còn để tra.
+  const dropped = droppedItems(flush.dropped, local);
   // Ảnh đi hàng đợi riêng; lên trước hay sau op của phiếu đều được. Hỏng thì lượt sau thử lại.
-  await flushAttachments(orgId).catch(() => 0);
+  const { alerts: photoAlerts } = await flushAttachments(orgId).catch((): { alerts: PhotoAlert[] } => ({ alerts: [] }));
   const pendingIds = await pendingRecordIds(orgId);
 
   // Gói hết hạn chỉ chặn GHI: vẫn kéo về để máy này thấy thay đổi từ máy khác — sổ vẫn đọc được.
@@ -432,11 +508,13 @@ export const syncOnce = async (
         ...pushState,
       },
       conflicts: flush.conflicts,
-      dropped: flush.dropped,
+      dropped,
       warnings: flush.warnings,
+      photoAlerts,
       cursor: currentCursor,
       pulled: { reset, pages },
       syncedAt: startedAt,
+      ...(flush.notMember ? { notMember: true } : {}),
     };
   } catch (err) {
     if (err instanceof ApiError && err.code === 'PLAN_EXPIRED') {
@@ -450,8 +528,9 @@ export const syncOnce = async (
           pendingCount: await pendingCount(orgId),
         },
         conflicts: flush.conflicts,
-        dropped: flush.dropped,
+        dropped,
         warnings: flush.warnings,
+        photoAlerts,
         cursor: currentCursor,
         pulled: { reset, pages },
       };
@@ -467,10 +546,12 @@ export const syncOnce = async (
         ...pushState,
       },
       conflicts: flush.conflicts,
-      dropped: flush.dropped,
+      dropped,
       warnings: flush.warnings,
+      photoAlerts,
       cursor: currentCursor,
       pulled: { reset, pages },
+      ...(flush.notMember || isNotMember(err) ? { notMember: true } : {}),
     };
   }
 };

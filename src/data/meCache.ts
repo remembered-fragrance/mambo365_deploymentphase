@@ -34,6 +34,27 @@ export const recallMe = (userId: string): Me | null => {
   }
 };
 
+/**
+ * Tài khoản có bản `/v1/me` trên máy và các tổ chức trong bản đó — để biết sổ nào trên máy còn người nhận.
+ * Đọc lỏng (không qua schema): bản do app cũ ghi thiếu trường mới vẫn kể được tổ chức. Ném lỗi khi localStorage
+ * bị chặn hay một bản hỏng không đọc nổi — không biết hết người nhận thì người gọi không được dọn gì.
+ */
+export const orgsInCachedMe = (): { readonly users: string[]; readonly orgIds: string[] } => {
+  const users: string[] = [];
+  const orgIds: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key?.startsWith(KEY_PREFIX)) continue;
+    users.push(key.slice(KEY_PREFIX.length));
+    const parsed = JSON.parse(localStorage.getItem(key) ?? 'null') as { memberships?: unknown } | null;
+    if (!Array.isArray(parsed?.memberships)) throw new Error(`Bản /v1/me trên máy không đọc được: ${key}`);
+    for (const m of parsed.memberships as { organization?: { id?: unknown } }[]) {
+      if (typeof m?.organization?.id === 'string') orgIds.push(m.organization.id);
+    }
+  }
+  return { users, orgIds };
+};
+
 /** Đăng xuất: tên tổ chức, vai trò của người cũ không được ở lại máy cho người sau. */
 export const forgetMe = (userId: string): void => {
   try {
