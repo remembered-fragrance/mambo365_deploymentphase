@@ -2,7 +2,7 @@
  * Đơn hàng và thông báo — cửa cho màn hình. Cần mạng; hỏi lại khi đổi tổ chức.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NotificationView, OrderDetail, OrderSummary } from '@mambo/contracts';
 import { getOrder, listNotifications, listOrders, readNotifications } from '../orders';
 import { useStore } from '../useStore';
@@ -34,6 +34,18 @@ export const useOrder = (id: string): Loaded<OrderDetail> => {
 
 const POLL_MS = 60_000;
 
+/**
+ * Thông báo `plan.activated` chưa thấy ở lần hỏi trước — gói vừa kích hoạt ngoài app. `seen = null` (lần hỏi đầu
+ * của tổ chức) chỉ ghi nhận: app vừa mở đã đọc gói mới rồi.
+ */
+export const newPlanActivations = (
+  seen: ReadonlySet<string> | null,
+  items: readonly NotificationView[],
+): { readonly fresh: boolean; readonly seen: ReadonlySet<string> } => {
+  const ids = items.filter((n) => n.kind === 'plan.activated').map((n) => n.id);
+  return { fresh: seen !== null && ids.some((id) => !seen.has(id)), seen: new Set([...(seen ?? []), ...ids]) };
+};
+
 export interface Notifications {
   readonly items: readonly NotificationView[];
   readonly unread: number;
@@ -47,9 +59,13 @@ export interface Notifications {
  * mọi thành viên cùng thấy, cùng trạng thái đã đọc. Hỏi hụt (mất mạng) thì giữ bản đang có.
  */
 export function useNotifications(): Notifications {
-  const { currentOrgId } = useStore();
+  const { currentOrgId, refreshPlan } = useStore();
   const [items, setItems] = useState<readonly NotificationView[]>([]);
   const [unread, setUnread] = useState(0);
+  // Qua ref: `refreshPlan` đổi danh tính mỗi lần `/v1/me` trả lời — để vào deps của `reload` là dựng lại nhịp hỏi.
+  const refreshPlanRef = useRef(refreshPlan);
+  useEffect(() => { refreshPlanRef.current = refreshPlan; }, [refreshPlan]);
+  const planSeen = useRef<ReadonlySet<string> | null>(null);
 
   const reload = useCallback(() => {
     if (!currentOrgId) return;
@@ -57,6 +73,9 @@ export function useNotifications(): Notifications {
       (r) => {
         setItems(r.notifications);
         setUnread(r.unread);
+        const plan = newPlanActivations(planSeen.current, r.notifications);
+        planSeen.current = plan.seen;
+        if (plan.fresh) refreshPlanRef.current();
       },
       () => {},
     );
@@ -65,6 +84,7 @@ export function useNotifications(): Notifications {
   useEffect(() => {
     setItems([]);
     setUnread(0);
+    planSeen.current = null;
     reload();
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'visible') reload();
