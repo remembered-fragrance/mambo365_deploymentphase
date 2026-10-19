@@ -10,15 +10,26 @@ import { useLoad, type Loaded } from './useLinked';
 
 export { createOrder, readNotifications, scheduleOrder, stepOrder, type OrderStep } from '../orders';
 
+/**
+ * Số lần máy chủ gỡ phiếu / nháp khỏi đơn (`ORDER_NOT_OPEN`) trong phiên — tăng thì đơn đã đổi (huỷ, không
+ * còn), hỏi lại danh sách để người cân không tưởng đơn vẫn mở.
+ */
+const useOrdersStamp = (): string => {
+  const { currentOrgId, syncWarnings } = useStore();
+  return `${currentOrgId ?? ''}:${syncWarnings.filter((w) => w.code === 'ORDER_NOT_OPEN').length}`;
+};
+
 /** shortcut: chỉ trang đầu (50 đơn mới nhất), thêm "Xem thêm" theo cursor khi có tổ chức vượt 50 đơn mở. */
 export const useOrders = (): Loaded<readonly OrderSummary[]> => {
   const { currentOrgId } = useStore();
-  return useLoad(currentOrgId ? async () => (await listOrders()).orders : null, currentOrgId ?? '');
+  const stamp = useOrdersStamp();
+  return useLoad(currentOrgId ? async () => (await listOrders()).orders : null, stamp);
 };
 
 export const useOrder = (id: string): Loaded<OrderDetail> => {
   const { currentOrgId } = useStore();
-  return useLoad(currentOrgId ? () => getOrder(id) : null, `${currentOrgId ?? ''}:${id}`);
+  const stamp = useOrdersStamp();
+  return useLoad(currentOrgId ? () => getOrder(id) : null, `${stamp}:${id}`);
 };
 
 const POLL_MS = 60_000;

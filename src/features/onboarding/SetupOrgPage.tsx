@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { ORG_TYPE_TEXT } from '../shared/roleText';
-import { asksOrgName, orgNameFor } from './setupOrg';
+import { asksOrgName, emptyFields, orgNameFor } from './setupOrg';
 
 const ORG_NAME_TEXT = {
   trader: { label: L.setupOrgNameTrader, hint: L.setupOrgNameTraderHint },
@@ -49,8 +49,9 @@ export function SetupOrgPage() {
       return;
     }
     // Nông dân: tên hộ lấy từ tên hiển thị ⇒ tên trống thì báo ngay ở ô tên.
-    if (!asksOrgName(orgType) && !name.trim()) {
-      setErrors({ name: L.nameRequired });
+    const empty = emptyFields(orgType, orgName, name);
+    if (Object.keys(empty).length > 0) {
+      setErrors(empty);
       return;
     }
     setBusy(true);

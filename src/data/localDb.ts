@@ -6,6 +6,8 @@
  */
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { z } from 'zod';
+import { newId } from '@mambo/core/id';
 import type { SyncEntity, SyncOpKind } from '@mambo/contracts';
 import type { TableName } from './rows';
 
@@ -31,14 +33,22 @@ export interface QueuedOp {
   readonly payload?: Record<string, unknown>;
 
   /**
-   * Số thứ tự tăng dần — khoá sắp xếp của hàng đợi.
+   * Số thứ tự tăng dần — khoá sắp xếp của hàng đợi. Cấp trong transaction ghi op (`enqueue`):
+   * luôn lớn hơn mọi op đang chờ, dù đồng hồ máy bị chỉnh lùi hay hai tab cùng ghi.
    *
    * 🔴 KHÔNG dùng `createdAt` để sắp: một lần bấm "Trả đủ & xong" xếp bốn thao
    * tác trong cùng một mili giây.
    */
   readonly seq: number;
   readonly createdAt: string;
+  /** Mọi lần gửi hỏng (mất mạng, cả lượt bị từ chối, máy chủ từ chối op) — chỉ để giãn cách thử lại. */
   readonly tries: number;
+  /**
+   * Số lần MÁY CHỦ từ chối chính op này với lỗi thử-lại-được (PARENT_MISSING / INTERNAL) — quyết định khi
+   * nào thành kẹt (`MAX_REJECTED_TRIES`). Mất mạng không cộng vào: rớt mạng 4 lần rồi gặp một lần
+   * INTERNAL không được thành kẹt ngay. Op của bản app cũ không có trường này = 0.
+   */
+  readonly rejectedTries?: number;
   readonly nextAttemptAt: string;
   readonly lastError?: string;
   readonly conflict?: { code: string; message: string; details?: unknown };
@@ -110,21 +120,16 @@ export const openLocalDb = (): Promise<IDBPDatabase<LocalDbSchema>> => {
   return dbPromise;
 };
 
-let lastSeq = 0;
-
-/**
- * Số thứ tự tăng dần, không bao giờ lặp trong một phiên và vẫn tăng qua các
- * lần mở app (phần nguyên là mốc thời gian).
- */
-export const nextSeq = (): number => {
-  const now = Date.now() * 1_000;
-  lastSeq = now > lastSeq ? now : lastSeq + 1;
-  return lastSeq;
-};
-
 const DEVICE_KEY = 'thumua365_device_id';
 
-/** Sinh MỘT lần cho mỗi máy và lưu lại. */
+/** Máy chủ bắt `deviceId: z.uuid()` — sai định dạng thì MỌI lượt đẩy bị 422. */
+const isDeviceId = (id: string | null): id is string => id !== null && z.uuid().safeParse(id).success;
+
+/**
+ * Sinh MỘT lần cho mỗi máy và lưu lại. `newId()` có dự phòng đúng định dạng UUID cho trình duyệt
+ * không có `crypto.randomUUID` (Chrome Android < 92, iOS Safari < 15.4). Bản app cũ lưu `dev-…` ở
+ * đúng trường hợp đó: sinh lại và ghi đè, không thì máy đó không bao giờ gửi được.
+ */
 export const getDeviceId = (): string => {
   let id: string | null = null;
   try {
@@ -132,8 +137,8 @@ export const getDeviceId = (): string => {
   } catch {
     // Trình duyệt chặn lưu
   }
-  if (!id) {
-    id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'dev-' + Math.random().toString(36).slice(2);
+  if (!isDeviceId(id)) {
+    id = newId();
     try {
       if (typeof localStorage !== 'undefined') localStorage.setItem(DEVICE_KEY, id);
     } catch {

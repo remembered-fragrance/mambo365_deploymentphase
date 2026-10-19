@@ -658,6 +658,64 @@ Theo báo cáo rà soát hai repo (cùng đợt với BE `v0.18.0`). Ba lỗi l�
 - **Phát hành 19/10:** API trước (BE #38 `fa568e4`, `/v1/health` `0.18.0`), rồi #48 (lock theo release `v0.18.0`,
   CI xanh, merge `3c40db7`); bundle production có code mới.
 
+## Hàng đợi không kẹt vì cả lượt bị từ chối · `@mambo/*` 0.19.0 · 19/10/2026 · đợt 1, chưa phát hành
+
+Theo `prompt-sua-loi-thumua365.md` (đợt 1: lỗi gốc chung, A1, A2, A3, B2, B9).
+
+- **Lỗi gốc chung**: cả lượt `/sync/push` bị từ chối (413, 422 vỏ request, `NOT_A_MEMBER`, mạng, 5xx) trước đây
+  gắn cờ kẹt cho **op đầu** — "Gửi lại" gặp lại lỗi cũ, "Bỏ" xoá op vô can. Giờ: không op nào bị gắn cờ; hẹn lại
+  từ op đầu (giãn cách theo `tries`), giữ nguyên hàng đợi. Lỗi không phải mạng bật `status.refused` → banner
+  "Máy chủ chưa nhận lượt gửi này" (không nói "mất mạng"). Chỉ `results[i].rejected` mới là lỗi của một op.
+- **Kiểm vỏ ở máy** bằng `SyncPushInput` (đúng luật cổng gây 422 cả lượt). Không dùng `SyncPushRequest`: lỗi `data`
+  máy chủ đã trả theo từng op; kiểm cả `data` ở đây chỉ trùng việc `opProblem`. Seq không tăng → cắt lô trước chỗ đó.
+- **A1**: lô cắt theo `SYNC_PUSH_MAX_OPS` **và** `SYNC_PUSH_MAX_BYTES` (700KB, đo UTF-8 của cả thân). 413 → chia đôi
+  lô; một op đơn lẻ vẫn 413 mới kẹt (`PAYLOAD_TOO_LARGE` + câu báo). Một lượt `flushQueue` gửi nhiều lô liền tới
+  hết op tới hạn. Các `update` **liền nhau** của cùng một nháp gộp thành một op (gộp nông `data`), mang opId/seq
+  của op **cuối** — lấy op đầu thì gửi lại nhóm có thêm lần lưu mới bị coi là `duplicate`, mất chữ. Nhận xong xoá
+  hết op trong nhóm.
+- **A2**: `getDeviceId` dùng `newId()` của core; id đã lưu không phải UUID (`dev-…` của bản cũ) thì sinh lại.
+- **A3**: `seq` cấp trong transaction ghi op: `max(Date.now()*1000, seq lớn nhất trong 'queue' + 1)`, đọc qua index
+  `seq` cursor `'prev'`, cùng transaction `readwrite` (hai tab không trùng). Bỏ `nextSeq()` (mốc trong bộ nhớ).
+- **B2**: `warnings` (`ORDER_NOT_OPEN`, `RECORD_DELETED`) đi từ `flushQueue` → `syncOnce` → store `syncWarnings`
+  (cộng dồn) → toast. Lần trả mang theo `transactionId` + `amount` để câu báo nói "Lần trả 500.000 đ cho phiếu
+  Chú Bảy, 19/10". `useOrders`/`useOrder` hỏi lại khi số `ORDER_NOT_OPEN` tăng.
+- **Một toast mỗi lượt**: `ToastProvider` chỉ giữ MỘT toast (câu sau đè câu trước) ⇒ `SyncNotices` gộp số op bỏ
+  vì đổi chi nhánh + cảnh báo vào một câu (`syncNoticeText.ts`: kể 2 cái đầu, còn lại "+n"). Thay
+  `BranchDropNotice` (đã xoá). Tên file thuần không được chỉ khác hoa/thường với component (TS1261, gãy trên CI).
+- **Lỗi ẩn sửa thêm khi rà (cùng đợt)**:
+  - Hai tab cùng đẩy: `flushQueue` chạy trong `navigator.locks` (`thumua365-push:<org>`). Không có Web Locks thì
+    vẫn gửi nhưng **không gộp nháp** — gộp mà tab kia đã gửi op giữa nhóm thì op cuối cũ đè chữ mới.
+  - Mỗi lô đọc lại hàng đợi (`readyOps`), không dùng ảnh chụp đầu lượt: op ghi thêm trong lúc gửi vẫn đúng thứ tự,
+    op đã xoá (Bỏ / BRANCH_SCOPE) không gửi lại. BRANCH_SCOPE `break` rồi đọc lại, không đệ quy (từng treo).
+  - Op kẹt từ trước luôn vào `conflicts` (cả khi lượt này lỗi mạng) — không thì banner "Gửi lại / Bỏ" biến mất.
+  - 413 từ proxy (Render trả HTML, SDK ra `INTERNAL` + status 413) cũng chia lô như `PAYLOAD_TOO_LARGE`.
+  - Test hàng đợi cài stub Web Locks khi `navigator.locks` không có — CI chạy Node 22 (không có), máy local
+    Node 24 (có). Đã chạy `tests/data` bằng `npx -p node@22`: xanh.
+- **B9**: `QueuedOp.rejectedTries` — chỉ lần máy chủ từ chối op (PARENT_MISSING / INTERNAL) mới cộng; mất mạng
+  chỉ cộng `tries` (giãn cách). `keepRetrying` xét `rejectedTries`. "Gửi lại" đặt cả hai về 0.
+- **Chạy thử local 19/10** (Docker DB + API `npm run dev` + FE, tài khoản thật, sổ "Vựa Test Local" chỉ ở DB local;
+  giả lập mạng bằng cách bọc `fetch` trong trang): phiếu lập khi mất mạng lên đủ; 200 nháp nặng 1,5MB → 3 lô
+  ~700KB, không 413; op 1,2MB → máy chủ trả `PAYLOAD_TOO_LARGE` thật, kẹt đúng op, banner còn khi mất mạng, "Bỏ"
+  xong op sau đi tiếp; hai tab → một tab gửi, không `duplicate`, nháp giữ bản cuối; 403 cả lượt → banner
+  "Máy chủ chưa nhận", không kẹt; toast gộp 3 cảnh báo; deviceId `dev-…` đổi sang UUID.
+- **Sửa thêm sau chạy thử**: `isDue` coi mốc hẹn hỏng/thiếu là tới hạn (trước: `NaN` ⇒ chặn im cả hàng đợi);
+  bước "Bạn là ai?" báo ô tên trống bằng tiếng Việt (`emptyFields`) thay câu zod tiếng Anh của máy chủ; toast
+  không có "Hoàn tác" giữ theo độ dài câu (`toastDuration`, 60ms/ký tự, 8–20 giây).
+- **Chạy thử hai luồng chéo tổ chức** (Vựa Test3 ↔ DN Test2, mỗi bên một profile Chrome; membership Test3 trong DN
+  chèn tay ở DB local): DN huỷ đơn khi vựa còn phiếu theo đơn → `ORDER_NOT_OPEN`, phiếu giữ, gỡ khỏi đơn, toast
+  nói rõ; chủ đổi chi nhánh nhân viên → op phiếu chi nhánh cũ bị `BRANCH_SCOPE` tự bỏ, toast báo, sổ dựng lại
+  theo chi nhánh mới. Đạt cả hai.
+- **Sửa sau đợt chạy thử này**: toast cảnh báo bỏ trùng (`entity:recordId:code`), bỏ nháp đã không còn, phiếu
+  xếp trước lần trả (`worthTelling`); toast chốt phiếu in tổng thật + còn nợ/còn phải thu (`finishText.ts`,
+  trước in số ĐÃ TRẢ dưới nhãn "Tổng phiếu" ⇒ "Ghi nợ & xong" ra "Tổng phiếu: 0đ"); hướng dẫn 4 bước theo
+  chiều phiếu (`coachSteps`, phiếu bán "chọn người mua").
+- Test 271 (+39: `localDb.test.ts`, `syncNoticeText.test.ts`, `toastDuration.test.ts`, `finishText.test.ts` mới; `isDue` hỏng, ô tên
+  trống; hai tab, op ghi giữa lượt, 413 proxy, giữ banner kẹt; `sync.test.ts` cả lượt bị từ chối ×4, 200 op
+  nháp to, 413 chia lô, op đơn lẻ quá lớn, gộp nháp, seq trùng, `ORDER_NOT_OPEN`, mất mạng rồi INTERNAL). Test cũ "FORBIDDEN cả lượt → kẹt op
+  đầu" đã đổi theo hành vi mới.
+- **Chưa làm**: lock `@mambo/*` đang trỏ `file:../tmp-pack/0.19.0/*.tgz` để chạy local — phải đổi sang release
+  `v0.19.0` sau khi BE gắn tag.
+
 ---
 
 ## Ba số phải giữ trong tầm

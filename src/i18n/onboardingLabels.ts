@@ -45,6 +45,7 @@ export const ONBOARDING_LABELS = {
   // ─── Hướng dẫn 4 bước ─────────────────────────────────────────────────────
   coachTitle: 'Bốn bước cho phiếu đầu tiên',
   coachStep1: 'Một — chọn người bán, gõ tên mới cũng được.',
+  coachStep1Sale: 'Một — chọn người mua, gõ tên mới cũng được.',
   coachStep2: 'Hai — chọn mặt hàng đang cân.',
   coachStep3: 'Ba — nhập số cân và đơn giá, app tự ra tiền.',
   coachStep4: 'Bốn — bấm "Trả đủ & xong" hoặc "Ghi nợ & xong".',

@@ -36,6 +36,7 @@ import type {
 } from '@mambo/contracts';
 import { L } from '@/i18n/labels';
 import type { ProfilePatch, SignUpInput } from './auth';
+import type { SyncNotice } from './sync';
 
 /** Đăng xuất bị chặn vì còn thao tác chưa lên máy chủ. Màn hình hỏi lại rồi gọi `signOut({ discardUnsent: true })`. */
 export class UnsentOpsError extends Error {
@@ -129,6 +130,11 @@ export interface StoreValue {
   readonly stuck: boolean;
   /** Số thao tác đã tự bỏ vì chủ đổi chi nhánh của người này (cộng dồn trong phiên). */
   readonly branchDropped: number;
+  /**
+   * Op máy chủ đã nhận kèm cảnh báo (cộng dồn trong phiên): `ORDER_NOT_OPEN` — phiếu / nháp vẫn lưu nhưng
+   * bị gỡ khỏi đơn (đơn đã huỷ, không còn); `RECORD_DELETED` — bản ghi đã bị xoá ở máy khác.
+   */
+  readonly syncWarnings: readonly SyncNotice[];
   /** Bỏ cờ từ chối, gửi lại ngay. */
   retryStuck: () => void;
   /** Bỏ thao tác bị từ chối (máy chủ sẽ không có nó) để các thao tác sau đi tiếp. */

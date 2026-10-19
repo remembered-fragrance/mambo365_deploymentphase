@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { PlusIcon, TrashIcon } from '@/components/ui/icons';
-import { formatVnd } from '@mambo/core/format';
 import { newId } from '@mambo/core/id';
 import type { TransactionKind } from '@mambo/core/types';
 import { useSubscription } from '@/data/hooks/useSubscription';
@@ -18,6 +17,7 @@ import { FirstReceiptCoach } from '../onboarding/FirstReceiptCoach';
 import { ROUTES } from '../shared/navItems';
 import { CounterpartyPicker } from './CounterpartyPicker';
 import { discardConsequence, nextSession } from './draftSessions';
+import { finishMessage } from './finishText';
 import { LineEditor } from './LineEditor';
 import { MoreInfoPanel } from './MoreInfoPanel';
 import { OrderPicker } from './OrderPicker';
@@ -94,7 +94,7 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
     const tx = attempt(() => receipt.finish(amountPaid, dueDate));
     if (!tx) return;
     setPayPartOpen(false);
-    toast({ message: `${L.total}: ${formatVnd(amountPaid)} · ${tx.supplierName}` });
+    toast({ message: finishMessage(tx) });
     goToDraft(nextSession(sessions, receipt.draftId));
   };
 
@@ -146,7 +146,7 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
       />
 
       {/* Hướng dẫn bốn bước — chỉ hiện một lần, ngay trên màn hình nó nói về. */}
-      <FirstReceiptCoach />
+      <FirstReceiptCoach kind={kind} />
 
       <div className="mb-3 lg:hidden">
         <SessionRail
