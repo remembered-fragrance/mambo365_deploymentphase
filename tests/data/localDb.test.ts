@@ -63,13 +63,13 @@ describe('seq của hàng đợi không phụ thuộc giờ máy', () => {
   it('đồng hồ lùi giữa hai lần mở app: op mới vẫn đứng sau op cũ', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-10-19T10:00:00Z'));
-    await enqueue({ ...opInsert('transaction', 'tx-1', {}), orgId: 'org-a' });
+    await enqueue({ ...opInsert('transaction', 'tx-1', {}), orgId: 'org-a', userId: 'u-1' });
 
     // Mở lại app (mốc trong bộ nhớ mất) sau khi đồng hồ máy bị chỉnh lùi một giờ.
     vi.resetModules();
     const reopened = await import('@/data/queue');
     vi.setSystemTime(new Date('2026-10-19T09:00:00Z'));
-    await reopened.enqueue({ ...opInsert('payment', 'pay-1', { transactionId: 'tx-1' }), orgId: 'org-a' });
+    await reopened.enqueue({ ...opInsert('payment', 'pay-1', { transactionId: 'tx-1' }), orgId: 'org-a', userId: 'u-1' });
 
     expect((await pendingOps('org-a')).map((op) => op.recordId)).toEqual(['tx-1', 'pay-1']);
   });
@@ -83,9 +83,9 @@ describe('seq của hàng đợi không phụ thuộc giờ máy', () => {
     const tabB = await import('@/data/queue');
 
     await Promise.all([
-      tabA.enqueue({ ...opInsert('note', 'a', {}), orgId: 'org-a' }),
-      tabB.enqueue({ ...opInsert('note', 'b', {}), orgId: 'org-a' }),
-      tabA.enqueue({ ...opInsert('note', 'c', {}), orgId: 'org-a' }),
+      tabA.enqueue({ ...opInsert('note', 'a', {}), orgId: 'org-a', userId: 'u-1' }),
+      tabB.enqueue({ ...opInsert('note', 'b', {}), orgId: 'org-a', userId: 'u-1' }),
+      tabA.enqueue({ ...opInsert('note', 'c', {}), orgId: 'org-a', userId: 'u-1' }),
     ]);
 
     const seqs = (await pendingOps('org-a')).map((op) => op.seq);

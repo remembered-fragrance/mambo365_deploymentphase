@@ -13,6 +13,7 @@ import { MAX_ATTACHMENTS } from '@/config';
 import { newId } from '@mambo/core/id';
 import { deleteLocalAttachment, putLocalAttachment, queueAttachmentUpload } from '../attachments';
 import { compressImage } from '../compressImage';
+import { L } from '@/i18n/labels';
 import { useStore } from '../useStore';
 
 export interface Attachments {
@@ -23,18 +24,26 @@ export interface Attachments {
 }
 
 export function useAttachments(): Attachments {
-  const { currentOrgId } = useStore();
+  const { currentOrgId, user } = useStore();
+  const userId = user?.id;
 
   const addPhoto = useCallback(
     async (file: File, current: readonly string[]) => {
       if (current.length >= MAX_ATTACHMENTS) return null;
       const id = newId();
       await putLocalAttachment(id, await compressImage(file));
-      // Sổ của máy này (chưa có tổ chức) không đẩy lên đâu cả — ảnh chỉ nằm trong máy.
-      if (currentOrgId) await queueAttachmentUpload(id, currentOrgId);
+      // Sổ của máy này (chưa có tổ chức) không đẩy lên đâu cả — ảnh chỉ nằm trong máy. Sổ tổ chức thì ảnh phải
+      // mang người chụp (B8); chưa biết là ai thì không nhận ảnh, không để ảnh nằm im không bao giờ được đẩy.
+      if (currentOrgId) {
+        if (!userId) {
+          await deleteLocalAttachment(id);
+          throw new Error(L.bookNotReady);
+        }
+        await queueAttachmentUpload(id, currentOrgId, userId);
+      }
       return id;
     },
-    [currentOrgId],
+    [currentOrgId, userId],
   );
 
   const removePhoto = useCallback(async (id: string) => {

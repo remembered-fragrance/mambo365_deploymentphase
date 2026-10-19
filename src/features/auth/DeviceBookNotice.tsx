@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
 import { useDeviceBook } from '@/data/hooks/useDeviceBook';
+import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 
 /**
@@ -13,10 +14,12 @@ import { L } from '@/i18n/labels';
  */
 export function DeviceBookNotice() {
   const { count, importDeviceBook } = useDeviceBook();
+  const { importsFromFile } = useStore();
   const toast = useToast();
   const [dismissed, setDismissed] = useState(false);
 
-  if (count === 0 || dismissed) return null;
+  // Sổ tổ chức không nhận sổ thay thế từ ngoài (B1): hỏi rồi bấm vào chỉ ra lỗi.
+  if (count === 0 || dismissed || !importsFromFile) return null;
 
   return (
     <Card title={L.deviceBookTitle} subtitle={`${count} ${L.receiptCountUnit}`}>

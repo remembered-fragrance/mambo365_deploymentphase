@@ -4,10 +4,10 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { formatDate } from '@mambo/core/format';
+import { formatDate, formatVnd } from '@mambo/core/format';
 import { emptyData } from '@mambo/core/normalize';
 import type { AppData, Transaction } from '@mambo/core/types';
-import { syncNoticeMessage, type SyncNoticeItem } from '@/features/shared/syncNoticeText';
+import { droppedLines, syncNoticeMessage, type SyncNoticeItem } from '@/features/shared/syncNoticeText';
 import { L } from '@/i18n/labels';
 
 const receipt: Transaction = {
@@ -99,3 +99,35 @@ describe('syncNoticeMessage', () => {
   });
 });
 
+
+describe('thẻ "đã bỏ vì đổi chi nhánh" (B10)', () => {
+  it('🔴 kể từng phiếu, lần trả: người, ngày, số tiền; danh bạ gộp một dòng đếm', () => {
+    const lines = droppedLines([
+      { entity: 'transaction', kind: 'insert', recordId: 'tx-1', name: 'Chú Bảy', date: receipt.date, amount: 1_000_000 },
+      { entity: 'payment', kind: 'insert', recordId: 'p-1', name: 'Chú Bảy', date: receipt.date, amount: 300_000 },
+      { entity: 'transaction', kind: 'softDelete', recordId: 'tx-2', name: '', date: receipt.date },
+      { entity: 'supplier', kind: 'update', recordId: 's-1' },
+      { entity: 'product', kind: 'insert', recordId: 'pr-1' },
+    ]);
+    expect(lines).toEqual([
+      `${L.syncNoticeReceipt} Chú Bảy, ${formatDate(receipt.date)}, ${formatVnd(1_000_000)}`,
+      `${L.syncNoticePayment} ${formatVnd(300_000)} ${L.syncNoticeForReceipt} Chú Bảy, ${formatDate(receipt.date)}`,
+      `${L.droppedDelete} ${L.syncNoticeReceipt} ${L.walkIn}, ${formatDate(receipt.date)}`,
+      `2 ${L.droppedOthers}`,
+    ]);
+  });
+});
+
+describe('ảnh chứng từ (B6)', () => {
+  it('ảnh bị từ chối nói rõ của phiếu nào; ảnh thử mãi không lên nói là vẫn còn trên máy', () => {
+    const withPhoto: AppData = { ...data, transactions: [{ ...receipt, attachmentIds: ['ph-1', 'ph-2'] }] };
+    const text = syncNoticeMessage(0, [], withPhoto, [
+      { id: 'ph-1', reason: 'rejected' },
+      { id: 'ph-2', reason: 'stalled' },
+    ]);
+    expect(text).toBe(
+      `1 ${L.photoRejected} (${L.syncNoticeReceipt} Chú Bảy, ${formatDate(receipt.date)}) · ` +
+        `1 ${L.photoStalled} (${L.syncNoticeReceipt} Chú Bảy, ${formatDate(receipt.date)})`,
+    );
+  });
+});

@@ -15,9 +15,9 @@ import { downloadBook } from '../shared/bookFile';
  * Ghi và đọc đều đi qua `useStore`, giao diện không tự chạm nơi lưu trữ.
  */
 export function DataCard() {
-  // Sổ đang đồng bộ là sổ của máy chủ: thay trên máy bằng file thì máy chủ, máy khác không có. Gói hết hạn
-  // (không đồng bộ) thì file vẫn là cách duy nhất để đổi máy — nút phải còn.
-  const { data, importData, syncsWithServer: online } = useStore();
+  // Sổ của tổ chức là sổ của máy chủ — kể cả khi hết gói, đổi máy chỉ cần đăng nhập (B1). Chỉ sổ nằm riêng trên
+  // máy mới có nút lấy lại từ file.
+  const { data, importData, importsFromFile } = useStore();
   const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<unknown>(null);
@@ -45,7 +45,7 @@ export function DataCard() {
           {L.exportToFile}
         </Button>
 
-        {!online && (
+        {importsFromFile && (
           <Button block onClick={() => fileInput.current?.click()}>
             {L.importFromFile}
           </Button>
@@ -62,7 +62,7 @@ export function DataCard() {
           }}
         />
 
-        {!online && <p className="text-sm text-ink-3">{L.importReplaceWarning}</p>}
+        {importsFromFile && <p className="text-sm text-ink-3">{L.importReplaceWarning}</p>}
       </div>
 
       <ConfirmDialog

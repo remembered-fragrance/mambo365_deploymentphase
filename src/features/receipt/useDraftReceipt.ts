@@ -13,6 +13,7 @@ import { computeReceiptTotal, totalAdjustments } from '@mambo/core/calc';
 import type { DraftStatus, PriceAdjustment, Transaction, TransactionKind } from '@mambo/core/types';
 import { useStore } from '@/data/useStore';
 import { emptyLine, fromLine, isUsable, toLine, type LineDraft } from './lineDraft';
+import type { PartyChoice } from './namesakes';
 
 /** `failed`: máy không nhận bản nháp (số vượt mức máy chủ nhận) — xem `opCheck.ts`. */
 export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
@@ -46,8 +47,11 @@ export interface DraftReceiptState {
   setNote: (note: string) => void;
   setAttachmentIds: (ids: readonly string[]) => void;
   setOrderId: (orderId: string | undefined) => void;
-  /** `dueDate` chỉ có nghĩa khi phiếu còn nợ — xem `PayPartDialog`. */
-  finish: (amountPaid: number, dueDate?: string) => Transaction | null;
+  /**
+   * `dueDate` chỉ có nghĩa khi phiếu còn nợ — xem `PayPartDialog`. `party`: câu trả lời khi tên gõ trùng người đã
+   * có (B3, `namesakes.ts`) — không có thì core dùng lại người cùng tên như cũ.
+   */
+  finish: (amountPaid: number, dueDate?: string, party?: PartyChoice) => Transaction | null;
   discard: () => void;
   /** Lưu ngay thành "Để dành" và ngừng tự lưu — trang rời màn lập phiếu ngay sau đó. */
   saveForLater: () => void;
@@ -135,7 +139,7 @@ export function useDraftReceipt(
   }, []);
 
   const finish = useCallback(
-    (amountPaid: number, dueDate?: string): Transaction | null => {
+    (amountPaid: number, dueDate?: string, party?: PartyChoice): Transaction | null => {
       const usable = lines.filter(isUsable).map(toLine);
       if (usable.length === 0) return null;
 
@@ -143,12 +147,14 @@ export function useDraftReceipt(
       if (timer.current) clearTimeout(timer.current);
 
       const debt = linesTotal + adjustmentTotal - amountPaid;
+      const picked = party && 'id' in party ? party : undefined;
+      const partyId = picked ? picked.id : counterpartyId;
       const record = () => addTransaction({
         date: new Date().toISOString(),
         kind,
-        counterpartyId: counterpartyId ?? '',
-        supplierId: counterpartyId,
-        supplierName: partyName,
+        counterpartyId: partyId ?? '',
+        supplierId: partyId,
+        supplierName: picked ? picked.name : partyName,
         lines: usable,
         amountPaid,
         payments: [],
@@ -160,7 +166,7 @@ export function useDraftReceipt(
         note: note || undefined,
         attachmentIds: attachmentIds.length > 0 ? [...attachmentIds] : undefined,
         orderId,
-      });
+      }, party && 'asNew' in party ? { asNew: true } : undefined);
       let tx: Transaction;
       try {
         tx = record();

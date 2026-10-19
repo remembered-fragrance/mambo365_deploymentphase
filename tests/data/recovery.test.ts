@@ -71,4 +71,12 @@ describe('xác nhận email', () => {
     calls.verify.mockRejectedValueOnce(new ApiError('EMAIL_UNAVAILABLE', 503, 'x'));
     await expect(sendVerificationMail()).rejects.toThrow(L.recoveryMailUnavailable);
   });
+
+  it('🔴 email đã được tài khoản khác xác nhận (C4): báo đổi email, không coi là link hỏng', async () => {
+    const taken = () => new ApiError('VALIDATION_FAILED', 422, 'x', undefined, { reason: 'EMAIL_TAKEN' });
+    calls.confirm.mockRejectedValueOnce(taken());
+    await expect(confirmRecoveryEmail('t'.repeat(43))).rejects.toThrow(L.emailTaken);
+    calls.verify.mockRejectedValueOnce(taken());
+    await expect(sendVerificationMail()).rejects.toThrow(L.emailTaken);
+  });
 });

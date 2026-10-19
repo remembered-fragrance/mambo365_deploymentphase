@@ -16,7 +16,7 @@ const { enqueue, opInsert } = await import('@/data/queue');
 
 describe('syncOnce — con trỏ đi cùng sổ, store mới là nơi ghi', () => {
   it('trả con trỏ mới nhưng không tự ghi — kết quả bị bỏ thì lần sau kéo lại đúng trang đó', async () => {
-    const outcome = await syncOnce(null, 'org-a', emptyData());
+    const outcome = await syncOnce(null, 'org-a', 'u-1', emptyData());
     expect(outcome.cursor).toBe('c-1');
     expect(await readCursor('org-a')).toBeNull();
   });
@@ -47,7 +47,7 @@ describe('rebasePulled — gộp phần kéo về vào sổ mới nhất', () =>
 
 describe('syncOnce không tự ghi mốc "đã đồng bộ"', () => {
   it('trả mốc để store ghi khi thật sự lưu kết quả', async () => {
-    const outcome = await syncOnce(null, 'org-mark', emptyData());
+    const outcome = await syncOnce(null, 'org-mark', 'u-1', emptyData());
     expect(outcome.syncedAt).toBeTruthy();
     expect(await readSyncMark('org-mark')).toBeNull();
   });
@@ -55,10 +55,10 @@ describe('syncOnce không tự ghi mốc "đã đồng bộ"', () => {
 
 describe('gói hết hạn', () => {
   it('chưa gửi lên được nhưng vẫn kéo thay đổi từ máy khác về', async () => {
-    await enqueue({ ...opInsert('note', 'n-1', {}), orgId: 'org-expired' });
+    await enqueue({ ...opInsert('note', 'n-1', {}), orgId: 'org-expired', userId: 'u-1' });
     push.mockRejectedValueOnce(new ApiError('PLAN_EXPIRED', 403, 'Hết gói'));
     pull.mockClear();
-    const outcome = await syncOnce(null, 'org-expired', emptyData());
+    const outcome = await syncOnce(null, 'org-expired', 'u-1', emptyData());
     expect(pull).toHaveBeenCalled();
     expect(outcome.status).toMatchObject({ blocked: true, pendingCount: 1 });
     expect(outcome.cursor).toBe('c-1');

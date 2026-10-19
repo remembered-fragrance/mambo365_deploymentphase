@@ -9,6 +9,7 @@ import { formatDateTime, formatVnd } from '@mambo/core/format';
 import type { DraftReceipt } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { discardConsequence, draftHref } from '../receipt/draftSessions';
+import { useAttempt } from '../shared/useAttempt';
 
 interface DraftListProps {
   readonly drafts: readonly DraftReceipt[];
@@ -23,6 +24,7 @@ interface DraftListProps {
  */
 export function DraftList({ drafts, emptyTitle, onDelete }: DraftListProps) {
   const toast = useToast();
+  const attempt = useAttempt();
   const [deleting, setDeleting] = useState<DraftReceipt | null>(null);
 
   if (drafts.length === 0) return <EmptyState title={emptyTitle} icon="⚖️" />;
@@ -69,7 +71,7 @@ export function DraftList({ drafts, emptyTitle, onDelete }: DraftListProps) {
           const draft = deleting;
           setDeleting(null);
           if (!draft) return;
-          onDelete(draft.id);
+          if (!attempt(() => onDelete(draft.id))) return;
           toast({ message: `${L.draftDiscarded} · ${name(draft)}`, tone: 'alert' });
         }}
         onCancel={() => setDeleting(null)}

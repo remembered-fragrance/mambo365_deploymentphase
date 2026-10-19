@@ -9,6 +9,8 @@ import type { StoreValue } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 
 export type SyncNoticeItem = StoreValue['syncWarnings'][number];
+export type DroppedItem = StoreValue['branchDropped'][number];
+export type PhotoAlertItem = StoreValue['photoAlerts'][number];
 
 /** Hiện trọn tối đa ngần này cảnh báo; còn lại chỉ đếm. */
 const MAX_LISTED = 2;
@@ -80,15 +82,69 @@ const worthTelling = (notices: readonly SyncNoticeItem[], data: AppData): SyncNo
     .sort((a, b) => rank(a) - rank(b));
 };
 
+const when = (date: string | undefined): string => (date ? `, ${formatDate(date)}` : '');
+const money = (amount: number | undefined): string => (amount === undefined ? '' : `, ${formatVnd(amount)}`);
+
+/** "Phiếu Chú Bảy, 19/10/2026, 1.200.000₫" — đủ để người cân nhập lại. `null`: không phải phiếu / tiền / nháp. */
+export const droppedLine = (item: DroppedItem): string | null => {
+  const name = item.name?.trim() || L.walkIn;
+  switch (item.entity) {
+    case 'transaction':
+      return `${item.kind === 'softDelete' ? `${L.droppedDelete} ` : ''}${L.syncNoticeReceipt} ${name}${when(item.date)}${money(item.amount)}`;
+    case 'payment': {
+      const amount = item.amount === undefined ? '' : ` ${formatVnd(item.amount)}`;
+      const of = item.name ? ` ${L.syncNoticeForReceipt} ${name}${when(item.date)}` : '';
+      return `${item.kind === 'softDelete' ? `${L.droppedDelete} ` : ''}${L.syncNoticePayment}${amount}${of}`;
+    }
+    case 'draft':
+      return `${L.syncNoticeDraft} ${name}${money(item.amount)}`;
+    default:
+      return null;
+  }
+};
+
+/** Từng dòng cho thẻ "đã bỏ vì đổi chi nhánh" (B10); danh bạ, mặt hàng… gộp thành một dòng đếm. */
+export const droppedLines = (items: readonly DroppedItem[]): string[] => {
+  const lines: string[] = [];
+  let others = 0;
+  for (const item of items) {
+    const line = droppedLine(item);
+    if (line) lines.push(line);
+    else others++;
+  }
+  if (others > 0) lines.push(`${others} ${L.droppedOthers}`);
+  return lines;
+};
+
+/** Ảnh của phiếu / nháp nào — "ảnh bị từ chối" mà không nói phiếu nào thì không ai đi chụp lại được. */
+const photoOwner = (id: string, data: AppData): string | undefined => {
+  const receipt = data.transactions.find((t) => t.attachmentIds?.includes(id));
+  if (receipt) return `${L.syncNoticeReceipt} ${receiptName(receipt)}`;
+  const draft = data.drafts.find((d) => d.attachmentIds?.includes(id));
+  return draft ? `${L.syncNoticeDraft} ${draft.supplierName.trim() || L.walkIn}` : undefined;
+};
+
+/** B6: ảnh bị từ chối hẳn (chỉ còn trên máy này) và ảnh thử mãi không lên (vẫn đang thử). */
+export const photoAlertText = (alerts: readonly PhotoAlertItem[], data: AppData): string[] =>
+  (['rejected', 'stalled'] as const).flatMap((reason) => {
+    const ids = [...new Set(alerts.filter((a) => a.reason === reason).map((a) => a.id))];
+    if (ids.length === 0) return [];
+    const owners = [...new Set(ids.map((id) => photoOwner(id, data)).filter((o): o is string => Boolean(o)))];
+    const which = owners.length > 0 ? ` (${owners.slice(0, MAX_LISTED).join('; ')}${owners.length > MAX_LISTED ? '…' : ''})` : '';
+    return [`${ids.length} ${reason === 'rejected' ? L.photoRejected : L.photoStalled}${which}`];
+  });
+
 /** Một câu cho cả lượt, hoặc `null` nếu không có gì phải báo. */
 export const syncNoticeMessage = (
   dropped: number,
   all: readonly SyncNoticeItem[],
   data: AppData,
+  photos: readonly PhotoAlertItem[] = [],
 ): string | null => {
   const notices = worthTelling(all, data);
   const parts: string[] = [];
   if (dropped > 0) parts.push(`${dropped} ${L.branchOpsDropped}`);
+  parts.push(...photoAlertText(photos, data));
   parts.push(...notices.slice(0, MAX_LISTED).map((notice) => noticeText(notice, data)));
   if (notices.length > MAX_LISTED) parts.push(`+${notices.length - MAX_LISTED} ${L.syncNoticesMore}`);
   return parts.length > 0 ? parts.join(' · ') : null;

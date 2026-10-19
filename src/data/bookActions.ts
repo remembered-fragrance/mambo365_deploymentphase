@@ -74,9 +74,9 @@ interface Deps {
 }
 
 export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActions => ({
-  addTransaction: (input) => {
+  addTransaction: (input, match) => {
     const before = book();
-    const result = receipts.addTransaction(before, input);
+    const result = receipts.addTransaction(before, input, match);
     const tx = result.transaction;
     commit(result.data, [
       ...derivedOps(before, result.data, uid),
@@ -87,9 +87,9 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
     return tx;
   },
 
-  addSupplier: (input) => {
+  addSupplier: (input, match) => {
     const before = book();
-    const result = parties.addSupplier(before, input);
+    const result = parties.addSupplier(before, input, match);
     commit(result.data, derivedOps(before, result.data, uid));
     return result.supplier;
   },
@@ -103,9 +103,9 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
     commit(parties.deleteSupplier(book(), supplierId), [opSoftDelete('supplier', supplierId)]);
   },
 
-  addBuyer: (input) => {
+  addBuyer: (input, match) => {
     const before = book();
-    const result = parties.addBuyer(before, input);
+    const result = parties.addBuyer(before, input, match);
     commit(result.data, derivedOps(before, result.data, uid));
     return result.buyer;
   },
@@ -226,17 +226,17 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
 
   importData: (payload) => commit(normalize(payload), []),
 
-  importSuppliers: (rows) => {
+  importSuppliers: (rows, match) => {
     const before = book();
-    const result = sheets.importSuppliers(before, rows);
+    const result = sheets.importSuppliers(before, rows, match);
     commit(result.data, derivedOps(before, result.data, uid));
     track('import_completed', { kind: 'partners', rows: result.added.length });
     return result.added.length;
   },
 
-  importReceipts: (rows) => {
+  importReceipts: (rows, match) => {
     const before = book();
-    const result = sheets.importReceipts(before, rows);
+    const result = sheets.importReceipts(before, rows, match);
     commit(result.data, [
       ...derivedOps(before, result.data, uid),
       ...result.added.flatMap((tx) => [

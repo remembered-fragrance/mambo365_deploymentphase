@@ -13,6 +13,7 @@ import type { DebtSide } from '@mambo/core/debtSelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { useAccess } from '../shared/useAccess';
+import { useAttempt } from '../shared/useAttempt';
 
 export type PayDebt = (tx: Transaction, amount: number) => void;
 
@@ -20,15 +21,16 @@ export function usePayDebt(side: DebtSide): PayDebt {
   const { recordPayment, removePayment } = useStore();
   const { can } = useAccess();
   const toast = useToast();
+  const attempt = useAttempt();
 
   return (tx, amount) => {
-    const payment = recordPayment(tx.id, amount);
+    const payment = attempt(() => recordPayment(tx.id, amount))?.value;
     if (!payment) return;
 
     toast({
       message: `${side === 'payable' ? L.paidToast : L.collectedToast} ${formatVnd(payment.amount)} · ${tx.supplierName}`,
       // Hoàn tác = huỷ lần trả (`payment:void`); người cân không có quyền này.
-      ...(can('payment:void') ? { undoLabel: L.undo, onUndo: () => removePayment(tx.id, payment.id) } : {}),
+      ...(can('payment:void') ? { undoLabel: L.undo, onUndo: () => attempt(() => removePayment(tx.id, payment.id)) } : {}),
     });
   };
 }
