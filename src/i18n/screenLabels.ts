@@ -156,6 +156,7 @@ export const SCREEN_LABELS = {
   displayModeTitle: 'Chế độ xem',
   dataTitle: 'Dữ liệu của bạn',
   dataHint: 'Sổ nằm trong máy. Lưu ra file để đổi máy hoặc phòng khi mất điện thoại.',
+  dataHintServer: 'Sổ của vựa lưu trên máy chủ — đổi máy chỉ cần đăng nhập. Lưu ra file nếu muốn giữ thêm một bản.',
   importReplaceWarning: 'Lấy lại từ file sẽ THAY toàn bộ sổ đang có trên máy này.',
   importFileTitle: 'Thay sổ hiện tại?',
   importedToast: 'Đã lấy lại sổ từ file',

@@ -39,7 +39,7 @@ export function DataCard() {
   };
 
   return (
-    <Card title={L.dataTitle} subtitle={L.dataHint}>
+    <Card title={L.dataTitle} subtitle={importsFromFile ? L.dataHint : L.dataHintServer}>
       <div className="flex flex-col gap-2">
         <Button tone="primary" block onClick={() => void downloadBook(data)}>
           {L.exportToFile}

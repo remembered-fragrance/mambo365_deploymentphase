@@ -94,6 +94,8 @@ export interface StoreValue {
   bootstrap: (input: MeBootstrapInput) => Promise<Me>;
   selectOrg: (orgId: string) => Promise<void> | void;
   refreshMe: () => Promise<Me | null>;
+  /** Gói vừa đổi ngoài app (thông báo `plan.activated`): đọc lại `/v1/me` và gói của banner. */
+  refreshPlan: () => void;
 
   // ─── Action nghiệp vụ — chữ ký giữ nguyên ─────────────────────────────────
   /**

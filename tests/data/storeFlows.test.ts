@@ -35,6 +35,9 @@ vi.mock('@/data/client', () => {
 
 /** Tổ chức đã gỡ người dùng: `/v1/me` không còn kể (B8). */
 const removedFrom = new Set<string>();
+const TRIAL = { tier: 'trial', status: 'trialing', periodEnd: null, branchLimit: null } as const;
+/** Gói máy chủ đang giữ — đổi giữa chừng như khi được kích hoạt ngoài app. */
+const serverPlan: { current: Me['memberships'][number]['plan'] } = { current: TRIAL };
 const me = (): Me => ({
   user: { id: USER, name: 'Hùng', phone: '+84912345678', email: null, phoneVerified: false },
   memberships: removedFrom.has(ORG) ? [] : [{
@@ -43,7 +46,7 @@ const me = (): Me => ({
     branch: null,
     permissions: ['book:sync'],
     features: [],
-    plan: { tier: 'trial', status: 'trialing', periodEnd: null, branchLimit: null },
+    plan: serverPlan.current,
   }],
   pendingLinks: 0,
 });
@@ -101,6 +104,7 @@ const supplierRow = (id: string, name: string) => ({
 beforeEach(async () => {
   ORG = crypto.randomUUID();
   removedFrom.clear();
+  serverPlan.current = TRIAL;
   localStorage.clear();
   net.pull.mockReset().mockImplementation(nothingNew);
   net.push.mockReset().mockImplementation(applied);
@@ -184,6 +188,40 @@ describe('đăng xuất khi còn thao tác chưa gửi', () => {
     await act(async () => { await expect(store.signOut()).rejects.toBeInstanceOf(UnsentOpsError); });
     await act(async () => { await store.signOut({ discardUnsent: true }); });
     expect(store.user).toBeNull();
+  });
+});
+
+describe('gói mở lại ngoài app', () => {
+  it('🔴 lượt đồng bộ đầu tiên gửi được sau khi bị chặn: đọc lại gói, không còn coi là hết hạn', async () => {
+    net.push.mockImplementation(({ ops }: { ops: WireOp[] }) => Promise.resolve({
+      results: [{ opId: ops[0]?.opId, status: 'rejected', error: { code: 'PLAN_EXPIRED', message: 'Gói hết hạn' } }],
+    }));
+    act(() => { store.addSupplier({ name: 'Ghi lúc hết gói' }); });
+    await until(() => Boolean(store.status.blocked), 'máy chủ báo hết gói');
+
+    // Hỗ trợ kích hoạt gói trong lúc app vẫn mở.
+    serverPlan.current = { tier: 'premium', status: 'active', periodEnd: '2027-10-20T00:00:00.000Z', branchLimit: null };
+    net.push.mockImplementation(applied);
+    act(() => { store.syncNow(); });
+    await until(() => store.plan?.tier === 'premium', 'đọc lại gói');
+    expect(store.syncsWithServer).toBe(true);
+    expect(await pendingOps(ORG)).toHaveLength(0);
+  });
+
+  it('mất mạng lúc đang bị chặn không tính là gói mở lại', async () => {
+    net.push.mockImplementation(({ ops }: { ops: WireOp[] }) => Promise.resolve({
+      results: [{ opId: ops[0]?.opId, status: 'rejected', error: { code: 'PLAN_EXPIRED', message: 'Gói hết hạn' } }],
+    }));
+    act(() => { store.addSupplier({ name: 'Ghi lúc hết gói' }); });
+    await until(() => Boolean(store.status.blocked), 'máy chủ báo hết gói');
+
+    serverPlan.current = { tier: 'premium', status: 'active', periodEnd: '2027-10-20T00:00:00.000Z', branchLimit: null };
+    net.push.mockImplementation(() => Promise.reject(new TypeError('Failed to fetch')));
+    net.pull.mockImplementation(() => Promise.reject(new TypeError('Failed to fetch')));
+    act(() => { store.syncNow(); });
+    await until(() => !store.status.blocked && Boolean(store.status.error), 'lượt mất mạng');
+    await settle();
+    expect(store.plan?.tier).toBe('trial');
   });
 });
 

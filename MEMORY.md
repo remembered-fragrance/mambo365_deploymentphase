@@ -785,6 +785,23 @@ Theo `prompt-sua-loi-thumua365.md` (đợt 2: B1, B3, B4, B5, B6, B7, B8, B10, C
   - B1, B4, B6, B10 chỉ kiểm bằng test (cần gói hết hạn / chi nhánh doanh nghiệp).
   - Để ý: `npm run test:db` của BE dùng chung DB dev và `truncateAll()` — chạy là mất sổ thử local (đã dựng lại).
 
+## Gói mở lại ngoài app · thẻ Dữ liệu · 20/10/2026 · chưa phát hành
+
+Thấy lúc thử B1 trên Chrome (lùi `trial_ends_at` của vựa thử trong DB Docker, không tạo tài khoản). Có từ trước đợt 2.
+Nhánh `fix/goi-mo-lai`, không đổi `@mambo/*`.
+
+- Gói mở lại ngoài app (chuyển khoản lúc không ở màn chờ, hỗ trợ kích hoạt): `useSubscription` chỉ hỏi gói một lần
+  mỗi tổ chức ⇒ băng "Gói đã hết hạn" nằm tới lần mở app sau, dù phiếu đã gửi lên được. Giờ store có `refreshPlan`
+  (đọc lại `/v1/me` + `loadSubscription(force)`), gọi khi:
+  - lượt đồng bộ trót lọt ngay sau lượt bị `PLAN_EXPIRED` (`planBlocked`); lượt hỏng vì mạng không tính;
+  - `useNotifications` thấy thông báo `plan.activated` MỚI (`newPlanActivations`; lần hỏi đầu chỉ ghi nhận).
+- Thẻ "Dữ liệu của bạn": sổ tổ chức ghi `dataHintServer` ("lưu trên máy chủ — đổi máy chỉ cần đăng nhập"), sổ riêng
+  trên máy giữ `dataHint`.
+- Test (đỏ trước khi sửa): `storeFlows` "gói mở lại ngoài app" (+ mất mạng không tính), `planActivated`, `dataCard`.
+  verify xanh 49 file / 319 test.
+- Chrome local: ghi phiếu lúc hết gói → mở lại gói ở DB → ~30 giây sau tự gửi, cả hai băng tự mất; hàng đợi trống +
+  thêm thông báo `plan.activated` ở DB → trong nhịp hỏi 60 giây chuông lên 1, băng hết hạn tự mất.
+
 ---
 
 ## Ba số phải giữ trong tầm

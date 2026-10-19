@@ -23,7 +23,7 @@ import {
   retryConflicts, unownedOps, type NewOp,
 } from './queue';
 import { bookChanges, drainRescued, rescue } from './rescue';
-import { forgetSubscription } from './subscriptionStore';
+import { forgetSubscription, loadSubscription } from './subscriptionStore';
 import { queuedPhotoCount, type PhotoAlert } from './attachments';
 import {
   droppedItems, looksOnline, markSyncStates, rebasePulled, saveSyncedBook, syncOnce, type DroppedItem, type SyncNotice,
@@ -75,6 +75,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const stuckEpoch = useRef(0);
   /** Có người gọi đồng bộ trong lúc đang chạy — chạy thêm một lượt ngay khi xong. */
   const rerun = useRef(false);
+  /** Sổ có lượt đồng bộ gần nhất bị máy chủ chặn vì hết gói — lượt sau gửi được là gói đã mở lại. */
+  const planBlocked = useRef<string | null>(null);
   /** Bản ghi của các commit đã lên màn hình nhưng thao tác chưa vào hàng đợi. */
   const inflight = useRef(new Map<string, number>());
   const persistence = useRef<Promise<void>>(Promise.resolve());
@@ -143,6 +145,15 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     setStatus(IDLE_STATUS);
     setStuck(false);
   }, [show]);
+  /**
+   * Gói đổi ngoài app (chuyển khoản lúc không ở màn chờ, hỗ trợ kích hoạt): đọc lại `/v1/me` (bậc gói của store)
+   * và gói của banner. Không thì băng "Gói đã hết hạn" nằm tới lần mở app sau, dù phiếu đã gửi lên được.
+   */
+  const refreshPlan = useCallback(() => {
+    if (!activeKey || !currentOrg || !getSupabase()) return;
+    void refreshMeRef.current();
+    void loadSubscription(activeKey, true, currentOrg.permissions.includes('billing:manage'));
+  }, [activeKey, currentOrg]);
   const kickSync = useCallback(() => {
     const supabase = getSupabase();
     if (!supabase || !hasBackend() || !currentOrg || !activeKey || !userId || reloadRequired ||
@@ -177,6 +188,12 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
           for (const id of inflight.current.keys()) pending.add(id);
           if (stuckMark === stuckEpoch.current) setStuck(outcome.conflicts.length > 0);
           setStatus(outcome.status);
+          // Lượt trước bị chặn vì hết gói, lượt này trót lọt. Lượt hỏng vì mạng thì chưa biết gì — chờ lượt sau.
+          if (outcome.status.blocked) planBlocked.current = activeKey;
+          else if (!outcome.status.error && planBlocked.current === activeKey) {
+            planBlocked.current = null;
+            refreshPlan();
+          }
           const rebased = rebasePulled(latest.current, outcome.pulled, pending);
           if (!rebased) return;
           const book = markSyncStates(rebased, pending, outcome.conflicts);
@@ -198,7 +215,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
           kickSyncRef.current();
         }
       });
-  }, [activeKey, currentOrg, userId, reloadRequired, persist, show, noticeClosedDb]);
+  }, [activeKey, currentOrg, userId, reloadRequired, persist, show, noticeClosedDb, refreshPlan]);
   useEffect(() => { kickSyncRef.current = kickSync; }, [kickSync]);
   const commit = useCallback((next: AppData, ops: NewOp[]) => {
     if (!activeKey || readyKey.current !== activeKey ||
@@ -445,6 +462,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       bootstrap,
       selectOrg,
       refreshMe,
+      refreshPlan,
       ...createBookActions({ book: () => latest.current, commit, userId: activeKey ?? '' }),
       importsFromFile,
       importData: (payload) => {
@@ -605,7 +623,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     [
       activateOrg, data, status, stuck, branchDropped, photoAlerts, syncWarnings, reloadRequired, leftOrgs, unowned, user, me, currentOrgId, currentOrg, orgType,
       userRole, permissions, features, plan, needsBootstrap, syncsWithServer, importsFromFile, bootstrap,
-      selectOrg, refreshMe, enterSession, activeKey, commit, replaceBook, kickSync, userId, show,
+      selectOrg, refreshMe, refreshPlan, enterSession, activeKey, commit, replaceBook, kickSync, userId, show,
     ],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
