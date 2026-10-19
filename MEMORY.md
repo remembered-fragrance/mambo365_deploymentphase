@@ -785,10 +785,10 @@ Theo `prompt-sua-loi-thumua365.md` (đợt 2: B1, B3, B4, B5, B6, B7, B8, B10, C
   - B1, B4, B6, B10 chỉ kiểm bằng test (cần gói hết hạn / chi nhánh doanh nghiệp).
   - Để ý: `npm run test:db` của BE dùng chung DB dev và `truncateAll()` — chạy là mất sổ thử local (đã dựng lại).
 
-## Gói mở lại ngoài app · thẻ Dữ liệu · 20/10/2026 · chưa phát hành
+## Gói mở lại ngoài app · thẻ Dữ liệu · 20/10/2026 · đã phát hành
 
 Thấy lúc thử B1 trên Chrome (lùi `trial_ends_at` của vựa thử trong DB Docker, không tạo tài khoản). Có từ trước đợt 2.
-Nhánh `fix/goi-mo-lai`, không đổi `@mambo/*`.
+PR #54 merge `7abd9ae`, không đổi `@mambo/*`; bundle production có code mới lúc 18:27Z.
 
 - Gói mở lại ngoài app (chuyển khoản lúc không ở màn chờ, hỗ trợ kích hoạt): `useSubscription` chỉ hỏi gói một lần
   mỗi tổ chức ⇒ băng "Gói đã hết hạn" nằm tới lần mở app sau, dù phiếu đã gửi lên được. Giờ store có `refreshPlan`
