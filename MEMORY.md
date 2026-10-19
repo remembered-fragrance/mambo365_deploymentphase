@@ -718,10 +718,11 @@ Theo `prompt-sua-loi-thumua365.md` (đợt 1: lỗi gốc chung, A1, A2, A3, B2,
 
 ---
 
-## Trùng tên, ô nhập, ảnh, nhiều tab, đổi tài khoản · `@mambo/*` 0.20.0 · 20/10/2026 · đợt 2, chưa phát hành
+## Trùng tên, ô nhập, ảnh, nhiều tab, đổi tài khoản · `@mambo/*` 0.20.0 · 20/10/2026 · đợt 2, đã phát hành
 
 Theo `prompt-sua-loi-thumua365.md` (đợt 2: B1, B3, B4, B5, B6, B7, B8, B10, C1, C4). C2, C3 chỉ đề xuất — xem
-`docs/DE_XUAT_C2_C3.md` của BE. Nhánh `fix/dot2`, `package.json` khoá theo release `v0.20.0` của BE.
+`docs/DE_XUAT_C2_C3.md` của BE. PR #52 merge `3ac5aec`, `package.json` khoá theo release `v0.20.0` của BE (API lên
+`0.20.0` trước, 17:47Z; bundle production có code mới 17:49Z).
 
 - **B1**: sổ của tổ chức là sổ máy chủ, kể cả lúc hết gói — chỉ sổ riêng trên máy mới có nút lấy lại từ file
   (`DataCard`, `ImportDataPage`). Nhập file vào sổ tổ chức từng làm sổ máy lệch với server.
