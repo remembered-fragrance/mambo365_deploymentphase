@@ -658,7 +658,7 @@ Theo báo cáo rà soát hai repo (cùng đợt với BE `v0.18.0`). Ba lỗi l�
 - **Phát hành 19/10:** API trước (BE #38 `fa568e4`, `/v1/health` `0.18.0`), rồi #48 (lock theo release `v0.18.0`,
   CI xanh, merge `3c40db7`); bundle production có code mới.
 
-## Hàng đợi không kẹt vì cả lượt bị từ chối · `@mambo/*` 0.19.0 · 19/10/2026 · đợt 1, chưa phát hành
+## Hàng đợi không kẹt vì cả lượt bị từ chối · `@mambo/*` 0.19.0 · 19/10/2026 · đợt 1, đã phát hành
 
 Theo `prompt-sua-loi-thumua365.md` (đợt 1: lỗi gốc chung, A1, A2, A3, B2, B9).
 
@@ -713,8 +713,8 @@ Theo `prompt-sua-loi-thumua365.md` (đợt 1: lỗi gốc chung, A1, A2, A3, B2,
   trống; hai tab, op ghi giữa lượt, 413 proxy, giữ banner kẹt; `sync.test.ts` cả lượt bị từ chối ×4, 200 op
   nháp to, 413 chia lô, op đơn lẻ quá lớn, gộp nháp, seq trùng, `ORDER_NOT_OPEN`, mất mạng rồi INTERNAL). Test cũ "FORBIDDEN cả lượt → kẹt op
   đầu" đã đổi theo hành vi mới.
-- **Chưa làm**: lock `@mambo/*` đang trỏ `file:../tmp-pack/0.19.0/*.tgz` để chạy local — phải đổi sang release
-  `v0.19.0` sau khi BE gắn tag.
+- **Phát hành 19/10:** API trước (BE #40 `bd7eb2e`, `/v1/health` `0.19.0` lúc 13:53Z), rồi #50 (lock theo release
+  `v0.19.0`, CI xanh, merge `3b03b53`); bundle production có code mới lúc 13:54Z.
 
 ---
 
