@@ -110,6 +110,12 @@ describe('thử lại có giãn cách', () => {
     expect(isDue(failed, Date.now() + (RETRY_DELAYS_MS[0] ?? 0) + 10)).toBe(true);
   });
 
+  it('mốc hẹn hỏng hay thiếu thì coi như tới hạn — không được chặn im cả hàng đợi', async () => {
+    const op = await enqueue(opInsert('transactions', 'tx-1', { id: 'tx-1' }));
+    expect(isDue({ ...op, nextAttemptAt: 'không phải ngày' })).toBe(true);
+    expect(isDue({ ...op, nextAttemptAt: undefined as unknown as string })).toBe(true);
+  });
+
   it('giãn cách tăng dần qua từng lần thất bại', async () => {
     let op = await enqueue(opInsert('transactions', 'tx-1', { id: 'tx-1' }));
     const waits: number[] = [];

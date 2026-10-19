@@ -21,7 +21,7 @@ import {
   dropConflictedRecord, enqueue, legacyQueueCount, pendingCount, pendingRecordIds, retryConflicts, type NewOp,
 } from './queue';
 import { forgetSubscription } from './subscriptionStore';
-import { looksOnline, markSyncStates, rebasePulled, saveSyncedBook, syncOnce } from './sync';
+import { looksOnline, markSyncStates, rebasePulled, saveSyncedBook, syncOnce, type SyncNotice } from './sync';
 import { StoreContext, UnsentOpsError, type StoreValue } from './useStore';
 const SYNC_INTERVAL_MS = 30_000;
 const IDLE_STATUS: SyncStatus = { loading: false, pendingCount: 0 };
@@ -42,6 +42,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const [stuck, setStuck] = useState(false);
   /** Số thao tác đã tự bỏ vì chủ đổi chi nhánh (cộng dồn) — giao diện báo mỗi khi số này tăng. */
   const [branchDropped, setBranchDropped] = useState(0);
+  /** Op máy chủ đã nhận kèm cảnh báo (cộng dồn trong phiên) — giao diện báo từng cái khi danh sách dài thêm. */
+  const [syncWarnings, setSyncWarnings] = useState<readonly SyncNotice[]>([]);
   const latest = useRef(data);
   /** Tài khoản Supabase của phiên — bù SĐT / email khôi phục mà `/v1/me` chưa trả. */
   const authUser = useRef<User | null>(null);
@@ -127,6 +129,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       .then((outcome) => {
         if (!outcome || !isCurrent()) return;
         if (outcome.dropped > 0) setBranchDropped((n) => n + outcome.dropped);
+        if (outcome.warnings.length > 0) setSyncWarnings((list) => [...list, ...outcome.warnings]);
         // Ghi trong chuỗi, sau mọi commit đã có: gộp phần kéo về vào sổ MỚI NHẤT chứ không đè bằng
         // ảnh chụp lúc bắt đầu kéo — phiếu ghi trong lúc kéo vẫn còn, tiến độ kéo cũng không mất.
         persist(async () => {
@@ -354,6 +357,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       reset: () => replaceBook(currentOrgId ? emptyData() : starterData(), true),
       stuck,
       branchDropped,
+      syncWarnings,
       retryStuck: () => {
         if (!currentOrgId) return;
         stuckEpoch.current++;
@@ -465,7 +469,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       syncNow: kickSync,
     }),
     [
-      activateOrg, data, status, stuck, branchDropped, user, me, currentOrgId, currentOrg, orgType,
+      activateOrg, data, status, stuck, branchDropped, syncWarnings, user, me, currentOrgId, currentOrg, orgType,
       userRole, permissions, features, plan, needsBootstrap, syncsWithServer, bootstrap,
       selectOrg, refreshMe, enterSession, activeKey, commit, replaceBook, kickSync, userId, show,
     ],

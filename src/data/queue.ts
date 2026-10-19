@@ -11,7 +11,7 @@
 
 import { newId } from '@mambo/core/id';
 import type { SyncEntity, SyncOpKind } from '@mambo/contracts';
-import { isScopedOp, nextSeq, openLocalDb, type QueuedOp } from './localDb';
+import { isScopedOp, openLocalDb, type QueuedOp } from './localDb';
 import type { TableName } from './rows';
 
 export type { OpKind, QueuedOp } from './localDb';
@@ -103,7 +103,8 @@ export const opSoftDelete = (
 export const RETRY_DELAYS_MS = [1_000, 5_000, 30_000, 300_000] as const;
 
 /**
- * Máy chủ đã nhận op mà vẫn trả PARENT_MISSING / INTERNAL chừng này lần liền (~6 phút) thì coi là kẹt:
+ * Máy chủ đã nhận op mà vẫn trả PARENT_MISSING / INTERNAL chừng này lần (đếm bằng `rejectedTries`, không
+ * gồm lần mất mạng; nhanh nhất ~6 phút) thì coi là kẹt:
  * thử nữa cũng vậy, phải hiện banner cho người dùng "Gửi lại" / "Bỏ". Mất mạng, máy chủ bận
  * (RATE_LIMITED) hay cả lượt gửi hỏng thì vẫn thử lại mãi — không phải lỗi của op này.
  */
@@ -113,19 +114,24 @@ export const enqueue = async (op: NewOp & { readonly orgId: string }): Promise<Q
   if (!op.orgId?.trim()) throw new Error('Organization is required');
   const now = new Date().toISOString();
   const opId = newId();
+  const db = await openLocalDb();
+  // Đọc seq lớn nhất và ghi op trong CÙNG một transaction readwrite: tab khác phải đợi transaction này
+  // xong mới cấp được số, nên không trùng. Không dựa riêng vào giờ máy: đồng hồ bị chỉnh lùi thì lần trả
+  // tiền xếp trước phiếu cha, máy chủ trả PARENT_MISSING mãi vì phiếu cha nằm sau trong hàng.
+  const tx = db.transaction('queue', 'readwrite');
+  const last = await tx.store.index('seq').openCursor(null, 'prev');
   const queued: QueuedOp = {
     ...op,
     id: opId,
     opId,
-    seq: nextSeq(),
+    seq: Math.max(Date.now() * 1_000, (last?.value.seq ?? 0) + 1),
     createdAt: now,
     tries: 0,
     nextAttemptAt: now,
   };
-  const db = await openLocalDb();
-
   // Preserve immutable patches, including those already in flight.
-  await db.put('queue', queued);
+  await tx.store.put(queued);
+  await tx.done;
   return queued;
 };
 
@@ -149,14 +155,23 @@ export const removeOp = async (opId: string, orgId: string): Promise<void> => {
   if (op?.orgId === orgId) await db.delete('queue', opId);
 };
 
-/** Ghi nhận một lần thử thất bại và hẹn lần sau. */
-export const markFailed = async (op: QueuedOp, error: string, orgId: string): Promise<QueuedOp> => {
+/**
+ * Ghi nhận một lần thử thất bại và hẹn lần sau. `rejected`: chính máy chủ từ chối op này (không phải mất
+ * mạng hay cả lượt hỏng) — cộng vào `rejectedTries`.
+ */
+export const markFailed = async (
+  op: QueuedOp,
+  error: string,
+  orgId: string,
+  rejected = false,
+): Promise<QueuedOp> => {
   if (!isScopedOp(op) || op.orgId !== orgId) throw new Error('Operation organization mismatch');
   const tries = op.tries + 1;
   const delay = RETRY_DELAYS_MS[Math.min(tries - 1, RETRY_DELAYS_MS.length - 1)] ?? 0;
   const next: QueuedOp = {
     ...op,
     tries,
+    rejectedTries: (op.rejectedTries ?? 0) + (rejected ? 1 : 0),
     lastError: error,
     nextAttemptAt: new Date(Date.now() + delay).toISOString(),
   };
@@ -183,7 +198,7 @@ export const retryConflicts = async (orgId: string): Promise<void> => {
   const db = await openLocalDb();
   const now = new Date().toISOString();
   for (const op of await pendingOps(orgId)) {
-    if (op.conflict) await db.put('queue', { ...op, conflict: undefined, tries: 0, nextAttemptAt: now });
+    if (op.conflict) await db.put('queue', { ...op, conflict: undefined, tries: 0, rejectedTries: 0, nextAttemptAt: now });
   }
 };
 
@@ -216,8 +231,12 @@ export const dropConflictedRecord = async (orgId: string): Promise<QueuedOp | nu
   return stuck;
 };
 
+/**
+ * Mốc hẹn hỏng / thiếu (bản ghi IndexedDB lỗi) cho `NaN`, mà `NaN <= now` là false: op đó không bao giờ tới
+ * hạn và chặn im cả hàng đợi, không có banner nào để gỡ. Coi như tới hạn — gửi đi thì máy chủ phân xử.
+ */
 export const isDue = (op: QueuedOp, now = Date.now()): boolean =>
-  new Date(op.nextAttemptAt).getTime() <= now;
+  !(new Date(op.nextAttemptAt).getTime() > now);
 
 /** Id các bản ghi còn thao tác chưa đẩy được — dùng để vẽ cờ "đang chờ gửi". */
 export const pendingRecordIds = async (orgId: string): Promise<Set<string>> => {

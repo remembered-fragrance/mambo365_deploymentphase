@@ -18,7 +18,7 @@ import { DemoBanner } from '../onboarding/DemoBanner';
 import { draftHref } from '../receipt/draftSessions';
 import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
-import { BranchDropNotice } from './BranchDropNotice';
+import { SyncNotices } from './SyncNotices';
 import { backTarget, isTabRoot, navGroups, navItems, ROUTES } from './navItems';
 import { StuckBanner } from './StuckBanner';
 import { useAccess } from './useAccess';
@@ -185,13 +185,16 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
             <DemoBanner />
             <PlanBanner />
             <StuckBanner />
-            <BranchDropNotice />
+            <SyncNotices />
             {/* Banner kẹt đã nói lỗi của thao tác; hết gói thì vẫn phải nói, vì "Gửi lại" không gỡ được nó. */}
             {status.error && (status.blocked || !stuck) &&
               (status.blocked ? (
                 // Hết gói không phải mất mạng. Nói nhầm thì người dùng đi tìm
                 // sóng trong khi thứ cần làm là mở lại gói.
                 <OfflineBanner message={L.syncBlocked} detail={L.syncBlockedDetail} />
+              ) : status.refused ? (
+                // Máy chủ từ chối cả lượt (không phải mạng): nói đúng lý do, hàng đợi vẫn còn nguyên.
+                <OfflineBanner message={L.syncRefused} detail={`${status.error}. ${L.syncRefusedDetail}`} />
               ) : (
                 <OfflineBanner message={L.syncOfflineBanner} detail={L.syncOfflineDetail} />
               ))}
