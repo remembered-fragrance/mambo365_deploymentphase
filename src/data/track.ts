@@ -52,6 +52,14 @@ const anonId = (): string => {
 const platform = (): 'web' | 'pwa' =>
   typeof matchMedia !== 'undefined' && matchMedia('(display-mode: standalone)').matches ? 'pwa' : 'web';
 
+export const clearTrackQueue = (): void => {
+  try {
+    localStorage.removeItem(QUEUE_KEY);
+  } catch {
+    // Trình duyệt chặn lưu
+  }
+};
+
 export function track<N extends TrackedEvent['name']>(name: N, props: Props<N>): void {
   if (!hasBackend()) return; // sổ của máy này: không có nơi gửi, không chất đầy máy
   const event = { anonId: anonId(), at: new Date().toISOString(), platform: platform(), appVersion: APP_VERSION, name, props };

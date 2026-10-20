@@ -23,12 +23,18 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '@mambo/contracts';
+
+const COMMON_PASSWORDS = new Set([
+  '123456', '12345678', '123456789', '1234567890', 'password', 'qwerty', 'abc123',
+  'abcdef', 'abcdefgh', '000000', '00000000', '111111', '11111111', '123123',
+  'iloveyou', 'admin', 'welcome', 'letmein', 'monkey', 'dragon', 'master',
+  'matkhau', 'matkhau1', 'matkhau123', 'anhyeuem', 'yeuem', 'mothaiba',
+]);
 
 const url = process.env.SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const [identifier, newPassword, operator] = process.argv.slice(2);
-
-const MIN_PASSWORD_LENGTH = 6;
 
 // Khai báo dạng function (không phải arrow const) để TypeScript hiểu đây là
 // điểm dừng và thu hẹp kiểu ở các dòng sau mỗi lần gọi.
@@ -43,8 +49,14 @@ if (!url || !serviceRoleKey) {
 if (!identifier || !newPassword || !operator) {
   fail('Dùng: admin-reset-password.ts <sđt|tên tài khoản|email> <mật khẩu mới> <tên người duyệt>');
 }
-if (newPassword.length < MIN_PASSWORD_LENGTH) {
-  fail(`Mật khẩu mới phải từ ${MIN_PASSWORD_LENGTH} ký tự.`);
+if (newPassword.length < PASSWORD_MIN_LENGTH) {
+  fail(`Mật khẩu mới phải từ ${PASSWORD_MIN_LENGTH} ký tự.`);
+}
+if (newPassword.length > PASSWORD_MAX_LENGTH) {
+  fail(`Mật khẩu mới không quá ${PASSWORD_MAX_LENGTH} ký tự.`);
+}
+if (COMMON_PASSWORDS.has(newPassword.toLowerCase())) {
+  fail('Mật khẩu quá phổ biến — chọn mật khẩu khác.');
 }
 
 const admin = createClient(url, serviceRoleKey, {

@@ -25,6 +25,7 @@ import {
 import { bookChanges, drainRescued, rescue } from './rescue';
 import { forgetSubscription, loadSubscription } from './subscriptionStore';
 import { queuedPhotoCount, type PhotoAlert } from './attachments';
+import { clearTrackQueue } from './track';
 import {
   droppedItems, looksOnline, markSyncStates, rebasePulled, saveSyncedBook, syncOnce, type DroppedItem, type SyncNotice,
 } from './sync';
@@ -591,6 +592,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
           forgetMe(userId);
           forgetBooks(userId);
         }
+        clearTrackQueue();
         setLeftOrgs([]);
         setUnowned([]);
         setCurrentOrg(null);
