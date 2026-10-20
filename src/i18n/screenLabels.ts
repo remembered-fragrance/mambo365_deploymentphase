@@ -149,6 +149,7 @@ export const SCREEN_LABELS = {
   passwordMismatch: 'Hai lần gõ chưa giống nhau',
   passwordTooShort: 'Mật khẩu ít nhất 8 ký tự',
   passwordTooLong: 'Mật khẩu dài nhất 72 ký tự',
+  passwordTooCommon: 'Mật khẩu quá dễ đoán — chọn mật khẩu khác',
   passwordChanged: 'Đã đổi mật khẩu',
   weightUnitTitle: 'Cân theo',
   weightUnitKg: 'Ki-lô-gam (kg)',
