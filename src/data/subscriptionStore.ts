@@ -120,3 +120,18 @@ export const forgetSubscription = (userId: string): void => {
   loadedFor = null;
   emit(EMPTY);
 };
+
+/**
+ * Đăng xuất: dọn MỌI bản nhớ gói trên máy — kể cả của tổ chức `/v1/me` không còn kể và sổ cũng
+ * không còn trên máy (đã bị gỡ, tổ chức đã xoá), nên vòng `forgetSubscription` theo tổ chức không chạm tới.
+ */
+export const forgetAllSubscriptions = (): void => {
+  try {
+    const keys = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i));
+    for (const key of keys) if (key?.startsWith(KEY_PREFIX)) localStorage.removeItem(key);
+  } catch {
+    // Trình duyệt chặn lưu
+  }
+  loadedFor = null;
+  emit(EMPTY);
+};
