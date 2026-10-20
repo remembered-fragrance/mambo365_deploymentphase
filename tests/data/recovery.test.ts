@@ -26,7 +26,8 @@ describe('một luật mật khẩu (BE 0.16.0)', () => {
     expect(MIN_PASSWORD_LENGTH).toBe(8);
     expect(MAX_PASSWORD_LENGTH).toBe(72);
     expect(passwordProblem('1234567')).toBe(L.passwordTooShort);
-    expect(passwordProblem('12345678')).toBeUndefined();
+    expect(passwordProblem('12345678')).toBe(L.passwordTooCommon);
+    expect(passwordProblem('kh0eMạnh')).toBeUndefined();
     expect(passwordProblem('x'.repeat(72))).toBeUndefined();
     expect(passwordProblem('x'.repeat(73))).toBe(L.passwordTooLong);
   });

@@ -23,8 +23,9 @@ import {
   retryConflicts, unownedOps, type NewOp,
 } from './queue';
 import { bookChanges, drainRescued, rescue } from './rescue';
-import { forgetSubscription, loadSubscription } from './subscriptionStore';
+import { forgetAllSubscriptions, forgetSubscription, loadSubscription } from './subscriptionStore';
 import { queuedPhotoCount, type PhotoAlert } from './attachments';
+import { clearTrackQueue } from './track';
 import {
   droppedItems, looksOnline, markSyncStates, rebasePulled, saveSyncedBook, syncOnce, type DroppedItem, type SyncNotice,
 } from './sync';
@@ -581,16 +582,15 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         await persistence.current;
         const supabase = getSupabase();
         if (supabase) await auth.signOut(supabase);
-        for (const orgId of orgIds) {
-          await wipeOrgFromDevice(orgId, userId);
-          forgetSubscription(orgId);
-        }
+        for (const orgId of orgIds) await wipeOrgFromDevice(orgId, userId);
         if (!supabase && userId) await wipeOrgFromDevice(userId, userId);
         forgetDemo(userId ? [...orgIds, userId] : orgIds);
         if (userId) {
           forgetMe(userId);
           forgetBooks(userId);
         }
+        clearTrackQueue();
+        forgetAllSubscriptions();
         setLeftOrgs([]);
         setUnowned([]);
         setCurrentOrg(null);
