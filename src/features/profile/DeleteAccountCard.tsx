@@ -19,7 +19,7 @@ import { L } from '@/i18n/labels';
  * đường ra khỏi đây đi ngang qua nút "Lưu ra file".
  */
 export function DeleteAccountCard() {
-  const { user, deleteAccount } = useStore();
+  const { user, currentOrg, permissions, deleteAccount } = useStore();
   const online = useBackend();
   const toast = useToast();
 
@@ -28,15 +28,15 @@ export function DeleteAccountCard() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
-  // Tên vựa là thứ họ tự gõ vào lúc đăng ký nên nhớ được; không có thì lùi về
-  // tên chủ vựa. Không bao giờ lấy chuỗi rỗng — gõ rỗng mà khớp thì hộp xác
+  // Tên tổ chức đang chọn là đối tượng cần xác nhận; không có thì lùi về
+  // tên tài khoản. Không bao giờ lấy chuỗi rỗng — gõ rỗng mà khớp thì hộp xác
   // nhận này thành nút bấm một lần.
-  const phrase = user?.businessName?.trim() || user?.name?.trim() || user?.identifier || '';
+  const phrase = currentOrg?.organization.name.trim() || user?.name?.trim() || user?.identifier || '';
   const matches = typed.trim().toLowerCase() === phrase.toLowerCase();
 
   // Chưa cấu hình máy chủ thì không có tài khoản nào để xoá — sổ nằm ở máy này
   // và "Xoá hết" trong thẻ dữ liệu mới là thao tác đúng.
-  if (!online || !phrase) return null;
+  if (!online || !permissions.includes('account:delete') || !phrase) return null;
 
   // Tên hàm cố ý tránh ba từ bị cấm ở §3.7. Một hàm trùng tên với hộp thoại của
   // trình duyệt vừa làm máy kiểm luật báo động, vừa khiến lần sau ai đó tưởng

@@ -17,6 +17,7 @@ import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
 import { navGroups, navItems, ROUTES } from './navItems';
 import { useTheme } from './useTheme';
+import { profileTitle } from '@/i18n/profileLabels';
 
 const SYNC_LABEL: Record<SyncTone, string> = {
   synced: L.syncSynced,
@@ -43,12 +44,14 @@ const PAGE_TITLE: Record<string, string> = {
   [ROUTES.pricing]: L.navPricing,
   [ROUTES.reports]: L.taxReport,
   [ROUTES.utilities]: L.navUtilities,
-  [ROUTES.profile]: L.navProfile,
   [ROUTES.more]: L.navMore,
+  [ROUTES.farmerOrders]: L.farmerOrders,
+  [ROUTES.farmerNetwork]: L.farmerNetworkTitle,
+  [ROUTES.farmerWeighDebt]: L.farmerWeighDebtTitle,
 };
 
 export function AppLayout({ children }: { readonly children: ReactNode }) {
-  const { data, status } = useStore();
+  const { data, status, permissions, orgType, features } = useStore();
   const { theme, cycleTheme } = useTheme();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -57,7 +60,8 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
 
   const drafts = data.drafts.filter((d) => d.status === 'draft');
   const counts = { drafts: drafts.length, overdue: overdueCount(data) };
-  const items = navItems(counts);
+  const items = navItems(counts, permissions, orgType, features);
+  const canCreateReceipt = permissions.includes('receipt:create');
   const tone = syncTone(status.pendingCount, status.error);
 
   useBookRescue(data);
@@ -113,16 +117,16 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
         sidebar={
           <SidebarNav
             appName={L.appName}
-            groups={navGroups(counts)}
+            groups={navGroups(counts, permissions, orgType, features)}
             primaryActions={
-              <>
+              canCreateReceipt ? <>
                 <Button tone="primary" block onClick={() => startReceipt('purchase')}>
                   {L.createPurchase}
                 </Button>
                 <Button block onClick={() => startReceipt('sale')}>
                   {L.createSale}
                 </Button>
-              </>
+              </> : null
             }
             footer={badge}
           />
@@ -140,7 +144,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
         }
         mobileHeader={
           <MobileHeader
-            title={PAGE_TITLE[pathname] ?? L.appName}
+            title={pathname === ROUTES.profile ? profileTitle(orgType) : PAGE_TITLE[pathname] ?? L.appName}
             themeToggle={themeToggle}
             actions={searchButton}
             syncBadge={badge}
@@ -165,13 +169,15 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
             items={items}
             createLabel={L.createReceipt}
             onCreate={() => setCreateOpen(true)}
+            canCreate={canCreateReceipt}
+            centerItem={orgType === 'farmer' ? items.find((item) => item.id === 'profile') : undefined}
           />
         }
       >
         {children}
       </AppShell>
 
-      <BottomSheet open={createOpen} title={L.createReceipt} onClose={() => setCreateOpen(false)}>
+      <BottomSheet open={createOpen && canCreateReceipt} title={L.createReceipt} onClose={() => setCreateOpen(false)}>
         <div className="flex flex-col gap-2">
           {drafts.map((draft) => (
             <Button

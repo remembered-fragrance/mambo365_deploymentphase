@@ -34,7 +34,7 @@ import type {
   Permission,
   PlanSummary,
 } from '@mambo/contracts';
-import type { ProfilePatch, SignUpInput } from './auth';
+import type { AccountProfile, ProfilePatch, SignUpInput } from './auth';
 
 export interface StoreValue {
   readonly data: AppData;
@@ -55,10 +55,12 @@ export interface StoreValue {
   readonly needsBootstrap: boolean;
   readonly accountState: 'loading' | 'ready' | 'error' | 'local';
   readonly accountError: string | undefined;
+  readonly pendingReferralCode: string | null;
 
   bootstrap: (input: MeBootstrapInput) => Promise<Me>;
   selectOrg: (orgId: string) => Promise<void> | void;
   refreshMe: () => Promise<Me | null>;
+  claimReferral: (code: string) => Promise<boolean>;
 
   // ─── Action nghiệp vụ — chữ ký giữ nguyên ─────────────────────────────────
   addTransaction: (input: NewTransaction) => Transaction;
@@ -94,7 +96,7 @@ export interface StoreValue {
   signIn: (identifier: string, password: string) => Promise<void>;
   signUp: (input: SignUpInput) => Promise<void>;
   signOut: () => Promise<void>;
-  updateProfile: (patch: ProfilePatch) => Promise<void>;
+  updateProfile: (patch: ProfilePatch) => Promise<AccountProfile>;
   changePassword: (password: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
   /** Đẩy hàng đợi và kéo thay đổi ngay, không đợi hẹn giờ. */

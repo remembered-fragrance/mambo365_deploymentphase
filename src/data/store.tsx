@@ -27,12 +27,23 @@ const SYNC_INTERVAL_MS = 30_000;
 const IDLE_STATUS: SyncStatus = { loading: false, pendingCount: 0 };
 const NO_PERMISSIONS: readonly Permission[] = [];
 const NO_FEATURES: readonly Feature[] = [];
+const PENDING_REFERRAL_KEY = 'thumua365:pending-referral-code';
+const readPendingReferralCode = (): string | null => {
+  try { return localStorage.getItem(PENDING_REFERRAL_KEY); } catch { return null; }
+};
+const writePendingReferralCode = (code: string | null): void => {
+  try {
+    if (code) localStorage.setItem(PENDING_REFERRAL_KEY, code);
+    else localStorage.removeItem(PENDING_REFERRAL_KEY);
+  } catch { /* The referral can still be entered again from the account page. */ }
+};
 export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [accountState, setAccountState] = useState<'loading' | 'ready' | 'error' | 'local'>('loading');
   const [accountError, setAccountError] = useState<string | undefined>();
   const [bootstrapFallbackAvailable, setBootstrapFallbackAvailable] = useState(false);
+  const [pendingReferralCode, setPendingReferralCode] = useState<string | null>(readPendingReferralCode);
   const [currentOrgId, setCurrentOrgIdState] = useState<string | null>(null);
   const [data, setData] = useState<AppData>(emptyData);
   const [status, setStatus] = useState<SyncStatus>({ loading: true, pendingCount: 0 });
@@ -120,10 +131,10 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     setAccountError(undefined);
     memberships.current = result.memberships;
     setMe(result);
-    setUser(auth.profileFromMe(result));
     const stored = getCurrentOrgId();
     const target = result.memberships.find((m) => m.organization.id === stored) ?? result.memberships[0];
     const orgId = target?.organization.id ?? null;
+    setUser(auth.profileForSelectedMembership(auth.profileFromMe(result), target ?? null));
     if (selected.current !== orgId) activateOrg(orgId);
     else { setCurrentOrg(orgId); setCurrentOrgIdState(orgId); }
     if (!orgId) setStatus(IDLE_STATUS);
@@ -157,19 +168,33 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     }
   }, [applyMe]);
   const selectOrg = useCallback(async (orgId: string) => {
-    if (!memberships.current.some((m) => m.organization.id === orgId)) {
+    const target = memberships.current.find((m) => m.organization.id === orgId);
+    if (!target) {
       throw new Error('Not a member of this organization');
     }
     if (selected.current === orgId) return;
+    setUser((current) => current ? auth.profileForSelectedMembership(current, target) : current);
     activateOrg(orgId);
   }, [activateOrg]);
+  const claimReferral = useCallback(async (code: string) => {
+    const claimed = await auth.claimReferral(code);
+    if (claimed) {
+      setPendingReferralCode(null);
+      writePendingReferralCode(null);
+    }
+    return claimed;
+  }, []);
   const bootstrap = useCallback(async (input: MeBootstrapInput): Promise<Me> => {
     const epoch = sessionEpoch.current;
     const result = await auth.bootstrap(input);
     if (epoch !== sessionEpoch.current) throw new Error('Session changed');
     applyMe(result);
+    if (pendingReferralCode) {
+      try { await claimReferral(pendingReferralCode); }
+      catch { /* Keep the code available in the account screen for retry. */ }
+    }
     return result;
-  }, [applyMe]);
+  }, [applyMe, claimReferral, pendingReferralCode]);
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase) {
@@ -252,9 +277,11 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       needsBootstrap,
       accountState,
       accountError,
+      pendingReferralCode,
       bootstrap,
       selectOrg,
       refreshMe,
+      claimReferral,
       ...createBookActions({ book: () => latest.current, commit, userId: activeKey ?? '' }),
       signIn: async (identifier, password) => {
         const supabase = getSupabase();
@@ -264,6 +291,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         activateOrg(null);
         memberships.current = [];
         setMe(null);
+        setPendingReferralCode(null);
+        writePendingReferralCode(null);
         setBootstrapFallbackAvailable(false);
         setAccountState('loading');
         setAccountError(undefined);
@@ -283,12 +312,17 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         activateOrg(null);
         memberships.current = [];
         setMe(null);
+        setPendingReferralCode(null);
+        writePendingReferralCode(null);
         setBootstrapFallbackAvailable(false);
         setAccountState('loading');
         setAccountError(undefined);
         // Chỉ tạo user Auth. Chọn vai trò / tổ chức ở BootstrapPage qua meBootstrap.
         const account = await auth.signUp(supabase, input);
         setUser(auth.profileFromAuthUser(account));
+        const referralCode = input.referralCode?.trim() || null;
+        setPendingReferralCode(referralCode);
+        writePendingReferralCode(referralCode);
         // The contract defines meBootstrap as the immediate next step after signup.
         setBootstrapFallbackAvailable(true);
         setAccountState('ready');
@@ -308,6 +342,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         setCurrentOrgIdState(null);
         setUser(null);
         setMe(null);
+        setPendingReferralCode(null);
+        writePendingReferralCode(null);
         setBootstrapFallbackAvailable(false);
         setAccountState('ready');
         setAccountError(undefined);
@@ -316,8 +352,15 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       updateProfile: async (patch) => {
         const supabase = getSupabase();
         if (!supabase || !userId) throw new Error('Chưa cấu hình máy chủ');
-        await auth.updateProfile(supabase, userId, patch);
-        setUser((current) => (current ? { ...current, ...patch } : current));
+        const profile = await auth.updateProfile(supabase, userId, patch);
+        setUser((current) => current ? {
+          ...current,
+          name: profile.name,
+          username: profile.username ?? undefined,
+          email: profile.recoveryEmail ?? undefined,
+          referralCode: profile.referralCode ?? undefined,
+        } : current);
+        return profile;
       },
       changePassword: async (password) => {
         const supabase = getSupabase();
@@ -328,11 +371,20 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
         const supabase = getSupabase();
         if (!supabase || !userId) throw new Error('Chưa cấu hình máy chủ');
         await deleteAccount(supabase, userId);
-        if (currentOrgId) await clearOrgCache(currentOrgId);
+        const organizationIds = memberships.current.map((membership) => membership.organization.id);
+        await Promise.allSettled([
+          clearUserCache(userId),
+          ...organizationIds.map((organizationId) => clearOrgCache(organizationId)),
+        ]);
+        forgetSubscription(userId);
+        try { await supabase.auth.signOut({ scope: 'local' }); } catch { /* Server-side deletion already succeeded. */ }
         setCurrentOrg(null);
         setCurrentOrgIdState(null);
         setUser(null);
         setMe(null);
+        memberships.current = [];
+        setPendingReferralCode(null);
+        writePendingReferralCode(null);
         setBootstrapFallbackAvailable(false);
         setAccountState('ready');
         setAccountError(undefined);
@@ -343,7 +395,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
     [
       activateOrg, data, status, user, me, currentOrgId, currentOrg, orgType,
       userRole, permissions, features, plan, needsBootstrap, accountState, accountError,
-      bootstrap,
+      pendingReferralCode, bootstrap, claimReferral,
       selectOrg, refreshMe, activeKey, commit, kickSync, userId, show,
     ],
   );

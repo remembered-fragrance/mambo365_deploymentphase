@@ -3,22 +3,7 @@ import type { OrgType } from '@mambo/contracts';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/Button';
 import { L } from '@/i18n/labels';
-
-type DemoTab =
-  | 'home'
-  | 'orders'
-  | 'connections'
-  | 'receivables'
-  | 'debts'
-  | 'book'
-  | 'inventory'
-  | 'products'
-  | 'pricing'
-  | 'staff'
-  | 'branches'
-  | 'reports'
-  | 'notifications'
-  | 'plans';
+import { ROLE_PREVIEW_OPTIONS, rolePreviewTabs, type DemoTab } from './rolePreviewModel';
 type DemoOrder = { readonly id: number; readonly crop: string; readonly quantity: string; readonly status: string };
 
 interface RolePreview {
@@ -57,55 +42,21 @@ const PREVIEWS: Record<OrgType, RolePreview> = {
   },
 };
 
-const ROLES: readonly { readonly type: OrgType; readonly label: string }[] = [
-  { type: 'trader', label: L.bootstrapTraderTitle },
-  { type: 'farmer', label: L.bootstrapFarmerTitle },
-  { type: 'enterprise', label: L.bootstrapEnterpriseTitle },
-];
-
 const INITIAL_ORDERS: DemoOrder[] = [
   { id: 1, crop: L.rolePreviewCropRubber, quantity: '1.000 kg', status: L.rolePreviewOrderWaiting },
   { id: 2, crop: L.rolePreviewCropCashew, quantity: '500 kg', status: L.rolePreviewOrderAccepted },
 ];
 
-const navFor = (role: OrgType): readonly { readonly id: DemoTab; readonly label: string }[] => {
-  const common = [
-    { id: 'home' as const, label: L.navDashboard },
-    { id: 'orders' as const, label: L.rolePreviewNavOrders },
-    { id: 'connections' as const, label: L.rolePreviewNavConnections },
-  ];
-  if (role === 'farmer') {
-    return [...common, { id: 'receivables', label: L.rolePreviewNavReceivables },
-      { id: 'reports', label: L.rolePreviewNavReports },
-      { id: 'notifications', label: L.rolePreviewNavNotifications }];
-  }
-  const business: { readonly id: DemoTab; readonly label: string }[] = [
-    ...common,
-    { id: 'book' as const, label: L.rolePreviewNavBook },
-    { id: 'debts' as const, label: L.rolePreviewNavDebts },
-    { id: 'inventory' as const, label: L.rolePreviewNavInventory },
-    { id: 'products' as const, label: L.rolePreviewNavProducts },
-    { id: 'pricing' as const, label: L.rolePreviewNavPricing },
-  ];
-  if (role === 'enterprise') {
-    business.push(
-      { id: 'branches', label: L.rolePreviewNavBranches },
-      { id: 'staff', label: L.rolePreviewNavStaff },
-    );
-  }
-  return [...business, { id: 'reports', label: L.rolePreviewNavReports },
-    { id: 'notifications', label: L.rolePreviewNavNotifications },
-    { id: 'plans', label: L.rolePreviewNavPlans }];
-};
-
 export function RoleDashboardPreview({
   role,
   onRoleChange,
   onBack,
+  backLabel = L.rolePreviewBack,
 }: {
   readonly role: OrgType;
   readonly onRoleChange: (role: OrgType) => void;
   readonly onBack: () => void;
+  readonly backLabel?: string;
 }) {
   const preview = PREVIEWS[role];
   const [tab, setTab] = useState<DemoTab>('home');
@@ -325,7 +276,7 @@ export function RoleDashboardPreview({
         <p className="mt-1 text-sm text-ink-2">{L.rolePreviewHint}</p>
 
         <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3" aria-label={L.bootstrapTitle}>
-          {ROLES.map((option) => (
+          {ROLE_PREVIEW_OPTIONS.map((option) => (
             <button
               key={option.type}
               type="button"
@@ -341,7 +292,7 @@ export function RoleDashboardPreview({
         </div>
 
         <nav aria-label={L.rolePreviewNavigation} className="mt-4 flex flex-wrap gap-2">
-          {navFor(role).map((item) => (
+          {rolePreviewTabs(role).map((item) => (
             <button
               key={item.id}
               type="button"
@@ -357,7 +308,7 @@ export function RoleDashboardPreview({
         </nav>
 
         <div className="mt-5 flex flex-col gap-4">{content()}</div>
-        <Button className="mt-5" block onClick={onBack}>{L.rolePreviewBack}</Button>
+        <Button className="mt-5" block onClick={onBack}>{backLabel}</Button>
       </div>
     </PageContainer>
   );

@@ -14,10 +14,9 @@
  */
 
 import type { SupabaseClient, User } from '@supabase/supabase-js';
-import type { Me, MeBootstrapInput } from '@mambo/contracts';
+import type { Me, MeBootstrapInput, MeMembership } from '@mambo/contracts';
 import { detectIdentifierKind, normalizePhone } from '@/core/identifier';
 import type { UserProfile } from '@/core/types';
-import { FeatureUnavailableError } from './capabilities';
 import { api, setCurrentOrg } from './client';
 import type { ProfileRow } from './rows';
 
@@ -56,7 +55,14 @@ export const profileFromMe = (me: Me, defaultEmail?: string): UserProfile => ({
   name: me.user.name ?? '',
   email: me.user.email ?? undefined,
   phone: me.user.phone ?? undefined,
-  businessName: me.memberships[0]?.organization.name ?? undefined,
+});
+
+export const profileForSelectedMembership = (
+  profile: UserProfile,
+  membership: Pick<MeMembership, 'organization'> | null,
+): UserProfile => ({
+  ...profile,
+  businessName: membership?.organization.name,
 });
 
 export const profileFromAuthUser = (user: User): UserProfile => ({
@@ -207,10 +213,6 @@ export const signUp = async (
       ? input.email.trim().toLowerCase()
       : undefined;
 
-  if (input.referralCode?.trim()) {
-    throw new FeatureUnavailableError('Referral');
-  }
-
   /*
    * Theo thiết kế hệ thống và Backend:
    * SĐT là định danh số 1. Tài khoản Supabase Auth LUÔN LUÔN dùng email nội bộ
@@ -256,20 +258,31 @@ export const signOut = async (supabase: SupabaseClient): Promise<void> => {
 
 export interface ProfilePatch {
   readonly name?: string;
-  readonly businessName?: string;
+  readonly username?: string;
   readonly email?: string;
 }
 
-/**
- * Backend chưa hỗ trợ cập nhật hồ sơ.
- * Không fallback sang `supabase.from('profiles')`.
- */
+export type AccountProfile = Awaited<ReturnType<typeof api.account.profile>>;
+
+export const getAccountProfile = async (): Promise<AccountProfile> => api.account.profile();
+
+export const claimReferral = async (code: string): Promise<boolean> => {
+  const result = await api.account.claimReferral({ code: code.trim() });
+  return result.claimed;
+};
+
 export const updateProfile = async (
   _supabase: SupabaseClient,
   _userId: string,
-  _patch: ProfilePatch,
-): Promise<void> => {
-  throw new FeatureUnavailableError('Profile update');
+  patch: ProfilePatch,
+): Promise<AccountProfile> => {
+  const update = {
+    ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
+    ...(patch.username !== undefined ? { username: patch.username.trim() || null } : {}),
+    ...(patch.email !== undefined ? { recoveryEmail: patch.email.trim() || null } : {}),
+  };
+  if (Object.keys(update).length === 0) return api.account.profile();
+  return api.account.updateProfile(update);
 };
 
 export const changePassword = async (

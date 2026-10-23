@@ -59,11 +59,11 @@ export const createPaymentIntent = async (
 };
 
 /**
- * Ghi nhận người mời. BE6 sẽ cung cấp endpoint POST /v1/referrals/claim.
+ * Ghi nhận người mời qua API tài khoản hiện có.
  */
 export const claimReferral = async (
   _supabaseClient: unknown,
-  _code: string,
+  code: string,
 ): Promise<boolean> => {
-  throw new FeatureUnavailableError('Referral');
+  return (await api.account.claimReferral({ code: code.trim() })).claimed;
 };

@@ -6,13 +6,15 @@ interface BottomNavProps {
   readonly items: readonly NavItem[];
   readonly createLabel: string;
   readonly onCreate: () => void;
+  readonly canCreate?: boolean;
+  readonly centerItem?: NavItem;
 }
 
 /**
  * Thanh dưới 5 slot CỐ ĐỊNH. Vị trí khai báo bằng `bar: 1|2|3|4`, không bằng
  * thứ tự mảng — thêm mục mới không được làm nút quen thuộc nhảy chỗ.
  */
-export function BottomNav({ items, createLabel, onCreate }: BottomNavProps) {
+export function BottomNav({ items, createLabel, onCreate, canCreate = true, centerItem }: BottomNavProps) {
   return (
     <nav className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-rule bg-card pb-[env(safe-area-inset-bottom)] lg:hidden">
       <div className="mx-auto grid max-w-lg grid-cols-5 items-end">
@@ -20,14 +22,14 @@ export function BottomNav({ items, createLabel, onCreate }: BottomNavProps) {
         <Slot item={barItem(items, 2)} />
 
         <div className="flex justify-center pb-1">
-          <button
+          {centerItem ? <Slot item={centerItem} /> : canCreate && <button
             type="button"
             onClick={onCreate}
             aria-label={createLabel}
             className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full border-4 border-paper bg-brand text-paper shadow-lg"
           >
             <PlusIcon className="h-7 w-7" />
-          </button>
+          </button>}
         </div>
 
         <Slot item={barItem(items, 3)} />

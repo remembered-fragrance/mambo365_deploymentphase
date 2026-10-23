@@ -1,10 +1,10 @@
-/** Endpoints unavailable in the installed backend SDK. */
+/** Capabilities that are still unavailable in the installed backend SDK. */
 export const backendCapabilities = {
-  deleteAccount: false,
+  deleteAccount: true,
   attachments: false,
   billingIntents: false,
-  referral: false,
-  updateProfile: false,
+  referral: true,
+  updateProfile: true,
 } as const;
 
 export class FeatureUnavailableError extends Error {

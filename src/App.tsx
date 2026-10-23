@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -11,6 +11,7 @@ import { AppLayout } from '@/features/shared/AppLayout';
 import { ROUTES } from '@/features/shared/navItems';
 import { NotFoundPage } from '@/features/NotFoundPage';
 import { saveBookToFile } from '@/features/shared/bookFile';
+import { resolveDeveloperRolePreviewPath } from '@/features/dev/rolePreviewRoute';
 
 // Tách bundle theo route: mở app chỉ tải màn Tổng quan, không tải cả app.
 const DashboardPage = lazy(() =>
@@ -60,6 +61,18 @@ const PlansPage = lazy(() =>
 const ImportDataPage = lazy(() =>
   import('@/features/importData/ImportDataPage').then((m) => ({ default: m.ImportDataPage })),
 );
+const FarmerOrdersPage = lazy(() =>
+  import('@/features/farmer/FarmerOrdersPage').then((m) => ({ default: m.FarmerOrdersPage })),
+);
+const FarmerNetworkPage = lazy(() =>
+  import('@/features/farmer/FarmerNetworkPage').then((m) => ({ default: m.FarmerNetworkPage })),
+);
+const FarmerWeighDebtPage = lazy(() =>
+  import('@/features/farmer/FarmerWeighDebtPage').then((m) => ({ default: m.FarmerWeighDebtPage })),
+);
+const DeveloperRolePreviewPage = import.meta.env.DEV
+  ? lazy(() => import('@/features/dev/DeveloperRolePreviewPage').then((m) => ({ default: m.DeveloperRolePreviewPage })))
+  : NotFoundPage;
 
 export function App() {
   return (
@@ -67,43 +80,64 @@ export function App() {
     // sổ mới nhất qua một hàm đăng ký, vì ở đây còn ở NGOÀI <StoreProvider>
     // nên không gọi hook được.
     <ErrorBoundary onExportFile={saveBookToFile}>
-      <StoreProvider>
-        <ToastProvider>
-          <BrowserRouter>
-            <RequireAccount>
-              <AppLayout>
-                <Suspense
-                  fallback={
-                    <PageContainer>
-                      <Skeleton rows={4} label={L.loading} />
-                    </PageContainer>
-                  }
-                >
-                  <Routes>
-                    <Route path={ROUTES.dashboard} element={<DashboardPage />} />
-                    <Route path={ROUTES.receipts} element={<ReceiptsPage />} />
-                    <Route path={ROUTES.create} element={<CreateReceiptPage />} />
-                    <Route path="/phieu/:id" element={<ReceiptDetailPage />} />
-                    <Route path={ROUTES.debts} element={<DebtsPage />} />
-                    <Route path={ROUTES.inventory} element={<InventoryPage />} />
-                    <Route path={ROUTES.suppliers} element={<PartnerListPage role="supplier" />} />
-                    <Route path={ROUTES.buyers} element={<PartnerListPage role="buyer" />} />
-                    <Route path={ROUTES.products} element={<ProductsPage />} />
-                    <Route path={ROUTES.pricing} element={<PricingPage />} />
-                    <Route path={ROUTES.reports} element={<ReportsPage />} />
-                    <Route path={ROUTES.utilities} element={<UtilitiesPage />} />
-                    <Route path={ROUTES.profile} element={<ProfilePage />} />
-                    <Route path={ROUTES.plans} element={<PlansPage />} />
-                    <Route path={ROUTES.importData} element={<ImportDataPage />} />
-                    <Route path={ROUTES.more} element={<MorePage />} />
-                    <Route path="*" element={<NotFoundPage />} />
-                  </Routes>
-                </Suspense>
-              </AppLayout>
-            </RequireAccount>
-          </BrowserRouter>
-        </ToastProvider>
-      </StoreProvider>
+      <ToastProvider>
+        <BrowserRouter>
+          <AppEntry />
+        </BrowserRouter>
+      </ToastProvider>
     </ErrorBoundary>
+  );
+}
+
+function AppEntry() {
+  const { pathname } = useLocation();
+  const destination = resolveDeveloperRolePreviewPath(pathname, import.meta.env.DEV);
+
+  if (destination === 'preview') {
+    return (
+      <Suspense fallback={<PageContainer><Skeleton rows={4} label={L.loading} /></PageContainer>}>
+        <DeveloperRolePreviewPage />
+      </Suspense>
+    );
+  }
+  if (destination === 'not-found') return <NotFoundPage />;
+
+  return (
+    <StoreProvider>
+      <RequireAccount>
+        <AppLayout>
+          <Suspense
+            fallback={
+              <PageContainer>
+                <Skeleton rows={4} label={L.loading} />
+              </PageContainer>
+            }
+          >
+            <Routes>
+              <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+              <Route path={ROUTES.farmerOrders} element={<FarmerOrdersPage />} />
+              <Route path={ROUTES.farmerNetwork} element={<FarmerNetworkPage />} />
+              <Route path={ROUTES.farmerWeighDebt} element={<FarmerWeighDebtPage />} />
+              <Route path={ROUTES.receipts} element={<ReceiptsPage />} />
+              <Route path={ROUTES.create} element={<CreateReceiptPage />} />
+              <Route path="/phieu/:id" element={<ReceiptDetailPage />} />
+              <Route path={ROUTES.debts} element={<DebtsPage />} />
+              <Route path={ROUTES.inventory} element={<InventoryPage />} />
+              <Route path={ROUTES.suppliers} element={<PartnerListPage role="supplier" />} />
+              <Route path={ROUTES.buyers} element={<PartnerListPage role="buyer" />} />
+              <Route path={ROUTES.products} element={<ProductsPage />} />
+              <Route path={ROUTES.pricing} element={<PricingPage />} />
+              <Route path={ROUTES.reports} element={<ReportsPage />} />
+              <Route path={ROUTES.utilities} element={<UtilitiesPage />} />
+              <Route path={ROUTES.profile} element={<ProfilePage />} />
+              <Route path={ROUTES.plans} element={<PlansPage />} />
+              <Route path={ROUTES.importData} element={<ImportDataPage />} />
+              <Route path={ROUTES.more} element={<MorePage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </AppLayout>
+      </RequireAccount>
+    </StoreProvider>
   );
 }

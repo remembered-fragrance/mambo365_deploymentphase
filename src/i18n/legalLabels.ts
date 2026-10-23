@@ -25,11 +25,11 @@ export const LEGAL_LABELS = {
   // ─── Xoá tài khoản ────────────────────────────────────────────────────────
   deleteAccountTitle: 'Xoá tài khoản',
   deleteAccountHint:
-    'Xoá hẳn tài khoản và toàn bộ phiếu, nông hộ, ảnh chứng từ trên máy chủ. Không lấy lại được.',
+    'Xoá tài khoản và dữ liệu của tổ chức bạn làm chủ. Không thể hoàn tác; yêu cầu sẽ bị từ chối nếu tổ chức còn thành viên khác hoặc bạn còn là thành viên của tổ chức khác.',
   deleteAccountSaveFirst: 'Nên bấm "Lưu ra file" ở trên trước khi xoá.',
   deleteAccountButton: 'Xoá tài khoản và toàn bộ dữ liệu',
-  deleteAccountTypeName: 'Gõ lại tên vựa để xác nhận',
-  deleteAccountMismatch: 'Chưa khớp tên vựa',
+  deleteAccountTypeName: 'Gõ lại tên tổ chức để xác nhận',
+  deleteAccountMismatch: 'Tên tổ chức chưa khớp',
   deleteAccountWorking: 'Đang xoá…',
   deleteAccountDone: 'Đã xoá tài khoản',
 } as const;
