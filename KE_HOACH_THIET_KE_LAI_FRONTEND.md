@@ -1,5 +1,7 @@
 # 🎨 KẾ HOẠCH THIẾT KẾ LẠI FRONTEND — THUMUA365
 
+> 🗄️ **23/10/2026 — tài liệu lịch sử.** Đặc tả giao diện vẫn là tham khảo cho `src/`, nhưng phần nói tầng dữ liệu / Supabase đã thay bằng backend NestJS (repo `Thumua365_BE`). Hiện trạng: [README.md](README.md), [MEMORY.md](MEMORY.md).
+
 > 📌 **Cập nhật 09/08/2026:** dự án đã chuyển sang **dựng lại từ base** cho bản phát hành thật — xem [KE_HOACH_XAY_DUNG_SAN_PHAM_THAT.md](KE_HOACH_XAY_DUNG_SAN_PHAM_THAT.md) (tài liệu chủ). Toàn bộ nội dung thiết kế dưới đây **vẫn giữ nguyên hiệu lực** và là đặc tả giao diện chính thức; chỉ khác một điểm: các mục ghi "sửa lỗi X" nay là "làm đúng ngay từ đầu", và lộ trình §13 được thay bằng lộ trình A–H của tài liệu chủ.
 
 > **Câu hỏi gốc:** tối ưu giao diện để dùng tốt trên **web máy tính** và **app/mobile** như nhau — không màn hình nào bị thừa hoặc thiếu chức năng quan trọng.

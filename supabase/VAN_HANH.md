@@ -1,5 +1,7 @@
 # Vận hành backend — THUMUA365
 
+> 🗄️ **23/10/2026 — tài liệu lịch sử (thời app gọi Supabase trực tiếp).** Schema nay do repo `Thumua365_BE` giữ bằng Prisma Migrate — `migrations/` ở đây không còn chạy; bảng kiểm vận hành hiện hành là `ops/PRODUCTION.md` bên đó. Vẫn dùng được: kịch bản đồng bộ §6 và mười mục luồng tiền §7.3 (BE6 nghiệm thu theo đó).
+
 Schema nằm trong `migrations/`, đánh số tăng dần, **commit vào git**.
 
 > 🔴 **Cấm sửa schema bằng table editor trên dashboard.** Không có lịch sử, không

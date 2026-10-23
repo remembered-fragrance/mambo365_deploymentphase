@@ -1,5 +1,7 @@
 # GIAI ĐOẠN C — TẦNG DỮ LIỆU
 
+> 📌 **23/10/2026 — đã thay thế.** Kế hoạch 08/2026, thời app gọi Supabase trực tiếp — giữ làm lịch sử. Trạng thái và kiến trúc hiện tại: đầu trang [README.md](README.md) của thư mục này. `src/data/` nay đồng bộ qua `/v1/sync/push` · `/v1/sync/pull` bằng `@mambo/sdk` (`docs/FRONTEND.md` §7 của repo BE); các nguyên tắc offline-first, `seq`, payments tách bảng vẫn giữ.
+
 **Buổi:** 4 · **Phụ thuộc:** A và B xong · **Người làm:** Tài · **Cần từ người khác:** không
 
 ---

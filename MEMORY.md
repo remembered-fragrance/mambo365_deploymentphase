@@ -3,7 +3,9 @@
 Sổ ghi **đã làm gì, quyết gì, vì sao**. Đọc file này trước khi tiếp tục một
 giai đoạn mới hoặc khi quay lại dự án sau một thời gian nghỉ.
 
-- Kế hoạch (sẽ làm gì) → [`deploy_plan/`](deploy_plan/README.md)
+- Kế hoạch gốc A → H (thời Supabase trực tiếp) → [`deploy_plan/`](deploy_plan/README.md)
+- Hợp đồng với backend, việc của app từng bước → `docs/FRONTEND.md` của repo
+  [Thumua365_BE](https://github.com/remembered-fragrance/Thumua365_BE/blob/master/docs/FRONTEND.md)
 - Việc thấy nhưng chưa tới lượt → [`deploy_plan/NOTES.md`](deploy_plan/NOTES.md)
 - Nhật ký (đã làm gì) → **file này**
 
@@ -16,9 +18,14 @@ Ghi thêm một mục mỗi khi kết thúc một giai đoạn. Không xoá mụ
 | | |
 |---|---|
 | Bắt đầu | 09/08/2026 |
-| Repo | `C:\Users\nino\Desktop\mambo365deployment` — nhánh `master`, chưa có remote |
-| Bản demo cũ | `C:\Users\nino\Desktop\mambo365-main` — **giữ nguyên**, vẫn deploy tới khi bản mới qua criteria |
-| Người làm | Tài (một mình, ghép cặp với AI) |
+| Repo | [github](https://github.com/remembered-fragrance/mambo365_deploymentphase), nhánh `master` (máy hiện tại: `D:\EXE201\mambo365_deploymentphase`; lúc đầu `C:\Users\nino\Desktop\mambo365deployment`, chưa có remote) |
+| Bản demo cũ | `mambo365-main` — đã thay bằng bản này; không còn deploy |
+| Người làm | Lúc đầu Tài (một mình, ghép cặp với AI). Từ 10/2026: Khôi (`k20elite`), Bảo (`bbao2114`) làm app; Tài làm backend (repo `Thumua365_BE`) |
+| Trạng thái (23/10/2026) | Production ở **www.thumua365.id.vn** (Vercel, merge `master` là lên). App gọi API `thumua365-api-staging.onrender.com` (repo BE) — chưa có production riêng, dữ liệu trên đó là của người dùng thật. Cài `@mambo/*` **v0.20.0** từ GitHub Release của BE. Mới nhất trên `master`: PR #57 (tự tải lại khi chunk cũ mất, 23/10) |
+
+Từ 09/2026 kiến trúc đổi sang backend NestJS (repo `Thumua365_BE`): các giai đoạn A → G dưới đây là thời
+"Supabase trực tiếp" — app nay không đọc / ghi bảng Supabase nữa, mọi dữ liệu đi qua `@mambo/sdk`. Nhật ký
+backend và hợp đồng: `MEMORY.md`, `docs/FRONTEND.md` của repo BE.
 
 Bản demo cũ không sửa tại chỗ mà dựng repo mới, theo `A-nen-mong.md` §3.1: việc
 bê `core/` sang và viết lại toàn bộ tầng đọc/ghi không được phá bản đang chạy.
@@ -802,6 +809,46 @@ PR #54 merge `7abd9ae`, không đổi `@mambo/*`; bundle production có code m�
 - Chrome local: ghi phiếu lúc hết gói → mở lại gói ở DB → ~30 giây sau tự gửi, cả hai băng tự mất; hàng đợi trống +
   thêm thông báo `plan.activated` ở DB → trong nhịp hỏi 60 giây chuông lên 1, băng hết hạn tự mất.
 
+## Bản sửa pentest · PR #56 · 20/10/2026 · đã phát hành
+
+Các mục phía app trong báo cáo pentest, đi cùng BE #44 (dò tài khoản qua độ trễ của `resolve-identifier`). Merge
+`68b49b0` (tác giả `k20elite`), không đổi `@mambo/*`.
+
+- **H3 — mật khẩu dễ đoán**: `passwordProblem` (`features/shared/password.ts`) chặn danh sách mật khẩu phổ biến
+  (không phân biệt hoa thường), câu "Mật khẩu quá dễ đoán — chọn mật khẩu khác". Áp ở đăng ký, đổi mật khẩu, đặt lại
+  qua email, chủ tạo nhân viên; **không** áp cho đăng nhập — tài khoản cũ vẫn vào được.
+- **M10 — dọn máy khi đăng xuất**: xoá hàng đợi sự kiện `thumua365:events` (`track.ts`) và mọi khoá
+  `thumua365:plan:*` (`forgetAllSubscriptions` trong `subscriptionStore.ts`) — kể cả của tổ chức `/v1/me` không còn
+  kể, mà vòng `forgetSubscription` theo tổ chức bỏ sót.
+- **M7, M8 — header** trong `vercel.json`: `Content-Security-Policy` (`connect-src` gồm Supabase + API Render;
+  `img-src` gồm VietQR, Supabase Storage, `tile.openstreetmap.org`) và `Strict-Transport-Security` 2 năm,
+  `includeSubDomains`, **không** `preload`. 🔴 Đổi `VITE_TILE_URL` hay domain API thì phải sửa CSP theo, không thì app
+  không tải được sổ / nền bản đồ (bản patch đầu đã chặn đúng hai thứ này — sửa ở `cc07f01`).
+- **H6**: `scripts/admin-reset-password.ts` dùng `PASSWORD_MIN_LENGTH` / `PASSWORD_MAX_LENGTH` của contracts (trước
+  cứng 6) và chặn mật khẩu phổ biến.
+- **C1**: `supabase/functions/payment-webhook` so bí mật không lộ độ dài — Edge Function đời cũ; webhook đang chạy là
+  ở BE.
+- Bỏ migration `0011_resolve_identifier_hardening.sql` của patch: hàm `resolve_identifier` đã được BE thay bằng
+  `find_login_user`; chạy migration đó lên database chưa có hàm sẽ tạo lại một hàm `anon` gọi được.
+- Test: verify xanh 49 file / 320 test. Chrome local (PC + 500px), bản build kèm header của `vercel.json`: sổ, đồng
+  bộ, bản đồ, QR VietQR chạy, không vi phạm CSP. Chưa kiểm: xuất PDF dưới CSP, HSTS trên HTTPS thật.
+
+## Tự tải lại khi chunk của bản build cũ đã mất · PR #57 · 23/10/2026 · đã phát hành
+
+PR #57 (`fix/tai-lai-khi-chunk-cu`, commit `3d5c06e`). Lỗi: trang đang chạy bản build cũ xin một chunk mà lần deploy mới đã
+xoá ⇒ 404 "Failed to fetch dynamically imported module" — hay gặp ngay lúc đăng nhập (màn từng vỏ tải lười, service
+worker `autoUpdate` đã dọn cache cũ).
+
+- `src/data/staleBuild.ts`: `watchStaleBuild()` nghe `vite:preloadError`; `reloadForStaleBuild` tải lại trang **một
+  lần**, ghi mốc vào sessionStorage `thumua365:stale-build-reload`; trong 10 giây (`GUARD_MS`) mà lỗi lại thì không
+  tải nữa — lỗi đi tới ErrorBoundary (còn nút "Tải lại", "Lưu ra file"). Không ghi được sessionStorage thì không
+  dám tự tải lại.
+- File nằm ở `data/` vì chạm sessionStorage (luật §3.7 trong `scripts/check-rules.mjs`).
+- `main.tsx` gọi `watchStaleBuild()` trước `warmUpApi()`. Test `tests/data/staleBuild.test.ts`.
+- `npm run verify` xanh: 50 file / 324 test; CI và bản preview Vercel của PR xanh. Không phụ thuộc BE.
+- Merge `1b64869` lúc 06:50Z; bundle production (`index-Cdao7wnK.js`) có code mới. Trang đang mở bản cũ hơn chưa có
+  đoạn này nên vẫn có thể gặp lỗi một lần nữa; từ lần deploy kế tiếp mới tự tải lại.
+
 ---
 
 ## Ba số phải giữ trong tầm
@@ -823,22 +870,30 @@ PR #54 merge `7abd9ae`, không đổi `@mambo/*`; bundle production có code m�
 `npm run verify` chạy đủ 5 bước: lint → typecheck → luật dự án → ranh giới tầng
 → test. Tất cả xanh.
 
+Từ khi `core/` chuyển sang `@mambo/core` (repo BE, 10/2026), "Phủ test `core/`" đo ở repo BE (bảng "Ba số" bên đó).
+Lần verify gần nhất ở đây: 50 file / 324 test (PR #57, 23/10/2026). JS khởi tạo và Lighthouse chưa đo lại từ khi
+dựng lại app.
+
 ---
 
 ## Việc còn treo vì cần thứ ngoài repo
 
 | Việc | Cần gì | Ghi ở |
 |---|---|---|
-| Chạy migration, sinh kiểu, test chéo hai tài khoản | Tài khoản Supabase (2 project) | `supabase/VAN_HANH.md` §2–§5 |
+| ~~Chạy migration, sinh kiểu, test chéo hai tài khoản~~ | Không còn áp dụng — schema do BE giữ (Prisma Migrate), app không đọc bảng | BE `ops/PRODUCTION.md` |
 | Bảy kịch bản đồng bộ | Hai thiết bị thật + sóng chập chờn | `supabase/VAN_HANH.md` §6 |
-| Cấu hình Auth (tắt xác nhận email, mật khẩu **8** ký tự, rate limit) | Dashboard Supabase | `supabase/VAN_HANH.md` §3 |
-| Vercel Preview → staging, Production → prod | Tài khoản Vercel | `supabase/VAN_HANH.md` §1 |
-| Gửi thư quên mật khẩu / xác nhận email | Tài khoản Brevo + `BREVO_API_KEY`, `MAIL_FROM` trên Render | BE `ops/PRODUCTION.md` |
+| Cấu hình Auth (tắt xác nhận email, mật khẩu **8** ký tự, rate limit) | Dashboard Supabase (Tài) — "Minimum password length = 8" chưa kiểm lại | `supabase/VAN_HANH.md` §3, BE `ops/PRODUCTION.md` mục 2 |
+| Vercel Preview → staging, Production → prod | Production đã chạy ở www.thumua365.id.vn nhưng vẫn trỏ API **staging** — chưa có prod riêng | BE `ops/PRODUCTION.md` mục 6 |
+| ~~Gửi thư quên mật khẩu / xác nhận email~~ | ✅ Brevo chạy trên staging (có email được xác nhận 17/10) | BE `ops/PRODUCTION.md` |
+| Bucket `attachments` | Tài tạo trên Supabase — 23/10 chưa có, ảnh chứng từ nằm chờ trong máy | BE `ops/PRODUCTION.md` mục 2 |
+| Backup ra kho ngoài Supabase | R2 / B2 + GitHub secrets ở repo BE — 23/10 chưa có, dù đã có người dùng thật | BE `ops/PRODUCTION.md` mục 4 |
+| Thông tin chủ thể vận hành, vùng máy chủ | Nguyên (`LEGAL_OPERATOR`), Tài (`DATA_REGION`) — đang `null`, trang pháp lý hiện "đang cập nhật" | `src/config.ts` |
+| TWA lên CH Play | Tài khoản nhà phát triển, `assetlinks.json`, thử nghiệm kín ≥ 12 người / 14 ngày | BE `docs/THONG_TIN_DU_AN.md` §5 |
 | ~~Số Zalo kỹ thuật viên thật~~ | ✅ 17/10/2026 (#40) | `src/config.ts` `SUPPORT_ZALO` |
 | Lighthouse mobile | Chạy trên bản deploy | — |
 | Bộ ký hiệu 4 nông sản | Tuyến | `deploy_plan/NOTES.md` mục E |
 | Mười mục nghiệm thu luồng tiền | Supabase thật + một lần chuyển khoản thật | `supabase/VAN_HANH.md` §7.3 |
-| Số tài khoản nhận tiền | Quyết định của nhóm | `src/config.ts`, `VAN_HANH.md` §7.1 |
+| Số tài khoản nhận tiền | Quyết định của nhóm — 23/10 vẫn là chỗ điền `BANK_ACCOUNT_NUMBER = '0000000000'` | `src/config.ts`, `VAN_HANH.md` §7.1 |
 | Casso hoặc SePay (50–100k/tháng) | Đăng ký dịch vụ | `VAN_HANH.md` §7.2 — được phép hoãn, 10 khách đầu kích hoạt tay |
 | **Cổng chặn 2**: 10 người dùng thật xem bảng giá, đếm số người nói "sẽ trả" | Nguyên (BD) | `deploy_plan/README.md` §1 |
 
@@ -846,10 +901,12 @@ PR #54 merge `7abd9ae`, không đổi `@mambo/*`; bundle production có code m�
 
 ## Ghi chú vận hành
 
-- Dev server bản mới chạy ở **cổng 5174** qua cấu hình `thumua365-v1` trong
-  `.claude/launch.json` của repo cũ — harness chỉ đọc launch.json ở thư mục làm
-  việc chính. Bản demo cũ vẫn ở 5173.
+- Dev server: `npm run dev` ở **cổng 5173** (cấu hình `thumua365` trong `.claude/launch.json` của repo này;
+  CORS của API staging cho phép 5173 và 5174). Lúc đầu chạy 5174 vì bản demo cũ giữ 5173.
 - `.dependency-cruiser.cjs` ghi cứng tên `data/useStore.ts` và `data/hooks/`.
   Đổi tên hai chỗ đó thì phải sửa cả luật.
-- IndexedDB tên `thumua365`, đang ở **version 2**. Lần nâng version 1→2 xoá và
-  dựng lại kho `queue` — chấp nhận được vì app chưa phát hành.
+- IndexedDB tên `thumua365`, đang ở **version 5** (`DB_VERSION` trong `src/data/localDb.ts`). Lần nâng cấp chỉ
+  thêm kho còn thiếu (`books`, `queue`, `legacyQueue`, `cursors`, `attachments`, `attachmentQueue`, `syncMarks`);
+  op cũ không đủ `orgId` / `opId` được chuyển sang `legacyQueue`, không xoá. (Lần 1→2 đầu tiên từng xoá và dựng lại
+  `queue` — khi app chưa phát hành.) Tab cũ nhường kết nối khi tab khác mở bản mới (`blocking`, `rescue.ts`).
+- Script `db:push`, `db:types` trong `package.json` là của thời Supabase trực tiếp — không dùng nữa.

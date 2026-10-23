@@ -1,5 +1,7 @@
 # 🚀 KẾ HOẠCH TRIỂN KHAI DEPLOY THỰC TẾ — THUMUA365
 
+> 🗄️ **23/10/2026 — tài liệu lịch sử.** Phần hạ tầng & schema Supabase dưới đây đã thay bằng backend NestJS (repo `Thumua365_BE`: `docs/THONG_TIN_DU_AN.md`, `ops/PRODUCTION.md`). Hosting thực tế: app trên Vercel (www.thumua365.id.vn), API trên Render. Hiện trạng: [README.md](README.md), [MEMORY.md](MEMORY.md).
+
 > 📌 **Cập nhật 09/08/2026:** tài liệu chủ cho bản phát hành thật là [KE_HOACH_XAY_DUNG_SAN_PHAM_THAT.md](KE_HOACH_XAY_DUNG_SAN_PHAM_THAT.md). Tài liệu này giữ vai trò **đặc tả hạ tầng & schema** — §3.2–3.5 (dữ liệu, payments, xác thực, storage), §5 (hosting/CI/môi trường), §7–§8 (bảo mật, giám sát) vẫn là nguồn tham chiếu chính thức. Mục §10 (lộ trình) đã bị thay bằng lộ trình A–H của tài liệu chủ. Khi hai tài liệu mâu thuẫn, tài liệu chủ thắng.
 
 > **Câu hỏi gốc:** deploy thành 1 web app có giao diện và hoạt động tốt trên cả PC và mobile — cần tech stack gì cho frontend, cần gì cho backend?
