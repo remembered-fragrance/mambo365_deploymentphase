@@ -21,7 +21,7 @@ Ghi thêm một mục mỗi khi kết thúc một giai đoạn. Không xoá mụ
 | Repo | [github](https://github.com/remembered-fragrance/mambo365_deploymentphase), nhánh `master` (máy hiện tại: `D:\EXE201\mambo365_deploymentphase`; lúc đầu `C:\Users\nino\Desktop\mambo365deployment`, chưa có remote) |
 | Bản demo cũ | `mambo365-main` — đã thay bằng bản này; không còn deploy |
 | Người làm | Lúc đầu Tài (một mình, ghép cặp với AI). Từ 10/2026: Khôi (`k20elite`), Bảo (`bbao2114`) làm app; Tài làm backend (repo `Thumua365_BE`) |
-| Trạng thái (23/10/2026) | Production ở **www.thumua365.id.vn** (Vercel, merge `master` là lên). App gọi API `thumua365-api-staging.onrender.com` (repo BE) — chưa có production riêng, dữ liệu trên đó là của người dùng thật. Cài `@mambo/*` **v0.20.0** từ GitHub Release của BE. Mới nhất trên `master`: PR #56 (pentest, 20/10); đang mở PR #57 (tự tải lại khi chunk cũ mất) |
+| Trạng thái (23/10/2026) | Production ở **www.thumua365.id.vn** (Vercel, merge `master` là lên). App gọi API `thumua365-api-staging.onrender.com` (repo BE) — chưa có production riêng, dữ liệu trên đó là của người dùng thật. Cài `@mambo/*` **v0.20.0** từ GitHub Release của BE. Mới nhất trên `master`: PR #57 (tự tải lại khi chunk cũ mất, 23/10) |
 
 Từ 09/2026 kiến trúc đổi sang backend NestJS (repo `Thumua365_BE`): các giai đoạn A → G dưới đây là thời
 "Supabase trực tiếp" — app nay không đọc / ghi bảng Supabase nữa, mọi dữ liệu đi qua `@mambo/sdk`. Nhật ký
@@ -833,7 +833,7 @@ Các mục phía app trong báo cáo pentest, đi cùng BE #44 (dò tài khoản
 - Test: verify xanh 49 file / 320 test. Chrome local (PC + 500px), bản build kèm header của `vercel.json`: sổ, đồng
   bộ, bản đồ, QR VietQR chạy, không vi phạm CSP. Chưa kiểm: xuất PDF dưới CSP, HSTS trên HTTPS thật.
 
-## Tự tải lại khi chunk của bản build cũ đã mất · PR #57 · 23/10/2026 · mở, chưa merge
+## Tự tải lại khi chunk của bản build cũ đã mất · PR #57 · 23/10/2026 · đã phát hành
 
 PR #57 (`fix/tai-lai-khi-chunk-cu`, commit `3d5c06e`). Lỗi: trang đang chạy bản build cũ xin một chunk mà lần deploy mới đã
 xoá ⇒ 404 "Failed to fetch dynamically imported module" — hay gặp ngay lúc đăng nhập (màn từng vỏ tải lười, service
@@ -845,8 +845,9 @@ worker `autoUpdate` đã dọn cache cũ).
   dám tự tải lại.
 - File nằm ở `data/` vì chạm sessionStorage (luật §3.7 trong `scripts/check-rules.mjs`).
 - `main.tsx` gọi `watchStaleBuild()` trước `warmUpApi()`. Test `tests/data/staleBuild.test.ts`.
-- `npm run verify` xanh: 50 file / 324 test; CI và bản preview Vercel của PR xanh. Không phụ thuộc BE; merge là lên
-  production.
+- `npm run verify` xanh: 50 file / 324 test; CI và bản preview Vercel của PR xanh. Không phụ thuộc BE.
+- Merge `1b64869` lúc 06:50Z; bundle production (`index-Cdao7wnK.js`) có code mới. Trang đang mở bản cũ hơn chưa có
+  đoạn này nên vẫn có thể gặp lỗi một lần nữa; từ lần deploy kế tiếp mới tự tải lại.
 
 ---
 
@@ -870,7 +871,7 @@ worker `autoUpdate` đã dọn cache cũ).
 → test. Tất cả xanh.
 
 Từ khi `core/` chuyển sang `@mambo/core` (repo BE, 10/2026), "Phủ test `core/`" đo ở repo BE (bảng "Ba số" bên đó).
-Lần verify gần nhất ở đây: 49 file / 320 test (PR #56, 20/10/2026). JS khởi tạo và Lighthouse chưa đo lại từ khi
+Lần verify gần nhất ở đây: 50 file / 324 test (PR #57, 23/10/2026). JS khởi tạo và Lighthouse chưa đo lại từ khi
 dựng lại app.
 
 ---

@@ -96,6 +96,5 @@ thư `/dat-lai-mat-khau`, `/xac-nhan-email` (API dựng link bằng đúng hai �
 |---|---|
 | Giai đoạn A → G (app một vai trò, Supabase trực tiếp) | ✅ 08/2026 — nhật ký trong `MEMORY.md` |
 | Dựng lại theo hợp đồng NestJS (09 → 10/2026) | ✅ ba vỏ, đăng nhập một ô, "Bạn là ai?", sổ offline đồng bộ qua API, kết nối bằng mã, đơn + hẹn lịch, thông báo, nhân viên / chi nhánh, báo cáo, gói + mã QR chuyển khoản, ảnh chứng từ, đo lường, bản đồ thu mua, quên mật khẩu / xác nhận email, trang pháp lý |
-| Bản phát hành gần nhất | PR #56 — sửa theo báo cáo pentest (20/10). Cài `@mambo/*` `v0.20.0` |
-| Đang mở | PR #57 — tự tải lại một lần khi chunk của bản build cũ đã mất |
+| Bản phát hành gần nhất | PR #57 — tự tải lại một lần khi chunk của bản build cũ đã mất (23/10); trước đó PR #56 sửa theo báo cáo pentest (20/10). Cài `@mambo/*` `v0.20.0` |
 | Chưa có | TWA lên CH Play · số tài khoản nhận tiền thật (`config.ts` còn chỗ điền) · Sentry cho web · bucket ảnh và backup phía BE |
