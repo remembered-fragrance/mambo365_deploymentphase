@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { BarChart } from '@/components/data/BarChart';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { formatVnd, formatVndShort, formatWeight } from '@mambo/core/format';
+import { formatDate, formatVnd, formatVndShort, formatWeight } from '@mambo/core/format';
 import { inventoryByProduct } from '@mambo/core/inventory';
 import { dailySpend, debtsBySupplier, salesSummaryFor, summaryFor } from '@mambo/core/selectors';
 import { useStore } from '@/data/useStore';
@@ -36,7 +36,8 @@ export function DashboardPage() {
     () =>
       dailySpend(data, 7).map((p) => ({
         label: p.label,
-        sublabel: new Date(p.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
+        // Bỏ năm khỏi formatDate: chỉ ngày + tháng thì Chrome ghi '17-10', lệch với 17/10/2026 cả app đang dùng.
+        sublabel: formatDate(p.date).slice(0, 5),
         value: p.spent,
         display: formatVndShort(p.spent),
       })),
