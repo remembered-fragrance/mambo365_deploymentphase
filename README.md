@@ -4,6 +4,7 @@ Sổ thu mua nông sản cho chủ vựa / thương lái. Chạy được khi kh
 
 | Đọc gì | Khi nào |
 |---|---|
+| [`THONG_TIN_DU_AN.md`](THONG_TIN_DU_AN.md) | **Đầu tiên.** Hướng mới (ba vai trò, NestJS), hiện trạng, lộ trình, việc cần chốt |
 | [`deploy_plan/README.md`](deploy_plan/README.md) | **Trước tiên.** Kế hoạch thi công; §3 (ràng buộc chung) áp cho mọi giai đoạn |
 | [`MEMORY.md`](MEMORY.md) | Nhật ký: đã làm gì, quyết gì, vì sao, còn treo gì |
 | [`deploy_plan/NOTES.md`](deploy_plan/NOTES.md) | Việc thấy nhưng chưa tới lượt |
