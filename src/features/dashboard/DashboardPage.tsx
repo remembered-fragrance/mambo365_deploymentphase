@@ -36,11 +36,13 @@ export function DashboardPage() {
     () =>
       dailySpend(data, 7).map((p) => ({
         label: p.label,
+        sublabel: new Date(p.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
         value: p.spent,
         display: formatVndShort(p.spent),
       })),
     [data],
   );
+  const chartEmpty = chart.every((p) => p.value === 0);
 
   const tasks = useMemo(
     () => [
@@ -96,6 +98,8 @@ export function DashboardPage() {
 
         <div className="lg:col-span-7">
           <Card title={L.last7Days}>
+            {/* Bảy vạch phẳng trông như biểu đồ chưa tải xong — nói rõ là tuần này chưa mua. */}
+            {chartEmpty && <p className="mb-2 text-sm text-ink-3">{L.last7DaysEmpty}</p>}
             <BarChart points={chart} caption={L.last7Days} />
           </Card>
         </div>

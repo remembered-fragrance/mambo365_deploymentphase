@@ -1,5 +1,7 @@
 export interface BarPoint {
   readonly label: string;
+  /** Dòng nhỏ dưới nhãn, vd. ngày/tháng — "Thứ 6" không cho biết là tuần này hay tuần trước. */
+  readonly sublabel?: string;
   readonly value: number;
   /** Giá trị đã định dạng để đọc — component không biết định dạng tiền. */
   readonly display: string;
@@ -46,6 +48,7 @@ export function BarChart({ points, caption }: BarChartProps) {
               />
             </div>
             <span className="truncate text-[11px] text-ink-3">{point.label}</span>
+            {point.sublabel && <span className="num truncate text-[11px] text-ink-3">{point.sublabel}</span>}
           </div>
         ))}
       </div>

@@ -250,6 +250,7 @@ const BASE = {
   spentWeek: 'Chi mua 7 ngày',
   spentMonth: 'Chi mua 30 ngày',
   last7Days: 'Bảy ngày gần đây',
+  last7DaysEmpty: 'Chưa có phiếu mua nào trong 7 ngày qua.',
   salesBlock: 'Bán ra 30 ngày',
   salesEmpty: 'Chưa có phiếu bán nào',
   salesEmptyHint: 'Bán hàng cho nhà máy thì tạo phiếu bán để theo dõi lời lỗ.',
