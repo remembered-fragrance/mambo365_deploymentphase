@@ -845,7 +845,8 @@ worker `autoUpdate` đã dọn cache cũ).
   dám tự tải lại.
 - File nằm ở `data/` vì chạm sessionStorage (luật §3.7 trong `scripts/check-rules.mjs`).
 - `main.tsx` gọi `watchStaleBuild()` trước `warmUpApi()`. Test `tests/data/staleBuild.test.ts`.
-- `npm run verify` xanh: 50 file / 324 test. Không phụ thuộc BE; merge là lên production.
+- `npm run verify` xanh: 50 file / 324 test; CI và bản preview Vercel của PR xanh. Không phụ thuộc BE; merge là lên
+  production.
 
 ---
 
