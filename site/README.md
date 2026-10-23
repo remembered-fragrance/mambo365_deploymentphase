@@ -3,6 +3,11 @@
 Bốn trang HTML tĩnh. **Không build, không framework, không công cụ theo dõi.**
 Mở thẳng file bằng trình duyệt là xem được.
 
+> **Trạng thái 23/10/2026: chưa xuất bản** — còn 10 chỗ `ĐIỀN:` (bảng dưới). App không phụ thuộc site này: trang
+> pháp lý và hướng dẫn là route công khai của chính app (`/dieu-khoan`, `/quyen-rieng-tu`, `/huong-dan`, nội dung ở
+> `src/i18n/legal/`, phiên bản `LEGAL_VERSION` trong `src/config.ts`). Sửa chính sách thì sửa ở app trước; site
+> chép theo khi xuất bản.
+
 | File | Là gì |
 |---|---|
 | `index.html` | Trang giới thiệu + bảng giá công khai |

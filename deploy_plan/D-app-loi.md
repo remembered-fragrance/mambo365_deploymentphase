@@ -1,5 +1,7 @@
 # GIAI ĐOẠN D — APP LÕI
 
+> 📌 **23/10/2026 — ✅ đã làm (09/08/2026), sau đó dựng lại cho ba vỏ.** Kế hoạch 08/2026, thời app gọi Supabase trực tiếp — giữ làm lịch sử. Trạng thái và kiến trúc hiện tại: đầu trang [README.md](README.md) của thư mục này.
+
 **Buổi:** 7 · **Phụ thuộc:** C xong · **Người làm:** Tài (có thể chia với Khôi) · **Cần từ Tuyến:** bộ ký hiệu 4 nông sản — **hạn chót đầu giai đoạn này**
 
 ---

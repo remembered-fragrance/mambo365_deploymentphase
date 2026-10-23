@@ -1,5 +1,7 @@
 # NOTES — sổ ghi việc phát sinh
 
+> 📌 **23/10/2026:** các mục dưới đây ghi trong thời kế hoạch A → H (Supabase trực tiếp). Việc còn treo hiện tại: `MEMORY.md` (mục "Việc còn treo") và `ops/PRODUCTION.md` của repo BE. Mục nào nhắc Supabase migration / RLS trong repo này thì nay thuộc repo BE.
+
 Chỗ duy nhất để ghi những thứ **thấy đáng làm nhưng chưa tới lượt**. Mục đích: không làm việc của giai đoạn sau, nhưng cũng không quên.
 
 ## Cách dùng

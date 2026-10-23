@@ -1,5 +1,7 @@
 # GIAI ĐOẠN H — KIỂM & MỞ
 
+> 📌 **23/10/2026 — chưa làm theo file này.** Kế hoạch 08/2026, thời app gọi Supabase trực tiếp — giữ làm lịch sử. Trạng thái và kiến trúc hiện tại: đầu trang [README.md](README.md) của thư mục này. App đã lên www.thumua365.id.vn và có người dùng thật; Lighthouse, pilot có đo, cổng chặn 2 và 3 vẫn chưa ghi nhận ở `MEMORY.md`.
+
 **Buổi:** 3 (+2 tuần chạy pilot) · **Phụ thuộc:** G xong · **Người làm:** cả nhóm
 
 ---

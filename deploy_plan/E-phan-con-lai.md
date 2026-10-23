@@ -1,5 +1,7 @@
 # GIAI ĐOẠN E — PHẦN CÒN LẠI & ONBOARDING
 
+> 📌 **23/10/2026 — ✅ đã làm (10/08/2026).** Kế hoạch 08/2026, thời app gọi Supabase trực tiếp — giữ làm lịch sử. Trạng thái và kiến trúc hiện tại: đầu trang [README.md](README.md) của thư mục này.
+
 **Buổi:** 4–5 · **Phụ thuộc:** D xong · **Người làm:** Tài (chia được với Khôi) · **Cần từ người khác:** không
 
 ---

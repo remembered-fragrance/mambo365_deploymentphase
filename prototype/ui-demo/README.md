@@ -3,6 +3,9 @@
 Bản demo bấm được, chạy hoàn toàn trong trình duyệt, **không gọi API thật**. Dùng để thống nhất
 giao diện và luồng trước khi dựng thật trong `src/` theo hợp đồng `docs/FRONTEND.md` của repo BE.
 
+> 23/10/2026: app thật trong `src/` đã dựng đủ các màn dưới đây (trừ màn Quản trị — quản trị đi qua API
+> `/v1/admin/*` và script). Demo này không còn được cập nhật theo app; giao diện thật lấy `src/` làm chuẩn.
+
 - Bản xem online: https://claude.ai/artifact/SXjR5PqXxHjqEv3NHAMCsn (riêng tư — chủ link chia sẻ cho nhóm)
 - Mở ở máy: mở thẳng `index.html` bằng trình duyệt, hoặc `npx serve prototype/ui-demo`
 
