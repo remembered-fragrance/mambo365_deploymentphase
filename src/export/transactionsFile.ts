@@ -7,7 +7,7 @@ import { lineTotals, transactionTotals } from '@mambo/core/calc';
 import { formatDate, formatQuantity, formatVnd } from '@mambo/core/format';
 import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
-import { captureInIsolatedFrame } from './receiptCapture';
+import { captureInIsolatedFrame, PDF_JPEG_QUALITY } from './receiptCapture';
 import { downloadBlob } from './downloadFile';
 
 export const exportTransactionsXlsx = async (
@@ -99,11 +99,11 @@ export const exportTransactionsPdf = async (
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
   const imgH = (canvas.height * pageW) / canvas.width;
-  const img = canvas.toDataURL('image/png');
+  const img = canvas.toDataURL('image/jpeg', PDF_JPEG_QUALITY);
 
   for (let y = 0; y < imgH; y += pageH) {
     if (y > 0) pdf.addPage();
-    pdf.addImage(img, 'PNG', 0, -y, pageW, imgH);
+    pdf.addImage(img, 'JPEG', 0, -y, pageW, imgH);
   }
   downloadBlob(pdf.output('blob'), filename);
 };

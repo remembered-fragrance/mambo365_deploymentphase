@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { useToast } from '@/components/ui/Toast';
-import { PlusIcon, ReceiptIcon, ToolIcon } from '@/components/ui/icons';
+import { EyeIcon, PlusIcon, UploadIcon } from '@/components/ui/icons';
 import { useDemoMode } from '@/data/hooks/useDemoMode';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
@@ -83,7 +83,7 @@ export function WelcomeScreen() {
           index="2"
           title={L.welcomeDemo}
           hint={L.welcomeDemoHint}
-          Icon={ReceiptIcon}
+          Icon={EyeIcon}
           onPick={() => {
             startDemo();
             toast({ message: L.demoStarted });
@@ -93,7 +93,7 @@ export function WelcomeScreen() {
           index="3"
           title={L.welcomeImport}
           hint={L.welcomeImportHint}
-          Icon={ToolIcon}
+          Icon={UploadIcon}
           onPick={() => fileInput.current?.click()}
         />}
       </div>

@@ -32,9 +32,6 @@ export function DebtGroupCard({ group, side, onPayFull, onPayPart }: DebtGroupCa
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center gap-3 p-3 text-left"
       >
-        <ChevronRightIcon
-          className={`h-5 w-5 shrink-0 text-ink-3 transition ${open ? 'rotate-90' : ''}`}
-        />
         <span className="min-w-0 flex-1">
           <span className="block truncate font-bold text-ink">{group.partyName}</span>
           <span className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-ink-3">
@@ -56,6 +53,10 @@ export function DebtGroupCard({ group, side, onPayFull, onPayPart }: DebtGroupCa
         >
           {formatVnd(group.debt)}
         </span>
+        {/* Gập/mở: mũi tên xuống/lên ở cuối dòng. Mũi tên sang phải cả app dành cho "mở trang khác". */}
+        <ChevronRightIcon
+          className={`h-5 w-5 shrink-0 text-ink-3 transition ${open ? '-rotate-90' : 'rotate-90'}`}
+        />
       </button>
 
       {open && (
