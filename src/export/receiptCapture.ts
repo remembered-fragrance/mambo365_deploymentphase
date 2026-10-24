@@ -142,6 +142,9 @@ export const buildReceiptExportElement = (tx: Transaction): HTMLElement => {
   return root;
 };
 
+/** Ảnh chụp nhúng vào PDF dạng JPEG: nhúng PNG thì một phiếu ra ~2,3 MB, quá nặng để gửi Zalo bằng 3G. */
+export const PDF_JPEG_QUALITY = 0.9;
+
 /** Chụp trong iframe trống — html2canvas không đọc được stylesheet Tailwind. */
 export const captureInIsolatedFrame = async (element: HTMLElement): Promise<HTMLCanvasElement> => {
   const { default: html2canvas } = await import('html2canvas');

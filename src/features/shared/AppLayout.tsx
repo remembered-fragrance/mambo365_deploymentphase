@@ -22,6 +22,7 @@ import { SyncNotices } from './SyncNotices';
 import { backTarget, isTabRoot, navGroups, navItems, ROUTES } from './navItems';
 import { StuckBanner } from './StuckBanner';
 import { BranchDropCard } from './BranchDropCard';
+import { InstallBanner } from './InstallBanner';
 import { UnownedOpsCard } from './UnownedOpsCard';
 import { useAccess } from './useAccess';
 import { useTheme } from './useTheme';
@@ -185,6 +186,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
         banner={
           <>
             <DemoBanner />
+            {pathname === ROUTES.dashboard && <InstallBanner />}
             <PlanBanner />
             <StuckBanner />
             <BranchDropCard />

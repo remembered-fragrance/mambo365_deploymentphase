@@ -104,6 +104,7 @@ export const SCREEN_LABELS = {
   reportMonthTable: 'Từng tháng trong năm',
   colMonth: 'Tháng',
   exportExcel: 'Xuất Excel',
+  exportPdf: 'Xuất PDF',
   reportLegalTitle: 'Số liệu tham khảo',
   reportLegalBody:
     'Đây là số liệu do app cộng từ phiếu của bạn, không phải tờ khai thuế. Đưa cho kế toán xem trước khi nộp.',

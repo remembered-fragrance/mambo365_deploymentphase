@@ -7,7 +7,7 @@
 
 import { useCallback, useState } from 'react';
 
-export type OnceKey = 'coach-first-receipt';
+export type OnceKey = 'coach-first-receipt' | 'install-card';
 
 const storageKey = (key: OnceKey): string => `thumua365:once:${key}`;
 
