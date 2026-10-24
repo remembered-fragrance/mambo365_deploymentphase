@@ -11,7 +11,7 @@ interface AttachmentPickerProps {
   readonly onChange: (ids: readonly string[]) => void;
 }
 
-function Thumbnail({ id, onRemove }: { readonly id: string; readonly onRemove: () => void }) {
+function Thumbnail({ id, onRemove }: { readonly id: string; readonly onRemove?: () => void }) {
   const { url, status } = useAttachmentUrl(id);
 
   return (
@@ -25,6 +25,7 @@ function Thumbnail({ id, onRemove }: { readonly id: string; readonly onRemove: (
       </span>
       <button
         type="button"
+        disabled={!onRemove}
         aria-label={L.removePhoto}
         onClick={onRemove}
         className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border border-rule bg-card text-alert"
@@ -48,7 +49,15 @@ export function AttachmentPicker({ ids, onChange }: AttachmentPickerProps) {
 
   const pick = async (file: File | undefined) => {
     if (!file) return;
-    const id = await addPhoto(file, ids);
+    let id: string | null;
+    try {
+      id = await addPhoto(file, ids);
+    } catch (error) {
+      // Ảnh không nén / lưu được (file hỏng, máy hết chỗ, tab khác vừa mở bản mới): phải nói ra, không thì
+      // người cân tưởng ảnh đã gắn vào phiếu (B4).
+      toast({ message: error instanceof Error && error.message === L.bookNotReady ? error.message : L.photoSaveFailed, tone: 'alert' });
+      return;
+    }
     if (!id) {
       toast({ message: L.photoFull, tone: 'alert' });
       return;

@@ -39,6 +39,14 @@ export const KeyboardIcon = (p: IconProps) => (
 );
 
 export const HomeIcon = (p: IconProps) => <Icon {...p} d="M4 11l8-7 8 7|M6 10v10h12V10" />;
+/** Tấm bản đồ gấp ba. */
+export const MapIcon = (p: IconProps) => (
+  <Icon {...p} d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z|M9 4v14|M15 6v14" />
+);
+/** Ghim địa điểm. */
+export const PinIcon = (p: IconProps) => (
+  <Icon {...p} d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z|M12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
+);
 export const ReceiptIcon = (p: IconProps) => (
   <Icon {...p} d="M6 3h12v18l-3-2-3 2-3-2-3 2z|M9 8h6M9 12h6" />
 );
@@ -81,6 +89,9 @@ export const CloudOffIcon = (p: IconProps) => (
 export const PhoneIcon = (p: IconProps) => (
   <Icon {...p} d="M5 4h4l2 5-2.5 1.5a12 12 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z" />
 );
+const EYE = 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z|M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z';
+export const EyeIcon = (p: IconProps) => <Icon {...p} d={EYE} />;
+export const EyeOffIcon = (p: IconProps) => <Icon {...p} d={`${EYE}|M4 4l16 16`} />;
 export const PencilIcon = (p: IconProps) => (
   <Icon {...p} d="M4 20h4L20 8l-4-4L4 16z|M14 6l4 4" />
 );
@@ -114,6 +125,12 @@ export const UploadIcon = (p: IconProps) => (
 );
 export const GiftIcon = (p: IconProps) => (
   <Icon {...p} d="M4 10h16v10H4z|M4 7h16v3H4z|M12 7v13|M12 7c-3 0-4-3-2-3s2 3 2 3zm0 0c3 0 4-3 2-3s-2 3-2 3z" />
+);
+export const BellIcon = (p: IconProps) => (
+  <Icon {...p} d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z|M10 20.5a2 2 0 0 0 4 0" />
+);
+export const PackageIcon = (p: IconProps) => (
+  <Icon {...p} d="M3 7l9-4 9 4v10l-9 4-9-4z|M3 7l9 4 9-4|M12 11v10" />
 );
 export const HelpIcon = (p: IconProps) => (
   <Icon {...p} d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z|M9.5 9.5a2.5 2.5 0 1 1 3 2.4V14|M12 17.5v.01" />

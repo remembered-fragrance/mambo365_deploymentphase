@@ -7,23 +7,30 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { AUTOSAVE_MS } from '@/config';
-import { computeReceiptTotal, totalAdjustments } from '@/core/calc';
-import type { PriceAdjustment, Transaction, TransactionKind } from '@/core/types';
+import { computeReceiptTotal, totalAdjustments } from '@mambo/core/calc';
+import type { DraftStatus, PriceAdjustment, Transaction, TransactionKind } from '@mambo/core/types';
 import { useStore } from '@/data/useStore';
 import { emptyLine, fromLine, isUsable, toLine, type LineDraft } from './lineDraft';
+import type { PartyChoice } from './namesakes';
 
-export type SaveState = 'idle' | 'saving' | 'saved';
+/** `failed`: máy không nhận bản nháp (số vượt mức máy chủ nhận) — xem `opCheck.ts`. */
+export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
 
 export interface DraftReceiptState {
   readonly draftId?: string;
   readonly kind: TransactionKind;
+  /** `draft` = trên thanh "Đang cân"; `waiting` = "Để dành", chốt sau. Sửa tiếp không đổi trạng thái. */
+  readonly status: DraftStatus;
   readonly counterpartyId?: string;
   readonly partyName: string;
   readonly lines: readonly LineDraft[];
   readonly adjustments: readonly PriceAdjustment[];
   readonly note: string;
   readonly attachmentIds: readonly string[];
+  /** Phiếu lập theo đơn (BE5): đồng bộ lên thì đơn tự sang "Đã cân xong". */
+  readonly orderId?: string;
   readonly linesTotal: number;
   readonly adjustmentTotal: number;
   readonly finalTotal: number;
@@ -32,14 +39,24 @@ export interface DraftReceiptState {
   setPartyName: (name: string) => void;
   setCounterparty: (id: string | undefined, name: string) => void;
   updateLine: (id: string, patch: Partial<LineDraft>) => void;
+  /** Còn thêm dòng được không — máy chủ nhận tối đa `RECEIPT_LIMITS.lines` dòng một phiếu. */
+  readonly canAddLine: boolean;
   addLine: () => void;
   removeLine: (id: string) => void;
   setAdjustments: (next: readonly PriceAdjustment[]) => void;
   setNote: (note: string) => void;
   setAttachmentIds: (ids: readonly string[]) => void;
-  /** `dueDate` chỉ có nghĩa khi phiếu còn nợ — xem `PayPartDialog`. */
-  finish: (amountPaid: number, dueDate?: string) => Transaction | null;
+  setOrderId: (orderId: string | undefined) => void;
+  /**
+   * `dueDate` chỉ có nghĩa khi phiếu còn nợ — xem `PayPartDialog`. `party`: câu trả lời khi tên gõ trùng người đã
+   * có (B3, `namesakes.ts`) — không có thì core dùng lại người cùng tên như cũ.
+   */
+  finish: (amountPaid: number, dueDate?: string, party?: PartyChoice) => Transaction | null;
   discard: () => void;
+  /** Lưu ngay thành "Để dành" và ngừng tự lưu — trang rời màn lập phiếu ngay sau đó. */
+  saveForLater: () => void;
+  /** Phiếu để dành quay lại thanh "Đang cân" (tự lưu như mọi lần sửa). */
+  backToWeighing: () => void;
 }
 
 export function useDraftReceipt(
@@ -55,9 +72,11 @@ export function useDraftReceipt(
   const [lines, setLines] = useState<readonly LineDraft[]>(() =>
     stored && stored.lines.length > 0 ? stored.lines.map(fromLine) : [emptyLine()],
   );
-  const [adjustments, setAdjustments] = useState<readonly PriceAdjustment[]>([]);
+  const [adjustments, setAdjustments] = useState<readonly PriceAdjustment[]>(stored?.adjustments ?? []);
   const [note, setNote] = useState(stored?.note ?? '');
   const [attachmentIds, setAttachmentIds] = useState<readonly string[]>(stored?.attachmentIds ?? []);
+  const [orderId, setOrderId] = useState(stored?.orderId);
+  const [status, setStatus] = useState<DraftStatus>(stored?.status ?? 'draft');
   const [saveState, setSaveState] = useState<SaveState>('idle');
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,6 +92,23 @@ export function useDraftReceipt(
   const adjustmentTotal = useMemo(() => totalAdjustments(adjustments), [adjustments]);
   const canFinish = lines.some(isUsable);
 
+  const save = (nextStatus: DraftStatus) =>
+    upsertDraft({
+      id,
+      status: nextStatus,
+      kind,
+      counterpartyId,
+      supplierName: partyName,
+      lines: lines.map(toLine),
+      amountPaid: 0,
+      // Luôn gửi đủ, kể cả khi trống: gỡ hết khoản / xoá ghi chú / bỏ khách cũng phải lên máy chủ,
+      // không thì lần kéo về sau dựng lại đúng cái vừa gỡ.
+      adjustments: [...adjustments],
+      note,
+      attachmentIds: [...attachmentIds],
+      orderId,
+    });
+
   // Tự lưu nháp — người dùng không phải nhớ bấm gì trước khi chuyển khách.
   useEffect(() => {
     if (!touched.current || finished.current) return;
@@ -80,27 +116,20 @@ export function useDraftReceipt(
     if (timer.current) clearTimeout(timer.current);
 
     timer.current = setTimeout(() => {
-      const saved = upsertDraft({
-        id,
-        status: 'draft',
-        kind,
-        counterpartyId,
-        supplierName: partyName,
-        lines: lines.map(toLine),
-        amountPaid: 0,
-        note: note || undefined,
-        attachmentIds: [...attachmentIds],
-      });
-      setId(saved.id);
-      setSaveState('saved');
+      try {
+        setId(save(status).id);
+        setSaveState('saved');
+      } catch {
+        setSaveState('failed');
+      }
     }, AUTOSAVE_MS);
 
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-    // `upsertDraft` đổi tham chiếu mỗi lần sổ đổi; đưa vào đây sẽ tự lưu vòng lặp.
+    // `save` / `upsertDraft` đổi tham chiếu mỗi lần sổ đổi; đưa vào đây sẽ tự lưu vòng lặp.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, kind, counterpartyId, partyName, lines, note, attachmentIds]);
+  }, [id, kind, status, counterpartyId, partyName, lines, adjustments, note, attachmentIds, orderId]);
 
   const mark = useCallback(<T,>(setter: (value: T) => void) => {
     return (value: T) => {
@@ -110,7 +139,7 @@ export function useDraftReceipt(
   }, []);
 
   const finish = useCallback(
-    (amountPaid: number, dueDate?: string): Transaction | null => {
+    (amountPaid: number, dueDate?: string, party?: PartyChoice): Transaction | null => {
       const usable = lines.filter(isUsable).map(toLine);
       if (usable.length === 0) return null;
 
@@ -118,12 +147,14 @@ export function useDraftReceipt(
       if (timer.current) clearTimeout(timer.current);
 
       const debt = linesTotal + adjustmentTotal - amountPaid;
-      const tx = addTransaction({
+      const picked = party && 'id' in party ? party : undefined;
+      const partyId = picked ? picked.id : counterpartyId;
+      const record = () => addTransaction({
         date: new Date().toISOString(),
         kind,
-        counterpartyId: counterpartyId ?? '',
-        supplierId: counterpartyId,
-        supplierName: partyName,
+        counterpartyId: partyId ?? '',
+        supplierId: partyId,
+        supplierName: picked ? picked.name : partyName,
         lines: usable,
         amountPaid,
         payments: [],
@@ -134,7 +165,16 @@ export function useDraftReceipt(
             : undefined,
         note: note || undefined,
         attachmentIds: attachmentIds.length > 0 ? [...attachmentIds] : undefined,
-      });
+        orderId,
+      }, party && 'asNew' in party ? { asNew: true } : undefined);
+      let tx: Transaction;
+      try {
+        tx = record();
+      } catch (error) {
+        // Chưa chốt được thì vẫn là nháp: bật lại tự lưu, để lỗi nổi lên chỗ vừa bấm.
+        finished.current = false;
+        throw error;
+      }
 
       if (id) deleteDraft(id);
       return tx;
@@ -150,6 +190,7 @@ export function useDraftReceipt(
       linesTotal,
       note,
       attachmentIds,
+      orderId,
       id,
       deleteDraft,
     ],
@@ -158,12 +199,14 @@ export function useDraftReceipt(
   return {
     draftId: id,
     kind,
+    status,
     counterpartyId,
     partyName,
     lines,
     adjustments,
     note,
     attachmentIds,
+    orderId,
     linesTotal,
     adjustmentTotal,
     finalTotal: linesTotal + adjustmentTotal,
@@ -179,9 +222,10 @@ export function useDraftReceipt(
       touched.current = true;
       setLines((cur) => cur.map((l) => (l.id === lineId ? { ...l, ...patch } : l)));
     },
+    canAddLine: lines.length < RECEIPT_LIMITS.lines,
     addLine: () => {
       touched.current = true;
-      setLines((cur) => [...cur, emptyLine()]);
+      setLines((cur) => (cur.length >= RECEIPT_LIMITS.lines ? cur : [...cur, emptyLine()]));
     },
     removeLine: (lineId) => {
       touched.current = true;
@@ -190,9 +234,29 @@ export function useDraftReceipt(
     setAdjustments: mark(setAdjustments),
     setNote: mark(setNote),
     setAttachmentIds: mark(setAttachmentIds),
+    setOrderId: mark(setOrderId),
     finish,
+    // Như `finish`: tắt tự lưu trước, kẻo lần lưu đang chờ dựng lại đúng cái nháp vừa xoá.
     discard: () => {
+      finished.current = true;
+      if (timer.current) clearTimeout(timer.current);
       if (id) deleteDraft(id);
+    },
+    // Lưu ngay, không chờ hẹn giờ: trang chuyển khách ngay sau đó, lần lưu hẹn giờ sẽ không kịp chạy.
+    saveForLater: () => {
+      finished.current = true;
+      if (timer.current) clearTimeout(timer.current);
+      try {
+        setId(save('waiting').id);
+      } catch (error) {
+        finished.current = false;
+        throw error;
+      }
+      setStatus('waiting');
+    },
+    backToWeighing: () => {
+      touched.current = true;
+      setStatus('draft');
     },
   };
 }

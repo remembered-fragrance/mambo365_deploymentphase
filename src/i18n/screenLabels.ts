@@ -2,9 +2,8 @@
  * Chuỗi hiển thị của các màn hình giai đoạn E: Công nợ · Tồn kho · Đối tác ·
  * Mặt hàng · Quy tắc giá · Báo cáo · Tiện ích · Tài khoản.
  *
- * Tách khỏi `labels.ts` vì một lý do đo được: gộp hết vào một file thì file đó
- * vượt 300 dòng, tức là vi phạm chính luật của dự án. Nơi dùng vẫn chỉ có một:
- * `L` trong `labels.ts` gộp hai phần lại.
+ * Tách khỏi `labels.ts` theo nhóm màn hình. Nơi dùng vẫn chỉ có một: `L` trong
+ * `labels.ts` gộp các mảnh lại.
  *
  * Giọng văn theo bảng từ vựng §16.3 — nói như ngoài chợ, không nói như phần mềm.
  */
@@ -55,9 +54,9 @@ export const SCREEN_LABELS = {
   deletePartyTitle: 'Xoá đối tác này?',
   deletePartyKeepsReceipts: 'Phiếu cũ vẫn còn, chỉ xoá tên khỏi danh bạ.',
   noSuppliers: 'Chưa có nông hộ nào',
-  noSuppliersHint: 'Tên nông hộ tự vào danh sách khi bác lập phiếu mua.',
+  noSuppliersHint: 'Tên nông hộ tự vào danh sách khi bạn lập phiếu mua.',
   noBuyers: 'Chưa có người mua nào',
-  noBuyersHint: 'Tên người mua tự vào danh sách khi bác lập phiếu bán.',
+  noBuyersHint: 'Tên người mua tự vào danh sách khi bạn lập phiếu bán.',
   nameRequired: 'Phải có tên',
   partyHistory: 'Phiếu gần đây',
 
@@ -107,7 +106,7 @@ export const SCREEN_LABELS = {
   exportExcel: 'Xuất Excel',
   reportLegalTitle: 'Số liệu tham khảo',
   reportLegalBody:
-    'Đây là số liệu do app cộng từ phiếu của bác, không phải tờ khai thuế. Đưa cho kế toán xem trước khi nộp.',
+    'Đây là số liệu do app cộng từ phiếu của bạn, không phải tờ khai thuế. Đưa cho kế toán xem trước khi nộp.',
 
   // ─── Tiện ích ─────────────────────────────────────────────────────────────
   navUtilities: 'Tiện ích',
@@ -124,25 +123,41 @@ export const SCREEN_LABELS = {
   noNotesHint: 'Ghi giá thoả thuận, số xe, lời hẹn — thứ hay quên nhất.',
 
   // ─── Tài khoản ────────────────────────────────────────────────────────────
-  profileOwner: 'Tên chủ vựa',
+  profileOwner: 'Tên hiển thị',
   profileBusiness: 'Tên vựa',
+  profileBusinessFarmer: 'Tên hộ',
+  profileBusinessEnterprise: 'Tên doanh nghiệp',
+  profileBusinessHint: 'Tên này chưa sửa được trong app — cần đổi thì nhắn Zalo hỗ trợ.',
+  profileUsername: 'Tên đăng nhập (không bắt buộc)',
   profilePhone: 'Số điện thoại',
-  profileEmail: 'Email',
+  profilePhoneHint: 'Số điện thoại là tài khoản của bạn — không đổi ở đây.',
+  profileEmail: 'Email khôi phục',
+  profileEmailHint: 'Đăng nhập bằng email này cũng vào đúng tài khoản. Để trống = bỏ email.',
+  profileSaved: 'Đã lưu hồ sơ',
   emailMissingTitle: 'Chưa có email',
   emailMissingBody: 'Không có email thì mất mật khẩu phải nhờ hỗ trợ. Thêm bây giờ cho chắc.',
+  emailVerified: 'Đã xác nhận — quên mật khẩu thì lấy lại qua email này',
+  emailUnverified: 'Chưa xác nhận — mở thư chúng tôi gửi và bấm link. Chưa xác nhận thì chưa lấy lại mật khẩu qua email được.',
+  emailSendVerify: 'Gửi lại thư xác nhận',
+  emailVerifySent: 'Đã gửi thư xác nhận — xem cả mục Thư rác',
+  emailVerifyTooSoon: 'Vừa gửi thư — đợi một phút rồi gửi lại',
+  emailVerifyAlready: 'Email đã được xác nhận',
   emailMissingLater: 'Để sau',
   changePassword: 'Đổi mật khẩu',
   newPassword: 'Mật khẩu mới',
   repeatPassword: 'Gõ lại mật khẩu mới',
   passwordMismatch: 'Hai lần gõ chưa giống nhau',
-  passwordTooShort: 'Mật khẩu ít nhất 6 ký tự',
+  passwordTooShort: 'Mật khẩu ít nhất 8 ký tự',
+  passwordTooLong: 'Mật khẩu dài nhất 72 ký tự',
+  passwordTooCommon: 'Mật khẩu quá dễ đoán — chọn mật khẩu khác',
   passwordChanged: 'Đã đổi mật khẩu',
   weightUnitTitle: 'Cân theo',
   weightUnitKg: 'Ki-lô-gam (kg)',
   weightUnitHg: 'Lạng (hg) — 302 lạng = 30,2 kg',
   displayModeTitle: 'Chế độ xem',
-  dataTitle: 'Dữ liệu của bác',
+  dataTitle: 'Dữ liệu của bạn',
   dataHint: 'Sổ nằm trong máy. Lưu ra file để đổi máy hoặc phòng khi mất điện thoại.',
+  dataHintServer: 'Sổ của vựa lưu trên máy chủ — đổi máy chỉ cần đăng nhập. Lưu ra file nếu muốn giữ thêm một bản.',
   importReplaceWarning: 'Lấy lại từ file sẽ THAY toàn bộ sổ đang có trên máy này.',
   importFileTitle: 'Thay sổ hiện tại?',
   importedToast: 'Đã lấy lại sổ từ file',

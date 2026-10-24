@@ -5,18 +5,25 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { BarChart } from '@/components/data/BarChart';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { formatVnd, formatVndShort, formatWeight } from '@/core/format';
-import { inventoryByProduct } from '@/core/inventory';
-import { dailySpend, debtsBySupplier, salesSummaryFor, summaryFor } from '@/core/selectors';
+import { formatDate, formatVnd, formatVndShort, formatWeight } from '@mambo/core/format';
+import { inventoryByProduct } from '@mambo/core/inventory';
+import { dailySpend, debtsBySupplier, salesSummaryFor, summaryFor } from '@mambo/core/selectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { HelpButton } from '../help/HelpButton';
 import { WelcomeScreen } from '../onboarding/WelcomeScreen';
 import { ROUTES } from '../shared/navItems';
+import { useAccess } from '../shared/useAccess';
+import { LinkCodesCard } from './LinkCodesCard';
+import { StaffTodayCard } from './StaffTodayCard';
 import { TodayTasks } from './TodayTasks';
 
 export function DashboardPage() {
-  const { data } = useStore();
+  const { data, currentOrgId } = useStore();
+  const { can } = useAccess();
+  // Hai thẻ cần máy chủ: mã kết nối (người giữ danh bạ) và việc của nhân viên (chủ).
+  const showLinks = Boolean(currentOrgId) && can('partner:manage');
+  const showStaff = Boolean(currentOrgId) && can('staff:manage');
 
   // Sổ rỗng thì không vẽ một trang toàn số 0 — người mới cần biết bấm gì tiếp.
   const empty = data.transactions.length === 0 && data.drafts.length === 0;
@@ -29,11 +36,14 @@ export function DashboardPage() {
     () =>
       dailySpend(data, 7).map((p) => ({
         label: p.label,
+        // Bỏ năm khỏi formatDate: chỉ ngày + tháng thì Chrome ghi '17-10', lệch với 17/10/2026 cả app đang dùng.
+        sublabel: formatDate(p.date).slice(0, 5),
         value: p.spent,
         display: formatVndShort(p.spent),
       })),
     [data],
   );
+  const chartEmpty = chart.every((p) => p.value === 0);
 
   const tasks = useMemo(
     () => [
@@ -89,6 +99,8 @@ export function DashboardPage() {
 
         <div className="lg:col-span-7">
           <Card title={L.last7Days}>
+            {/* Bảy vạch phẳng trông như biểu đồ chưa tải xong — nói rõ là tuần này chưa mua. */}
+            {chartEmpty && <p className="mb-2 text-sm text-ink-3">{L.last7DaysEmpty}</p>}
             <BarChart points={chart} caption={L.last7Days} />
           </Card>
         </div>
@@ -119,6 +131,17 @@ export function DashboardPage() {
             </Card>
           )}
         </div>
+
+        {showStaff && (
+          <div className="lg:col-span-6">
+            <StaffTodayCard />
+          </div>
+        )}
+        {showLinks && (
+          <div className="lg:col-span-6">
+            <LinkCodesCard />
+          </div>
+        )}
       </div>
     </PageContainer>
   );

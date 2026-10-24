@@ -1,7 +1,7 @@
 import { DataView } from '@/components/data/DataView';
 import type { Column } from '@/components/data/dataViewModel';
-import { formatVnd } from '@/core/format';
-import type { TaxReport } from '@/core/taxReport';
+import { formatVnd } from '@mambo/core/format';
+import type { TaxReport } from '@mambo/core/taxReport';
 import { L } from '@/i18n/labels';
 
 const columns: Column<TaxReport>[] = [

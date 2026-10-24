@@ -2,27 +2,20 @@
  * Ranh giới bốn tầng — ép bằng máy, không bằng kỷ luật cá nhân.
  * Bảng gốc: deploy_plan/README.md §3.1
  *
- *   core/       nghiệp vụ thuần — không import gì ngoài chính nó
- *   data/       Supabase + cache + hàng đợi — chỉ import core/
+ *   core        nghiệp vụ thuần — gói @mambo/core từ repo BE, không còn chép trong src/
+ *   data/       Supabase + cache + hàng đợi — chỉ import core
  *   components/ UI thuần — không import core/, không import data/
  *   features/   màn hình — import core/ + components/, data/ chỉ qua useStore
  *   export/     xuất file — chạm DOM và thư viện nặng, chỉ nạp động
  *
  * `i18n/` và `config.ts` là lá dùng chung: hằng số thuần, không phụ thuộc ai.
- * Mọi tầng trừ `core/` được import chúng (core phải giữ 0 import ngoài core).
+ * Mọi tầng được import chúng.
  */
 
 const SHARED = 'src/(i18n)/|src/config\\.ts';
 
 module.exports = {
   forbidden: [
-    {
-      name: 'core-phai-thuan',
-      comment: 'core/ không được import React, data/, DOM hay bất kỳ thư viện ngoài nào.',
-      severity: 'error',
-      from: { path: '^src/core/' },
-      to: { pathNot: '^src/core/' },
-    },
     {
       name: 'data-chi-import-core',
       severity: 'error',
@@ -35,6 +28,13 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/components/' },
       to: { path: '^src/', pathNot: `^src/components/|^${SHARED}` },
+    },
+    {
+      name: 'components-khong-import-mambo',
+      comment: 'components/ chỉ nhận props. Không import @mambo/* (core, contracts, sdk).',
+      severity: 'error',
+      from: { path: '^src/components/' },
+      to: { path: 'node_modules/@mambo/' },
     },
     {
       name: 'features-khong-cham-data-truc-tiep',
@@ -65,9 +65,17 @@ module.exports = {
       from: {},
       to: {
         dependencyTypes: ['npm'],
-        path: '^(xlsx|jspdf|html2canvas)',
+        // Đường dẫn đã resolve (node_modules/…), không phải tên gói — `^xlsx` không bao giờ khớp.
+        path: '^node_modules/(xlsx|jspdf|html2canvas)/',
         dependencyTypesNot: ['dynamic-import'],
       },
+    },
+    {
+      name: 'leaflet-chi-o-ban-do',
+      comment: 'leaflet · react-leaflet chỉ dùng trong features/map/ — màn đó nạp bằng lazy(), không vào JS khởi tạo.',
+      severity: 'error',
+      from: { pathNot: '^src/features/map/' },
+      to: { path: 'node_modules/(leaflet|react-leaflet|@types/leaflet)/', dependencyTypesNot: ['dynamic-import'] },
     },
     {
       name: 'khong-phu-thuoc-vong',

@@ -22,7 +22,7 @@ import {
   transactionToRow,
 } from '@/data/mappers';
 import type { DraftRow, NoteRow, PartyRow, PaymentRow, PricingRuleRow, ProductRow, TransactionRow } from '@/data/rows';
-import { GUEST_SUPPLIER_ID } from '@/core/normalizeTransaction';
+import { GUEST_SUPPLIER_ID } from '@mambo/core/normalizeTransaction';
 import type {
   Buyer,
   DraftReceipt,
@@ -32,7 +32,7 @@ import type {
   Product,
   Supplier,
   Transaction,
-} from '@/core/types';
+} from '@mambo/core/types';
 
 const USER = '11111111-1111-4111-8111-111111111111';
 

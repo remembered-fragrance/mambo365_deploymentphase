@@ -3,6 +3,22 @@
 Thư mục này là **tài liệu thi công**: mỗi giai đoạn một file, đọc xong là làm được ngay.
 Ngày lập: **09/08/2026** · Bám theo proposal đã duyệt `CP4.docx`.
 
+> 📌 **Trạng thái 23/10/2026.** Giai đoạn A → G đã làm xong trong 08/2026 (nhật ký ở [`MEMORY.md`](../MEMORY.md));
+> H chưa làm theo file. Từ 09/2026 kiến trúc đổi: app không đọc / ghi bảng Supabase nữa mà gọi API NestJS ở repo
+> [Thumua365_BE](https://github.com/remembered-fragrance/Thumua365_BE) qua `@mambo/sdk` — hợp đồng là `docs/FRONTEND.md`
+> bên đó. Các file giai đoạn giữ làm lịch sử.
+>
+> **§3 vẫn áp dụng** và được `npm run verify` ép (`rules` = `scripts/check-rules.mjs`, `boundaries` =
+> `.dependency-cruiser.cjs`), với các chỗ đã đổi:
+> - `src/core/` không còn — nghiệp vụ là gói `@mambo/core` từ repo BE (import `@mambo/core/<file>`); bảng §3.1 giữ nguyên,
+>   cột "core" nay là gói đó.
+> - `data/` gọi API qua `@mambo/sdk`; `supabase-js` chỉ còn dùng cho Auth. §3.7: cả `localStorage` lẫn `sessionStorage`
+>   chỉ được chạm trong `data/`.
+> - §2: dòng "Backend: @supabase/supabase-js · Postgres · Auth · Storage" và "Hạ tầng: Supabase (prod + staging)" đã
+>   lỗi thời — backend là NestJS trên Render, phía sau là Supabase (Postgres + Auth + Storage); chưa có production riêng.
+> - §3.6: phạm vi "7 module của CP4" đã được thay bằng nền tảng ba vai trò (`docs/THONG_TIN_DU_AN.md` của repo BE).
+> - §3.8: nhánh nay đặt theo việc (`feat/…`, `fix/…`, `docs/…`, `chore/…`), không theo chữ cái giai đoạn.
+
 ## Cách dùng
 
 1. Đọc **file này trước** — mục §3 (ràng buộc chung) áp cho mọi giai đoạn, không lặp lại trong từng file.
@@ -99,7 +115,6 @@ src/export/   Xuất Excel/PDF/PNG. Chạm DOM và thư viện nặng. Chỉ n�
 
 ### 3.3 Kích thước và hình dạng file
 
-- File **> 300 dòng** phải tách. File **> 500 dòng** là lỗi, không phải phong cách.
 - Một file React = **một component xuất khẩu chính**. Component phụ dùng chung → chuyển sang `components/`.
 - Hàm > 50 dòng hoặc lồng > 3 tầng → tách.
 - Không có file tên `utils.ts`, `helpers.ts`, `common.ts`, `misc.ts` — tên phải nói file đó làm gì.
@@ -140,12 +155,11 @@ Trả lời được cả bốn thì mới thêm: ① có ≥2 chỗ dùng thậ
 - **Việc dọn dẹp và việc đổi hành vi không đi chung một commit.** Đặc biệt khi bê `core/` sang: chuyển → test → mới sửa, ba commit riêng.
 - Không merge khi CI đỏ. Không `--no-verify`.
 
-### 3.9 Bốn số phải giữ trong tầm
+### 3.9 Ba số phải giữ trong tầm
 
 | Chỉ số | Ngưỡng | Đo bằng |
 |---|---|---|
 | JS khởi tạo | ≤ 250KB gzip | `vite build` |
-| File dài nhất trong `src/` | ≤ 300 dòng | `find src -name '*.ts*' \| xargs wc -l \| sort -n \| tail` |
 | Phủ test `core/` | ≥ 80% dòng | `vitest --coverage` |
 | Lighthouse mobile | Perf ≥85 · A11y ≥95 | thủ công mỗi cuối giai đoạn |
 

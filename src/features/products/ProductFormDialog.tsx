@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import { PRODUCT_LIMITS } from '@mambo/contracts';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import type { Product, ProductFormulaType } from '@/core/types';
+import type { Product, ProductFormulaType } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 
 export interface ProductDraft {
@@ -75,12 +76,15 @@ export function ProductFormDialog({ open, initial, onSave, onClose }: ProductFor
         <Input
           label={L.productNameLabel}
           value={draft.name}
+          maxLength={PRODUCT_LIMITS.name}
           error={touched && nameMissing ? L.nameRequired : undefined}
           onChange={(e) => set({ name: e.target.value })}
         />
+        {/* Giới hạn đúng bằng schema đồng bộ (B4): gõ quá thì máy chủ từ chối cả op, ô chặn trước. */}
         <Input
           label={L.unitOfMeasure}
           value={draft.unit}
+          maxLength={PRODUCT_LIMITS.unit}
           onChange={(e) => set({ unit: e.target.value })}
         />
         <Select

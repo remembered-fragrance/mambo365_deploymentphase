@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { NumInput } from '@/components/ui/NumInput';
 import { Numpad } from '@/components/ui/Numpad';
-import { appendDigit, parseNumber } from '@/core/parseNumber';
-import { groupThousands } from '@/core/format';
-import { moneyToVietnameseWords } from '@/core/numberToWords';
+import { appendDigit, parseNumber } from '@mambo/core/parseNumber';
+import { formatVnd, groupThousands } from '@mambo/core/format';
+import { moneyToVietnameseWords } from '@mambo/core/numberToWords';
 import { L } from '@/i18n/labels';
+import { isRoundedMoney, parseMoney } from './money';
 import { useCoarsePointer } from './useCoarsePointer';
 
 interface NumberFieldProps {
@@ -17,6 +18,10 @@ interface NumberFieldProps {
   readonly autoFocus?: boolean;
   /** Hiện dòng đọc bằng chữ — bật cho ô tiền, tắt cho ô cân. */
   readonly spoken?: boolean;
+  /** Ô tiền: gõ lẻ vẫn được nhưng số lưu là đồng nguyên — báo trước số sẽ lưu. Xem `money.ts`. */
+  readonly money?: boolean;
+  /** Lớn nhất máy chủ nhận (`RECEIPT_LIMITS`). Phím làm số vượt mức thì không ăn — lọt lên là kẹt hàng đợi. */
+  readonly max?: number;
   readonly onNext?: () => void;
 }
 
@@ -39,6 +44,8 @@ export function NumberField({
   error,
   autoFocus,
   spoken = false,
+  money = false,
+  max,
   onNext,
 }: NumberFieldProps) {
   const coarse = useCoarsePointer();
@@ -48,6 +55,11 @@ export function NumberField({
   const useNumpad = coarse && !systemKeyboard;
   const display = groupThousands(value);
   const words = spoken && value ? moneyToVietnameseWords(parseNumber(value)) : undefined;
+  const rounded = money && isRoundedMoney(value) ? `${L.moneyRoundedTo} ${formatVnd(parseMoney(value))}` : undefined;
+  const hint = [rounded, words].filter(Boolean).join(' · ') || undefined;
+  const change = (next: string) => {
+    if (max === undefined || parseNumber(next) <= max) onValueChange(next);
+  };
 
   return (
     <>
@@ -55,12 +67,12 @@ export function NumberField({
         label={label}
         value={value}
         display={display}
-        hint={words}
+        hint={hint}
         unit={unit}
         error={error}
         autoFocus={autoFocus}
         readOnly={useNumpad}
-        onValueChange={(next) => onValueChange(next.replace(/\./g, '').replace(/[^\d,]/g, ''))}
+        onValueChange={(next) => change(next.replace(/\./g, '').replace(/[^\d,]/g, ''))}
         onOpenNumpad={useNumpad ? () => setNumpadOpen(true) : undefined}
       />
 
@@ -68,8 +80,8 @@ export function NumberField({
         <Numpad
           label={label}
           display={display}
-          spoken={words}
-          onKeyPress={(key) => onValueChange(appendDigit(value, key))}
+          spoken={hint}
+          onKeyPress={(key) => change(appendDigit(value, key))}
           onClose={() => setNumpadOpen(false)}
           onNext={
             onNext &&

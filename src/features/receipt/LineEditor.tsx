@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { Select } from '@/components/ui/Select';
 import { TrashIcon } from '@/components/ui/icons';
-import { lineTotals } from '@/core/calc';
-import { formatVnd } from '@/core/format';
-import type { Product, ProductFormulaType } from '@/core/types';
+import { lineTotals } from '@mambo/core/calc';
+import { formatVnd } from '@mambo/core/format';
+import type { Product, ProductFormulaType } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { NumberField } from '../shared/NumberField';
 import { applyProduct, toLine, type LineDraft } from './lineDraft';
@@ -54,6 +55,7 @@ export function LineEditor({ line, products, canRemove, onChange, onRemove }: Li
         label={L.grossWeight}
         value={line.gross}
         unit={line.unit}
+        max={RECEIPT_LIMITS.quantity}
         onValueChange={(gross) => onChange({ gross })}
       />
 
@@ -62,6 +64,7 @@ export function LineEditor({ line, products, canRemove, onChange, onRemove }: Li
           label={L.tareWeight}
           value={line.tare}
           unit={line.unit}
+          max={RECEIPT_LIMITS.quantity}
           onValueChange={(tare) => onChange({ tare })}
         />
       )}
@@ -71,6 +74,7 @@ export function LineEditor({ line, products, canRemove, onChange, onRemove }: Li
           label={L.qualityPercent}
           value={line.quality}
           unit="%"
+          max={RECEIPT_LIMITS.percent}
           onValueChange={(quality) => onChange({ quality })}
         />
       )}
@@ -80,6 +84,7 @@ export function LineEditor({ line, products, canRemove, onChange, onRemove }: Li
           label={L.lossPercent}
           value={line.loss}
           unit="%"
+          max={RECEIPT_LIMITS.percent}
           onValueChange={(loss) => onChange({ loss })}
         />
       )}
@@ -89,6 +94,7 @@ export function LineEditor({ line, products, canRemove, onChange, onRemove }: Li
         value={line.price}
         unit={`₫/${line.unit}`}
         spoken
+        max={RECEIPT_LIMITS.quantity}
         onValueChange={(price) => onChange({ price })}
       />
 

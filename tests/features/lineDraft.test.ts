@@ -5,8 +5,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { applyProduct, emptyLine, fromLine, isUsable, toLine } from '@/features/receipt/lineDraft';
-import { lineTotals } from '@/core/calc';
-import type { Product } from '@/core/types';
+import { lineTotals } from '@mambo/core/calc';
+import type { Product } from '@mambo/core/types';
 
 const rubber: Product = {
   id: 'prod-rubber',
@@ -98,5 +98,15 @@ describe('dòng đủ thông tin để tính tiền', () => {
     const line = { ...filled(), formulaType: 'rubberLatex' as const, quality: '' };
     expect(isUsable(line)).toBe(false);
     expect(isUsable({ ...line, quality: '31' })).toBe(true);
+  });
+});
+
+describe('số vượt mức máy chủ nhận', () => {
+  it('nháp cũ lỡ lưu % trên 100 thì kẹp về 100 — không để op bị từ chối chặn hàng đợi', () => {
+    const latex = { ...filled(), formulaType: 'rubberLatex' as const, quality: '120' };
+    const loss = { ...filled(), formulaType: 'lossPercent' as const, loss: '150' };
+    expect(toLine(latex).qualityPercent).toBe(100);
+    expect(toLine(loss).lossPercent).toBe(100);
+    expect(toLine({ ...filled(), gross: '2000000000' }).grossWeight).toBe(1e9);
   });
 });

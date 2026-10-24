@@ -8,6 +8,7 @@
  */
 
 export const BILLING_LABELS = {
+  billingContact: 'Gói doanh nghiệp tính theo số chi nhánh và kích hoạt tay — nhắn Zalo hỗ trợ để được báo giá.',
   // ─── Bậc gói ──────────────────────────────────────────────────────────────
   planTitle: 'Gói dịch vụ',
   planFree: 'Gói miễn phí',
@@ -40,7 +41,7 @@ export const BILLING_LABELS = {
   featureNo: 'Không',
 
   // ─── Hạn mức ──────────────────────────────────────────────────────────────
-  quotaWallTitle: 'Tháng này bác đã ghi hết số phiếu miễn phí',
+  quotaWallTitle: 'Tháng này bạn đã ghi hết số phiếu miễn phí',
   quotaWallBody:
     'Nâng cấp để ghi không giới hạn, xem công nợ và giữ sổ trên mạng phòng khi mất máy.',
   quotaUsed: 'Đã ghi tháng này',
@@ -80,7 +81,7 @@ export const BILLING_LABELS = {
   payStatusFailed: 'Không thành',
   payStatusExpired: 'Đã huỷ',
   payRefundNote: 'Đổi ý trong 7 ngày đầu thì nhắn Zalo, hoàn lại tiền.',
-  payNoAutoRenew: 'Không tự động trừ tiền. Hết hạn thì bác chủ động chuyển tiếp.',
+  payNoAutoRenew: 'Không tự động trừ tiền. Hết hạn thì bạn chủ động chuyển tiếp.',
 
   // ─── Banner ───────────────────────────────────────────────────────────────
   bannerTrialLeft: 'Dùng thử còn',
@@ -91,11 +92,11 @@ export const BILLING_LABELS = {
   syncBlockedDetail: 'Phiếu vẫn ghi bình thường và sẽ tự gửi đi khi mở lại gói.',
 
   // ─── Mã mời ───────────────────────────────────────────────────────────────
-  referralTitle: 'Mã mời của bác',
-  referralHint: 'Người quen đăng ký bằng mã này thì hệ thống ghi nhận là bác giới thiệu.',
+  referralTitle: 'Mã mời của bạn',
+  referralHint: 'Người quen đăng ký bằng mã này thì hệ thống ghi nhận là bạn giới thiệu.',
   referralNone: 'Chưa có mã',
   referralAtSignUp: 'Mã mời (nếu có)',
-  referralAtSignUpHint: 'Ai chỉ bác dùng app thì gõ mã của họ vào đây.',
+  referralAtSignUpHint: 'Ai chỉ bạn dùng app thì gõ mã của họ vào đây.',
 
   // ─── Nhập từ file Excel ───────────────────────────────────────────────────
   importTitle: 'Nhập từ file Excel',

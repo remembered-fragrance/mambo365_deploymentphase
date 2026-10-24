@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -10,10 +10,10 @@ import { Chip } from '@/components/ui/Chip';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Segmented } from '@/components/ui/Segmented';
 import { FilterIcon } from '@/components/ui/icons';
-import { transactionTotals } from '@/core/calc';
-import type { HistoryFilters, PaymentFilter, TimePeriod } from '@/core/filters';
-import { formatVnd, formatWeight } from '@/core/format';
-import type { Transaction } from '@/core/types';
+import { transactionTotals } from '@mambo/core/calc';
+import type { HistoryFilters, PaymentFilter, TimePeriod } from '@mambo/core/filters';
+import { formatVnd, formatWeight } from '@mambo/core/format';
+import type { Transaction } from '@mambo/core/types';
 import { useStore } from '@/data/useStore';
 import { useTransactionList } from '@/data/hooks/useTransactionList';
 import { L } from '@/i18n/labels';
@@ -75,7 +75,7 @@ const selectionColumn = (
 });
 
 export function ReceiptsPage() {
-  const { data, user } = useStore();
+  const { data, user, deleteDraft } = useStore();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [filterOpen, setFilterOpen] = useState(false);
@@ -83,6 +83,11 @@ export function ReceiptsPage() {
   const wide = useWideScreen();
 
   const tab = (params.get('tab') as Tab | null) ?? 'done';
+  const chipRow = useRef<HTMLDivElement>(null);
+  // Mở thẳng `?tab=waiting` ở 320px: chip đang chọn có thể nằm khuất bên phải hàng cuộn ngang.
+  useEffect(() => {
+    chipRow.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [tab]);
   const previewId = params.get('xem');
   const preview = wide ? data.transactions.find((t) => t.id === previewId) : undefined;
 
@@ -152,17 +157,22 @@ export function ReceiptsPage() {
       />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <Chip label={L.tabDone} selected={tab === 'done'} onSelect={() => patch({ tab: 'done' })} />
-        <Chip
-          label={`${L.draftWeighing} (${drafts.length})`}
-          selected={tab === 'draft'}
-          onSelect={() => patch({ tab: 'draft' })}
-        />
-        <Chip
-          label={`${L.draftSaved} (${waiting.length})`}
-          selected={tab === 'waiting'}
-          onSelect={() => patch({ tab: 'waiting' })}
-        />
+        {/* Chip trạng thái luôn một hàng (cuộn ngang nếu thiếu chỗ): xuống hai hàng
+            thì bộ lọc chiếm nửa màn điện thoại trước phiếu đầu tiên. */}
+        {/* `py-1`: cuộn ngang thì cuộn dọc cũng thành auto, viền focus của chip bị cắt nếu không chừa chỗ. */}
+        <div ref={chipRow} className="-my-1 flex max-w-full gap-2 overflow-x-auto py-1 *:shrink-0">
+          <Chip label={L.tabDone} selected={tab === 'done'} onSelect={() => patch({ tab: 'done' })} />
+          <Chip
+            label={`${L.draftWeighing} (${drafts.length})`}
+            selected={tab === 'draft'}
+            onSelect={() => patch({ tab: 'draft' })}
+          />
+          <Chip
+            label={`${L.draftSaved} (${waiting.length})`}
+            selected={tab === 'waiting'}
+            onSelect={() => patch({ tab: 'waiting' })}
+          />
+        </div>
         {tab === 'done' && (
           <div className="ml-auto">
             <Segmented
@@ -175,8 +185,8 @@ export function ReceiptsPage() {
         )}
       </div>
 
-      {tab === 'draft' && <DraftList drafts={drafts} emptyTitle={L.noReceipts} />}
-      {tab === 'waiting' && <DraftList drafts={waiting} emptyTitle={L.noReceipts} />}
+      {tab === 'draft' && <DraftList drafts={drafts} emptyTitle={L.noReceipts} onDelete={deleteDraft} />}
+      {tab === 'waiting' && <DraftList drafts={waiting} emptyTitle={L.noReceipts} onDelete={deleteDraft} />}
 
       {tab === 'done' && (
         <MasterDetail

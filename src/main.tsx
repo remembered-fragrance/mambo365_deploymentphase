@@ -11,9 +11,16 @@ import '@fontsource/be-vietnam-pro/latin-800.css';
 
 import './index.css';
 import { App } from './App';
+import { warmUpApi } from './data/client';
+import { watchStaleBuild } from './data/staleBuild';
+import { startEventFlushing } from './data/track';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Không tìm thấy #root');
+
+watchStaleBuild();
+warmUpApi();
+startEventFlushing();
 
 createRoot(container).render(
   <StrictMode>

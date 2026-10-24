@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
+import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { Segmented } from '@/components/ui/Segmented';
 import { Select } from '@/components/ui/Select';
 import { TrashIcon } from '@/components/ui/icons';
-import { formatVnd, formatWeight } from '@/core/format';
-import { previewRule, SAMPLE_KG, SAMPLE_PRICE } from '@/core/pricingPreview';
-import type { PricingRule, Product } from '@/core/types';
+import { formatVnd, formatWeight } from '@mambo/core/format';
+import { previewRule, SAMPLE_KG, SAMPLE_PRICE } from '@mambo/core/pricingPreview';
+import type { PricingRule, Product } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { NumberField } from '../shared/NumberField';
 import { toRule, type RuleDraft } from './ruleDraft';
@@ -81,6 +82,8 @@ export function PricingRuleEditor({
         <Input
           label={L.ruleName}
           value={draft.name}
+          // Tên quy tắc thành nhãn khoản cộng/trừ trên phiếu — cùng giới hạn với nhãn (B4).
+          maxLength={RECEIPT_LIMITS.adjustmentLabel}
           error={touched && nameMissing ? L.nameRequired : undefined}
           onChange={(e) => set({ name: e.target.value })}
         />
@@ -116,6 +119,7 @@ export function PricingRuleEditor({
           label={L.ruleFixedAmount}
           value={draft.fixedAmount}
           spoken
+          money
           onValueChange={(fixedAmount) => set({ fixedAmount })}
         />
         <NumberField

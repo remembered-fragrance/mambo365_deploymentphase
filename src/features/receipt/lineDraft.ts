@@ -6,9 +6,10 @@
  * số ở đúng một chỗ — `toLine()`.
  */
 
-import { newId } from '@/core/id';
-import { parseNumber } from '@/core/parseNumber';
-import type { CropType, Product, ProductFormulaType, TransactionLine } from '@/core/types';
+import { RECEIPT_LIMITS } from '@mambo/contracts';
+import { newId } from '@mambo/core/id';
+import { parseNumber } from '@mambo/core/parseNumber';
+import type { CropType, Product, ProductFormulaType, TransactionLine } from '@mambo/core/types';
 
 export interface LineDraft {
   readonly id: string;
@@ -48,6 +49,12 @@ export const applyProduct = (line: LineDraft, product: Product): LineDraft => ({
   price: line.price || (product.lastPricePerUnit ? String(product.lastPricePerUnit) : ''),
 });
 
+/**
+ * Kẹp vào khoảng máy chủ nhận. Ô nhập đã chặn gõ vượt; đây là cho nháp lưu từ bản cũ (trước khi chặn)
+ * — để nguyên thì op nháp / phiếu bị từ chối và chặn cả hàng đợi.
+ */
+const within = (raw: string, max: number): number => Math.min(Math.max(parseNumber(raw), 0), max);
+
 export const toLine = (draft: LineDraft): TransactionLine => ({
   id: draft.id,
   productId: draft.productId,
@@ -55,11 +62,11 @@ export const toLine = (draft: LineDraft): TransactionLine => ({
   unit: draft.unit,
   formulaType: draft.formulaType,
   crop: draft.crop,
-  grossWeight: parseNumber(draft.gross),
-  tareWeight: parseNumber(draft.tare),
-  qualityPercent: draft.formulaType === 'rubberLatex' ? parseNumber(draft.quality) : undefined,
-  lossPercent: draft.formulaType === 'lossPercent' ? parseNumber(draft.loss) : undefined,
-  pricePerUnit: parseNumber(draft.price),
+  grossWeight: within(draft.gross, RECEIPT_LIMITS.quantity),
+  tareWeight: within(draft.tare, RECEIPT_LIMITS.quantity),
+  qualityPercent: draft.formulaType === 'rubberLatex' ? within(draft.quality, RECEIPT_LIMITS.percent) : undefined,
+  lossPercent: draft.formulaType === 'lossPercent' ? within(draft.loss, RECEIPT_LIMITS.percent) : undefined,
+  pricePerUnit: within(draft.price, RECEIPT_LIMITS.quantity),
   qualityGrade: draft.qualityGrade,
 });
 
