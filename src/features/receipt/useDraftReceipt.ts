@@ -15,7 +15,8 @@ import type { DraftStatus, PaymentMethod, PriceAdjustment, Transaction, Transact
 import { useStore } from '@/data/useStore';
 import { emptyLine, fromLine, isUsable, toLine, type LineDraft } from './lineDraft';
 import type { PartyChoice } from './namesakes';
-import { adjustmentsFromRules, useReceiptRules, type RuleOffer } from './ruleAdjustments';
+import { useReceiptRules } from '@/data/hooks/useReceiptRules';
+import { adjustmentsFromRules, receiptAdjustments, rulesForKind, type RuleOffer } from '@/data/receiptRules';
 
 /** `failed`: máy không nhận bản nháp (số vượt mức máy chủ nhận) — xem `opCheck.ts`. */
 export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
@@ -36,6 +37,8 @@ export interface DraftReceiptState {
   readonly ruleAdjustments: readonly PriceAdjustment[];
   /** Quy tắc chỉ cho xe đến lấy / tự mang tới — phiếu không biết nên mời thêm, không tự áp. */
   readonly offeredAdjustments: readonly RuleOffer[];
+  /** Lời mời đã nhận, số tiền tính lại theo dòng; `0` = phiếu chưa đủ điều kiện của quy tắc. */
+  readonly acceptedAdjustments: readonly PriceAdjustment[];
   readonly note: string;
   readonly attachmentIds: readonly string[];
   /** Phiếu lập theo đơn (BE5): đồng bộ lên thì đơn tự sang "Đã cân xong". */
@@ -100,14 +103,12 @@ export function useDraftReceipt(
   const rules = useReceiptRules();
   const usableLines = useMemo(() => lines.filter(isUsable).map(toLine), [lines]);
   const linesTotal = useMemo(() => computeReceiptTotal(usableLines).total, [usableLines]);
-  const { applied: ruleAdjustments, offered: offeredAdjustments } = useMemo(
-    () => adjustmentsFromRules(rules, usableLines, adjustments),
-    [rules, usableLines, adjustments],
+  const adjusted = useMemo(
+    () => adjustmentsFromRules(rulesForKind(rules, kind), usableLines, adjustments),
+    [rules, kind, usableLines, adjustments],
   );
-  const adjustmentTotal = useMemo(
-    () => totalAdjustments([...adjustments, ...ruleAdjustments]),
-    [adjustments, ruleAdjustments],
-  );
+  const finalAdjustments = useMemo(() => receiptAdjustments(adjusted), [adjusted]);
+  const adjustmentTotal = useMemo(() => totalAdjustments(finalAdjustments), [finalAdjustments]);
   const canFinish = lines.some(isUsable);
 
   const save = (nextStatus: DraftStatus) =>
@@ -177,7 +178,7 @@ export function useDraftReceipt(
         lines: usable,
         amountPaid,
         payments: method && amountPaid > 0 ? [{ id: newId(), date, amount: amountPaid, method }] : [],
-        adjustments: adjustments.length + ruleAdjustments.length > 0 ? [...adjustments, ...ruleAdjustments] : undefined,
+        adjustments: finalAdjustments.length > 0 ? finalAdjustments : undefined,
         creditTerms:
           dueDate && debt > 0
             ? [{ dueDate: new Date(dueDate).toISOString(), amount: debt }]
@@ -204,8 +205,7 @@ export function useDraftReceipt(
       kind,
       counterpartyId,
       partyName,
-      adjustments,
-      ruleAdjustments,
+      finalAdjustments,
       adjustmentTotal,
       linesTotal,
       note,
@@ -224,8 +224,9 @@ export function useDraftReceipt(
     partyName,
     lines,
     adjustments,
-    ruleAdjustments,
-    offeredAdjustments,
+    ruleAdjustments: adjusted.applied,
+    offeredAdjustments: adjusted.offered,
+    acceptedAdjustments: adjusted.accepted,
     note,
     attachmentIds,
     orderId,

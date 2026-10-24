@@ -73,7 +73,7 @@ export const SCREEN_LABELS = {
 
   // ─── Quy tắc giá ──────────────────────────────────────────────────────────
   navPricing: 'Quy tắc giá',
-  pricingSubtitle: 'khoản cộng / trừ tự đề xuất khi lập phiếu',
+  pricingSubtitle: 'khoản cộng / trừ tự áp khi lập phiếu mua',
   addRule: 'Thêm quy tắc',
   editRule: 'Sửa quy tắc',
   ruleName: 'Tên quy tắc',
@@ -122,6 +122,7 @@ export const SCREEN_LABELS = {
   ruleAdjustments: 'Theo quy tắc giá',
   ruleAdjustmentsHint: 'Tự cộng / trừ theo Quy tắc giá đang bật',
   ruleOffersHint: 'Phiếu không biết hàng đến bằng cách nào — đúng trường hợp thì chạm để thêm',
+  ruleNotMet: 'Chưa đủ điều kiện',
   rubberKind: 'Loại mủ',
   rubberLatex: 'Mủ nước (độ TSC)',
   rubberCuplump: 'Mủ tạp — mủ chén, mủ đông (DRC)',

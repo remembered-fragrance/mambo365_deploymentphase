@@ -5,7 +5,7 @@
  * hoặc nổi lên `status.error` để người dùng thấy.
  */
 
-import { computeReceiptTotal, transactionTotals } from '@mambo/core/calc';
+import { transactionTotals } from '@mambo/core/calc';
 import { isLegacyProductId } from '@mambo/core/catalog';
 import { emptyData } from '@mambo/core/normalize';
 import type { AppData, SyncStatus } from '@mambo/core/types';
@@ -28,6 +28,7 @@ import { readSyncMark, writeBook } from './cache';
 import { apiForOrg } from './client';
 import { getDeviceId, openLocalDb, readCursor } from './localDb';
 import { mergeChanges } from './pullChanges';
+import { draftTotal, receiptRules } from './receiptRules';
 import {
   dropWithDependents,
   isDue,
@@ -193,7 +194,9 @@ export const droppedItems = (ops: readonly QueuedOp[], book: AppData): DroppedIt
         ...base,
         name: draft?.supplierName ?? textOf(op.data?.supplierName),
         date: draft?.updatedAt,
-        amount: draft ? computeReceiptTotal(draft.lines).total : undefined,
+        // Ở đây không biết gói; thay đổi thường bị bỏ lúc đẩy lên, mà đẩy lên chỉ chạy khi gói còn đồng bộ → tính như
+        // có gói, ra đúng số thanh "Đang cân". Chỉ lệch nếu sổ hết gói mà còn quy tắc theo chất lượng đang bật.
+        amount: draft ? draftTotal(draft, receiptRules(book.pricingRules ?? [], true)) : undefined,
       });
     } else {
       items.push(base);

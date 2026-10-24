@@ -71,8 +71,9 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   const toast = useToast();
   const receipt = useDraftReceipt(draftId, kind);
   // Khoản nhận từ lời mời của quy tắc nằm ở khối "Theo quy tắc giá", không lặp lại ở ô cộng / trừ gõ tay.
-  const accepted = receipt.adjustments.filter((a) => a.ruleId);
+  const acceptedStored = receipt.adjustments.filter((a) => a.ruleId);
   const typed = receipt.adjustments.filter((a) => !a.ruleId);
+  const accepted = receipt.acceptedAdjustments;
   const [payPartOpen, setPayPartOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   /** Lần bấm chốt đang chờ người dùng trả lời "người này hay người mới?" (B3). */
@@ -239,7 +240,8 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
               line={line}
               products={data.products}
               canRemove={receipt.lines.length > 1}
-              metrics={paidQuality ? metricsForProduct(data.pricingRules ?? [], line.productId) : undefined}
+              // Phiếu bán không áp quy tắc giá nên cũng không hỏi chỉ tiêu.
+              metrics={paidQuality && kind !== 'sale' ? metricsForProduct(data.pricingRules ?? [], line.productId) : undefined}
               onChange={(patch) => receipt.updateLine(line.id, patch)}
               onRemove={() => receipt.removeLine(line.id)}
             />
@@ -259,7 +261,11 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
                 {accepted.map((adj) => (
                   <li key={adj.id} className="flex items-center justify-between gap-2 text-sm">
                     <span className="text-ink-2">{adj.label}</span>
-                    <span className="num font-semibold text-ink">{formatVnd(adj.amount)}</span>
+                    {adj.amount === 0 ? (
+                      <span className="text-xs text-ink-3">{L.ruleNotMet}</span>
+                    ) : (
+                      <span className="num font-semibold text-ink">{formatVnd(adj.amount)}</span>
+                    )}
                     <button
                       type="button"
                       onClick={() => receipt.setAdjustments(receipt.adjustments.filter((a) => a.id !== adj.id))}
@@ -298,7 +304,7 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
             adjustments={typed}
             note={receipt.note}
             attachmentIds={receipt.attachmentIds}
-            onAdjustmentsChange={(next) => receipt.setAdjustments([...next, ...accepted])}
+            onAdjustmentsChange={(next) => receipt.setAdjustments([...next, ...acceptedStored])}
             onNoteChange={receipt.setNote}
             onAttachmentsChange={receipt.setAttachmentIds}
           />

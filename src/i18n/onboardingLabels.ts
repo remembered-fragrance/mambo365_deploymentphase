@@ -37,7 +37,7 @@ export const ONBOARDING_LABELS = {
   helpInventory: 'Hàng còn trong kho, tính bằng cân thực tế đã mua trừ đi đã bán. Tồn âm nghĩa là có phiếu nhập sai, nên kiểm lại.',
   helpPartners: 'Danh bạ nông hộ và người mua. Bấm số điện thoại là gọi luôn. Sửa tên hoặc xoá khỏi danh bạ ở nút bên phải mỗi dòng.',
   helpProducts: 'Các mặt hàng bạn thu mua và cách tính tiền của từng loại. Cao su tính theo hàm lượng mủ, điều và cà phê tính theo cân trừ bì.',
-  helpPricing: 'Quy tắc tự cộng hoặc trừ tiền khi lập phiếu: phí xe đến lấy, bớt giá khi mua nhiều. Bật tắt được, xem trước tác dụng trước khi bật.',
+  helpPricing: 'Quy tắc tự cộng hoặc trừ tiền khi lập phiếu mua: phí xe đến lấy, bớt giá khi mua nhiều. Bật tắt được, xem trước tác dụng trước khi bật.',
   helpReports: 'Số liệu cộng sẵn theo kỳ để đi khai thuế. Xuất ra Excel đưa cho kế toán.',
   helpUtilities: 'Máy tính nhẩm nhanh cân × giá, và chỗ ghi những thứ hay quên.',
   helpProfile: 'Thông tin vựa, mật khẩu, cách hiển thị, và quan trọng nhất: lưu sổ ra file phòng khi mất máy.',

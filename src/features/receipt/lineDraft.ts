@@ -11,6 +11,7 @@ import { lossFromGreenRatio } from '@mambo/core/calc';
 import { newId } from '@mambo/core/id';
 import { parseNumber } from '@mambo/core/parseNumber';
 import type { CropType, Product, ProductFormulaType, RubberKind, TransactionLine } from '@mambo/core/types';
+import { usableLine } from '@/data/receiptRules';
 
 export interface LineDraft {
   readonly id: string;
@@ -133,9 +134,4 @@ export const fromLine = (line: TransactionLine): LineDraft => ({
 });
 
 /** Dòng đã đủ thông tin để tính ra tiền. */
-export const isUsable = (draft: LineDraft): boolean => {
-  const line = toLine(draft);
-  if (line.grossWeight <= 0 || line.pricePerUnit <= 0) return false;
-  if (line.formulaType === 'rubberLatex') return (line.qualityPercent ?? 0) > 0;
-  return true;
-};
+export const isUsable = (draft: LineDraft): boolean => usableLine(toLine(draft));

@@ -8,7 +8,8 @@ import { formatDateTime, formatVnd } from '@mambo/core/format';
 import type { DraftReceipt } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { discardConsequence, draftHref } from '../receipt/draftSessions';
-import { draftTotal, useReceiptRules } from '../receipt/ruleAdjustments';
+import { useReceiptRules } from '@/data/hooks/useReceiptRules';
+import { draftTotal } from '@/data/receiptRules';
 import { useAttempt } from '../shared/useAttempt';
 
 interface DraftListProps {
