@@ -89,26 +89,29 @@ export function AttachmentPicker({ ids, onChange }: AttachmentPickerProps) {
       )}
 
       {paid ? (
-        <Button block disabled={ids.length >= maxPhotos} onClick={() => input.current?.click()}>
-          <CameraIcon className="h-4 w-4" />
-          {L.addPhoto}
-        </Button>
+        <>
+          <Button block disabled={ids.length >= maxPhotos} onClick={() => input.current?.click()}>
+            <CameraIcon className="h-4 w-4" />
+            {L.addPhoto}
+          </Button>
+
+          <input
+            ref={input}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            aria-label={L.addPhoto}
+            onChange={(e) => {
+              void pick(e.target.files?.[0]);
+              e.target.value = '';
+            }}
+          />
+        </>
       ) : (
+        // Ô chọn file ẩn cũng bỏ: bàn phím / trình đọc màn hình vẫn bấm được nó.
         <PlanGate reason={L.gatePhotos} feature="attachments" />
       )}
-
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="sr-only"
-        aria-label={L.addPhoto}
-        onChange={(e) => {
-          void pick(e.target.files?.[0]);
-          e.target.value = '';
-        }}
-      />
     </div>
   );
 }
