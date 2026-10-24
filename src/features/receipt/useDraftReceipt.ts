@@ -11,13 +11,11 @@ import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { AUTOSAVE_MS } from '@/config';
 import { computeReceiptTotal, totalAdjustments } from '@mambo/core/calc';
 import { newId } from '@mambo/core/id';
-import { suggestAdjustments } from '@mambo/core/pricing';
 import type { DraftStatus, PaymentMethod, PriceAdjustment, Transaction, TransactionKind } from '@mambo/core/types';
-import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { useStore } from '@/data/useStore';
-import { qualityRules } from '../pricing/quality';
 import { emptyLine, fromLine, isUsable, toLine, type LineDraft } from './lineDraft';
 import type { PartyChoice } from './namesakes';
+import { adjustmentsFromRules, useReceiptRules, type RuleOffer } from './ruleAdjustments';
 
 /** `failed`: máy không nhận bản nháp (số vượt mức máy chủ nhận) — xem `opCheck.ts`. */
 export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
@@ -32,10 +30,12 @@ export interface DraftReceiptState {
   readonly lines: readonly LineDraft[];
   readonly adjustments: readonly PriceAdjustment[];
   /**
-   * Khoản theo chất lượng (V19), tính lại từ dòng mỗi lần gõ — không lưu vào nháp, chỉ ghi lên phiếu lúc
-   * chốt. Hết gói thì rỗng: quy tắc vẫn giữ, chỉ thôi tự áp.
+   * Khoản tự áp theo Quy tắc giá (kể cả theo chất lượng — V19), tính lại từ dòng mỗi lần gõ: không lưu vào nháp,
+   * chỉ ghi lên phiếu lúc chốt. Xem `ruleAdjustments.ts`.
    */
-  readonly qualityAdjustments: readonly PriceAdjustment[];
+  readonly ruleAdjustments: readonly PriceAdjustment[];
+  /** Quy tắc chỉ cho xe đến lấy / tự mang tới — phiếu không biết nên mời thêm, không tự áp. */
+  readonly offeredAdjustments: readonly RuleOffer[];
   readonly note: string;
   readonly attachmentIds: readonly string[];
   /** Phiếu lập theo đơn (BE5): đồng bộ lên thì đơn tự sang "Đã cân xong". */
@@ -53,6 +53,8 @@ export interface DraftReceiptState {
   addLine: () => void;
   removeLine: (id: string) => void;
   setAdjustments: (next: readonly PriceAdjustment[]) => void;
+  /** Nhận khoản mời: thành một khoản cộng / trừ thêm như gõ tay. */
+  acceptOffer: (offer: RuleOffer) => void;
   setNote: (note: string) => void;
   setAttachmentIds: (ids: readonly string[]) => void;
   setOrderId: (orderId: string | undefined) => void;
@@ -95,26 +97,16 @@ export function useDraftReceipt(
   // đúng cái nháp vừa xoá và khách đó hiện lại trên thanh "Đang cân".
   const finished = useRef(false);
 
-  const paidQuality = useEntitlement('quality:pricing');
-  const rules = useMemo(
-    () => (paidQuality ? qualityRules(data.pricingRules ?? []) : []),
-    [paidQuality, data.pricingRules],
-  );
+  const rules = useReceiptRules();
   const usableLines = useMemo(() => lines.filter(isUsable).map(toLine), [lines]);
-  const receiptTotal = useMemo(() => computeReceiptTotal(usableLines), [usableLines]);
-  const linesTotal = receiptTotal.total;
-  const qualityAdjustments = useMemo(
-    () =>
-      suggestAdjustments(rules, {
-        lines: usableLines,
-        totalKg: receiptTotal.netWeight,
-        totalAmount: receiptTotal.total,
-      }),
-    [rules, usableLines, receiptTotal],
+  const linesTotal = useMemo(() => computeReceiptTotal(usableLines).total, [usableLines]);
+  const { applied: ruleAdjustments, offered: offeredAdjustments } = useMemo(
+    () => adjustmentsFromRules(rules, usableLines, adjustments),
+    [rules, usableLines, adjustments],
   );
   const adjustmentTotal = useMemo(
-    () => totalAdjustments([...adjustments, ...qualityAdjustments]),
-    [adjustments, qualityAdjustments],
+    () => totalAdjustments([...adjustments, ...ruleAdjustments]),
+    [adjustments, ruleAdjustments],
   );
   const canFinish = lines.some(isUsable);
 
@@ -185,7 +177,7 @@ export function useDraftReceipt(
         lines: usable,
         amountPaid,
         payments: method && amountPaid > 0 ? [{ id: newId(), date, amount: amountPaid, method }] : [],
-        adjustments: adjustments.length + qualityAdjustments.length > 0 ? [...adjustments, ...qualityAdjustments] : undefined,
+        adjustments: adjustments.length + ruleAdjustments.length > 0 ? [...adjustments, ...ruleAdjustments] : undefined,
         creditTerms:
           dueDate && debt > 0
             ? [{ dueDate: new Date(dueDate).toISOString(), amount: debt }]
@@ -213,7 +205,7 @@ export function useDraftReceipt(
       counterpartyId,
       partyName,
       adjustments,
-      qualityAdjustments,
+      ruleAdjustments,
       adjustmentTotal,
       linesTotal,
       note,
@@ -232,7 +224,8 @@ export function useDraftReceipt(
     partyName,
     lines,
     adjustments,
-    qualityAdjustments,
+    ruleAdjustments,
+    offeredAdjustments,
     note,
     attachmentIds,
     orderId,
@@ -261,6 +254,13 @@ export function useDraftReceipt(
       setLines((cur) => (cur.length === 1 ? cur : cur.filter((l) => l.id !== lineId)));
     },
     setAdjustments: mark(setAdjustments),
+    // Máy chủ nhận tối đa `RECEIPT_LIMITS.adjustments` khoản một phiếu — như ô gõ tay ở `MoreInfoPanel`.
+    acceptOffer: ({ adjustment }) => {
+      touched.current = true;
+      setAdjustments((cur) =>
+        cur.length >= RECEIPT_LIMITS.adjustments ? cur : [...cur, { ...adjustment, id: newId() }],
+      );
+    },
     setNote: mark(setNote),
     setAttachmentIds: mark(setAttachmentIds),
     setOrderId: mark(setOrderId),

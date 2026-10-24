@@ -1,8 +1,8 @@
-import { computeReceiptTotal } from '@mambo/core/calc';
 import { formatVndShort } from '@mambo/core/format';
 import type { DraftReceipt } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { PlusIcon } from '@/components/ui/icons';
+import { draftTotal, useReceiptRules } from './ruleAdjustments';
 
 interface SessionRailProps {
   readonly drafts: readonly DraftReceipt[];
@@ -19,10 +19,11 @@ interface SessionRailProps {
  * KHÔNG dựng bảng mới cho việc này — thêm schema là thêm chuyện đồng bộ.
  */
 export function SessionRail({ drafts, activeId, onSelect, onNewCustomer }: SessionRailProps) {
+  const rules = useReceiptRules();
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
       {drafts.map((draft) => {
-        const { total } = computeReceiptTotal(draft.lines);
+        const total = draftTotal(draft, rules);
         const active = draft.id === activeId;
         return (
           <button

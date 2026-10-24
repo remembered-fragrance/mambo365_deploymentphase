@@ -70,6 +70,9 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   const navigate = useNavigate();
   const toast = useToast();
   const receipt = useDraftReceipt(draftId, kind);
+  // Khoản nhận từ lời mời của quy tắc nằm ở khối "Theo quy tắc giá", không lặp lại ở ô cộng / trừ gõ tay.
+  const accepted = receipt.adjustments.filter((a) => a.ruleId);
+  const typed = receipt.adjustments.filter((a) => !a.ruleId);
   const [payPartOpen, setPayPartOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   /** Lần bấm chốt đang chờ người dùng trả lời "người này hay người mới?" (B3). */
@@ -242,18 +245,47 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
             />
           ))}
 
-          {receipt.qualityAdjustments.length > 0 && (
-            <section aria-label={L.qualityAdjustments} className="card flex flex-col gap-1 p-3">
-              <p className="text-sm font-bold text-ink">{L.qualityAdjustments}</p>
-              <p className="text-xs text-ink-3">{L.qualityAdjustmentsHint}</p>
+          {(receipt.ruleAdjustments.length > 0 || accepted.length > 0 || receipt.offeredAdjustments.length > 0) && (
+            <section aria-label={L.ruleAdjustments} className="card flex flex-col gap-1 p-3">
+              <p className="text-sm font-bold text-ink">{L.ruleAdjustments}</p>
+              <p className="text-xs text-ink-3">{L.ruleAdjustmentsHint}</p>
               <ul aria-live="polite" className="mt-1 flex flex-col gap-1">
-                {receipt.qualityAdjustments.map((adj) => (
+                {receipt.ruleAdjustments.map((adj) => (
                   <li key={adj.id} className="flex items-center justify-between gap-2 text-sm">
                     <span className="text-ink-2">{adj.label}</span>
                     <span className="num font-semibold text-ink">{formatVnd(adj.amount)}</span>
                   </li>
                 ))}
+                {accepted.map((adj) => (
+                  <li key={adj.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-ink-2">{adj.label}</span>
+                    <span className="num font-semibold text-ink">{formatVnd(adj.amount)}</span>
+                    <button
+                      type="button"
+                      onClick={() => receipt.setAdjustments(receipt.adjustments.filter((a) => a.id !== adj.id))}
+                      aria-label={`${L.del} ${adj.label}`}
+                      className="text-sm font-semibold text-alert"
+                    >
+                      {L.del}
+                    </button>
+                  </li>
+                ))}
               </ul>
+              {receipt.offeredAdjustments.length > 0 && (
+                <>
+                  <p className="mt-2 text-xs text-ink-3">{L.ruleOffersHint}</p>
+                  {receipt.offeredAdjustments.map((offer) => (
+                    <Button key={offer.adjustment.id} block className="py-2" onClick={() => receipt.acceptOffer(offer)}>
+                      <PlusIcon className="h-4 w-4 shrink-0" />
+                      {/* Xuống dòng, không cắt chữ: tên quy tắc dài mà ép một dòng thì cả màn cuộn ngang ở 390px. */}
+                      <span className="flex-1 text-left">
+                        {offer.adjustment.label} · {offer.pickup ? L.rulePickupOnly : L.ruleBringOnly}
+                      </span>
+                      <span className="num shrink-0">{formatVnd(offer.adjustment.amount)}</span>
+                    </Button>
+                  ))}
+                </>
+              )}
             </section>
           )}
 
@@ -263,10 +295,10 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
           </Button>
 
           <MoreInfoPanel
-            adjustments={receipt.adjustments}
+            adjustments={typed}
             note={receipt.note}
             attachmentIds={receipt.attachmentIds}
-            onAdjustmentsChange={receipt.setAdjustments}
+            onAdjustmentsChange={(next) => receipt.setAdjustments([...next, ...accepted])}
             onNoteChange={receipt.setNote}
             onAttachmentsChange={receipt.setAttachmentIds}
           />

@@ -216,11 +216,13 @@ export const pricingRuleToPatch = (patch: Partial<PricingRule>) => {
   const result: Record<string, unknown> = {};
   if (patch.name !== undefined) result.name = patch.name.trim();
   if (patch.kind !== undefined) result.kind = patch.kind;
-  if (patch.productId !== undefined) result.productId = patch.productId ?? null;
-  if (patch.fixedAmount !== undefined) result.fixedAmount = optionalMoney(patch.fixedAmount);
-  if (patch.percentOfTotal !== undefined) result.percentOfTotal = patch.percentOfTotal ?? null;
-  if (patch.minWeightKg !== undefined) result.minWeightKg = patch.minWeightKg ?? null;
-  if (patch.appliesOnPickup !== undefined) result.appliesOnPickup = patch.appliesOnPickup ?? null;
+  // Có khoá mà không có giá trị là gỡ (đổi về "Mọi mặt hàng", xoá số tiền…): phải gửi null, không thì máy chủ
+  // giữ giá trị cũ và lần kéo về sau dựng lại đúng cái vừa gỡ.
+  if ('productId' in patch) result.productId = patch.productId ?? null;
+  if ('fixedAmount' in patch) result.fixedAmount = optionalMoney(patch.fixedAmount);
+  if ('percentOfTotal' in patch) result.percentOfTotal = patch.percentOfTotal ?? null;
+  if ('minWeightKg' in patch) result.minWeightKg = patch.minWeightKg ?? null;
+  if ('appliesOnPickup' in patch) result.appliesOnPickup = patch.appliesOnPickup ?? null;
   if (patch.active !== undefined) result.active = patch.active;
   if (patch.qualityMetric !== undefined) result.qualityMetric = patch.qualityMetric;
   if (patch.qualitySteps !== undefined) result.qualitySteps = [...patch.qualitySteps];

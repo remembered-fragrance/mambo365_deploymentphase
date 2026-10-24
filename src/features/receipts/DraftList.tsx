@@ -4,11 +4,11 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TrashIcon } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toast';
-import { computeReceiptTotal } from '@mambo/core/calc';
 import { formatDateTime, formatVnd } from '@mambo/core/format';
 import type { DraftReceipt } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { discardConsequence, draftHref } from '../receipt/draftSessions';
+import { draftTotal, useReceiptRules } from '../receipt/ruleAdjustments';
 import { useAttempt } from '../shared/useAttempt';
 
 interface DraftListProps {
@@ -26,6 +26,7 @@ export function DraftList({ drafts, emptyTitle, onDelete }: DraftListProps) {
   const toast = useToast();
   const attempt = useAttempt();
   const [deleting, setDeleting] = useState<DraftReceipt | null>(null);
+  const rules = useReceiptRules();
 
   if (drafts.length === 0) return <EmptyState title={emptyTitle} icon="⚖️" />;
 
@@ -35,7 +36,7 @@ export function DraftList({ drafts, emptyTitle, onDelete }: DraftListProps) {
     <>
       <ul className="flex flex-col gap-2">
         {drafts.map((draft) => {
-          const { total } = computeReceiptTotal(draft.lines);
+          const total = draftTotal(draft, rules);
           return (
             <li key={draft.id} className="flex items-stretch gap-2">
               <Link to={draftHref(draft)} className="card flex min-w-0 flex-1 items-center gap-3 p-3">
@@ -64,7 +65,7 @@ export function DraftList({ drafts, emptyTitle, onDelete }: DraftListProps) {
         open={deleting !== null}
         title={L.discardDraftTitle}
         consequence={
-          deleting ? discardConsequence(deleting.supplierName, computeReceiptTotal(deleting.lines).total) : ''
+          deleting ? discardConsequence(deleting.supplierName, draftTotal(deleting, rules)) : ''
         }
         confirmLabel={L.del}
         onConfirm={() => {
