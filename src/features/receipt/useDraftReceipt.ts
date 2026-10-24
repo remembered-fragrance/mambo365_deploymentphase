@@ -10,8 +10,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { AUTOSAVE_MS } from '@/config';
 import { computeReceiptTotal, totalAdjustments } from '@mambo/core/calc';
+import { newId } from '@mambo/core/id';
 import { suggestAdjustments } from '@mambo/core/pricing';
-import type { DraftStatus, PriceAdjustment, Transaction, TransactionKind } from '@mambo/core/types';
+import type { DraftStatus, PaymentMethod, PriceAdjustment, Transaction, TransactionKind } from '@mambo/core/types';
 import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { useStore } from '@/data/useStore';
 import { qualityRules } from '../pricing/quality';
@@ -57,9 +58,10 @@ export interface DraftReceiptState {
   setOrderId: (orderId: string | undefined) => void;
   /**
    * `dueDate` chỉ có nghĩa khi phiếu còn nợ — xem `PayPartDialog`. `party`: câu trả lời khi tên gõ trùng người đã
-   * có (B3, `namesakes.ts`) — không có thì core dùng lại người cùng tên như cũ.
+   * có (B3, `namesakes.ts`) — không có thì core dùng lại người cùng tên như cũ. `method`: gói Pro ghi hình thức
+   * của lần trả lúc chốt (V13); không có thì core tự tạo lần trả không ghi hình thức như cũ.
    */
-  finish: (amountPaid: number, dueDate?: string, party?: PartyChoice) => Transaction | null;
+  finish: (amountPaid: number, dueDate?: string, party?: PartyChoice, method?: PaymentMethod) => Transaction | null;
   discard: () => void;
   /** Lưu ngay thành "Để dành" và ngừng tự lưu — trang rời màn lập phiếu ngay sau đó. */
   saveForLater: () => void;
@@ -163,7 +165,7 @@ export function useDraftReceipt(
   }, []);
 
   const finish = useCallback(
-    (amountPaid: number, dueDate?: string, party?: PartyChoice): Transaction | null => {
+    (amountPaid: number, dueDate?: string, party?: PartyChoice, method?: PaymentMethod): Transaction | null => {
       const usable = lines.filter(isUsable).map(toLine);
       if (usable.length === 0) return null;
 
@@ -173,15 +175,16 @@ export function useDraftReceipt(
       const debt = linesTotal + adjustmentTotal - amountPaid;
       const picked = party && 'id' in party ? party : undefined;
       const partyId = picked ? picked.id : counterpartyId;
+      const date = new Date().toISOString();
       const record = () => addTransaction({
-        date: new Date().toISOString(),
+        date,
         kind,
         counterpartyId: partyId ?? '',
         supplierId: partyId,
         supplierName: picked ? picked.name : partyName,
         lines: usable,
         amountPaid,
-        payments: [],
+        payments: method && amountPaid > 0 ? [{ id: newId(), date, amount: amountPaid, method }] : [],
         adjustments: adjustments.length + qualityAdjustments.length > 0 ? [...adjustments, ...qualityAdjustments] : undefined,
         creditTerms:
           dueDate && debt > 0

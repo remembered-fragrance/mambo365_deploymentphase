@@ -10,7 +10,17 @@ interface Props {
   /** Câu nói cái gì vẫn còn và cái gì cần gia hạn. */
   readonly reason: string;
   /** Ghi vào `quota_wall_shown` để biết bức tường nào được thấy nhiều. */
-  readonly feature: 'members' | 'attachments' | 'branches' | 'quality' | 'rubber';
+  readonly feature:
+    | 'members'
+    | 'attachments'
+    | 'branches'
+    | 'quality'
+    | 'rubber'
+    | 'audit'
+    | 'statement'
+    | 'reports'
+    | 'tax'
+    | 'pay';
 }
 
 /**

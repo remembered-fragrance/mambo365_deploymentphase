@@ -4,11 +4,14 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Chip } from '@/components/ui/Chip';
 import { Segmented } from '@/components/ui/Segmented';
+import { cashPaidOnDay, needsCashReminder } from '@mambo/core/cashReminder';
 import { debtGroups, type DebtGroup, type DebtSide } from '@mambo/core/debtSelectors';
-import type { Transaction } from '@mambo/core/types';
+import type { PaymentMethod, Transaction } from '@mambo/core/types';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { useStore } from '@/data/useStore';
 import { L, SUB } from '@/i18n/labels';
 import { HelpButton } from '../help/HelpButton';
+import { CashReminderDialog } from '../shared/CashReminderDialog';
 import { DebtColumn } from './DebtColumn';
 import { PayDebtDialog } from './PayDebtDialog';
 import { usePayDebt } from './usePayDebt';
@@ -21,6 +24,7 @@ const SIDE_OPTIONS = [
 interface PartialTarget {
   readonly tx: Transaction;
   readonly side: DebtSide;
+  readonly preset?: { readonly amount: number; readonly method: PaymentMethod };
 }
 
 /**
@@ -37,6 +41,9 @@ export function DebtsPage() {
   const { data } = useStore();
   const [params, setParams] = useSearchParams();
   const [partial, setPartial] = useState<PartialTarget | null>(null);
+  const [cashAsk, setCashAsk] = useState<{ readonly tx: Transaction; readonly amount: number } | null>(null);
+  // V13: gói Pro ghi hình thức trả cho nông hộ (bên phải trả); bên phải thu giữ như cũ.
+  const payQr = useEntitlement('pay:qr');
 
   const side: DebtSide = params.get('ben') === 'receivable' ? 'receivable' : 'payable';
   const onlyOverdue = params.get('quahan') === '1';
@@ -63,7 +70,12 @@ export function DebtsPage() {
   const columnProps = (target: DebtSide) => ({
     side: target,
     groups: shown(target === 'payable' ? payable : receivable),
-    onPayFull: (tx: Transaction, debt: number) => payOf(target)(tx, debt),
+    onPayFull: (tx: Transaction, debt: number) => {
+      if (target !== 'payable' || !payQr) return payOf(target)(tx, debt);
+      // Trả một chạm mà chạm ngưỡng tiền mặt trong ngày: hỏi trước, không ghi thẳng.
+      if (needsCashReminder(data, tx.counterpartyId, debt, 'cash')) return setCashAsk({ tx, amount: debt });
+      return payPayable(tx, debt, 'cash');
+    },
     onPayPart: (tx: Transaction) => setPartial({ tx, side: target }),
   });
 
@@ -97,13 +109,31 @@ export function DebtsPage() {
       </div>
 
       <PayDebtDialog
+        // Mở lại là dựng mới: số tiền / hình thức đặt sẵn chỉ đọc lúc dựng.
+        key={partial ? `${partial.tx.id}:${partial.preset?.method ?? ''}` : 'none'}
         tx={partial?.tx ?? null}
         side={partial?.side ?? 'payable'}
-        onConfirm={(tx, amount) => {
-          if (partial) payOf(partial.side)(tx, amount);
+        withMethod={payQr && partial?.side === 'payable'}
+        preset={partial?.preset}
+        onConfirm={(tx, amount, method) => {
+          if (partial) payOf(partial.side)(tx, amount, method);
           setPartial(null);
         }}
         onCancel={() => setPartial(null)}
+      />
+
+      <CashReminderDialog
+        open={cashAsk !== null}
+        paidToday={cashAsk ? cashPaidOnDay(data, cashAsk.tx.counterpartyId, new Date()) : 0}
+        onTransfer={() => {
+          if (cashAsk) setPartial({ tx: cashAsk.tx, side: 'payable', preset: { amount: cashAsk.amount, method: 'transfer' } });
+          setCashAsk(null);
+        }}
+        onCash={() => {
+          if (cashAsk) payPayable(cashAsk.tx, cashAsk.amount, 'cash');
+          setCashAsk(null);
+        }}
+        onCancel={() => setCashAsk(null)}
       />
     </PageContainer>
   );

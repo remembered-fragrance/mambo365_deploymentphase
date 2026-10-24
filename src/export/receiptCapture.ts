@@ -13,16 +13,16 @@ import type { CropType, Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { METRIC_LABEL, METRIC_UNIT, qualityPercentLabel } from '@/features/pricing/quality';
 
-const INK = '#1A1714';
-const INK_2 = '#554E44';
-const INK_3 = '#8B8175';
-const RULE = '#D6D0C4';
-const BRAND = '#14663C';
-const CARD = '#FBF9F5';
-const PAPER = '#FFFFFF';
-const PAYABLE = '#9A3412';
+export const INK = '#1A1714';
+export const INK_2 = '#554E44';
+export const INK_3 = '#8B8175';
+export const RULE = '#D6D0C4';
+export const BRAND = '#14663C';
+export const CARD = '#FBF9F5';
+export const PAPER = '#FFFFFF';
+export const PAYABLE = '#9A3412';
 
-const el = (tag: string, style: string, children: (Node | string)[] = []): HTMLElement => {
+export const el = (tag: string, style: string, children: (Node | string)[] = []): HTMLElement => {
   const node = document.createElement(tag);
   node.setAttribute('style', style);
   for (const child of children) {
@@ -31,7 +31,7 @@ const el = (tag: string, style: string, children: (Node | string)[] = []): HTMLE
   return node;
 };
 
-const row = (label: string, value: string, strong = false): HTMLElement =>
+export const row = (label: string, value: string, strong = false): HTMLElement =>
   el(
     'div',
     'display:flex;justify-content:space-between;align-items:center;font-size:13px;margin:4px 0;gap:12px;',
@@ -47,7 +47,7 @@ const row = (label: string, value: string, strong = false): HTMLElement =>
     ],
   );
 
-const divider = (): HTMLElement => el('div', `border-top:1px dashed ${RULE};margin:12px 0;`);
+export const divider = (): HTMLElement => el('div', `border-top:1px dashed ${RULE};margin:12px 0;`);
 
 const productLabel = (name: string, crop?: CropType): string =>
   `${cropMeta(crop)?.emoji ?? ''} ${name}`.trim();

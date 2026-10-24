@@ -18,6 +18,8 @@ import { PlanGate } from '../billing/PlanGate';
  * Chi nhánh của doanh nghiệp. Số chi nhánh đang dùng ≤ giới hạn của gói (vượt → BRANCH_LIMIT).
  * Chỉ lưu trữ, không xoá — phiếu cũ vẫn trỏ tới; còn người gắn thì không lưu trữ được.
  * Hết gói: không tạo, không dùng lại chi nhánh đã lưu trữ (máy chủ: PLAN_REQUIRED); đổi tên, lưu trữ vẫn được.
+ * Đang dùng nhiều chi nhánh hơn gói cho (mua gói nhỏ sau khi dùng thử — C2 phương án C): chi nhánh đang có
+ * vẫn chạy, chỉ báo và cất form tạo đi.
  */
 export function BranchesPage() {
   const branches = useBranches();
@@ -54,6 +56,7 @@ export function BranchesPage() {
   };
 
   const list = branches.data;
+  const over = list && list.limit !== null && list.used > list.limit ? list : null;
 
   return (
     <PageContainer width="content">
@@ -62,7 +65,13 @@ export function BranchesPage() {
         subtitle={list ? `${L.branchUsed}: ${list.used} / ${list.limit ?? L.branchUnlimited}` : undefined}
       />
       <div className="grid gap-4">
-        {paid ? (
+        {over ? (
+          <p role="status" className="rounded-xl border border-alert bg-card p-3 text-sm text-ink">
+            {L.branchOverLimitPrefix} <span className="num font-bold">{over.used}</span> {L.branchOverLimitMiddle}{' '}
+            <span className="num font-bold">{over.limit}</span>
+            {L.branchOverLimitSuffix}
+          </p>
+        ) : paid ? (
           <Card title={L.branchAdd}>
             <form
               className="flex flex-col gap-3"

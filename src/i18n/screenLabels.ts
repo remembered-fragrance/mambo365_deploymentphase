@@ -135,7 +135,7 @@ export const SCREEN_LABELS = {
   exportExcel: 'Xuất Excel',
   reportLegalTitle: 'Số liệu tham khảo',
   reportLegalBody:
-    'Đây là số liệu do app cộng từ phiếu của bạn, không phải tờ khai thuế. Đưa cho kế toán xem trước khi nộp.',
+    'Số liệu tổng hợp từ sổ của bạn, không phải tờ khai thuế. Bạn tự kiểm tra và chịu trách nhiệm khi dùng để kê khai thuế — nên đưa kế toán xem trước khi nộp.',
 
   // ─── Tiện ích ─────────────────────────────────────────────────────────────
   navUtilities: 'Tiện ích',

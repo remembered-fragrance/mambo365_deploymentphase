@@ -15,6 +15,7 @@ import {
   BoxIcon,
   CardIcon,
   ChartIcon,
+  ClockIcon,
   DebtIcon,
   HomeIcon,
   MapIcon,
@@ -54,6 +55,7 @@ export const ROUTES = {
   orderDetail: (id: string) => `/don-hang/${id}`,
   notifications: '/thong-bao',
   members: '/nhan-vien',
+  audit: '/nhat-ky',
   branches: '/chi-nhanh',
   orgReport: '/bao-cao-tong',
   linked: '/vua',
@@ -94,6 +96,7 @@ export const ROUTE_GATES: Readonly<Record<string, Gate>> = {
   [ROUTES.orderCreate]: { org: true, permission: 'order:create' },
   [ROUTES.notifications]: { org: true },
   [ROUTES.members]: { org: true, permission: 'staff:manage' },
+  [ROUTES.audit]: { org: true, permission: 'staff:manage' },
   [ROUTES.branches]: { org: true, enterprise: true, permission: 'branch:manage' },
   [ROUTES.orgReport]: { org: true, enterprise: true, permission: 'report:view' },
   // Bản đồ: cần máy chủ; xem thì mọi vai trò, đặt địa điểm thì `place:manage`.
@@ -176,6 +179,7 @@ const allSecondary = (): NavItem[] => [
   { id: 'utilities', label: L.navUtilities, to: ROUTES.utilities, Icon: ToolIcon },
   { id: 'profile', label: L.navProfile, to: ROUTES.profile, Icon: UserIcon },
   { id: 'members', label: L.navMembers, to: ROUTES.members, Icon: PeopleIcon },
+  { id: 'audit', label: L.navAudit, to: ROUTES.audit, Icon: ClockIcon },
   { id: 'branches', label: L.navBranches, to: ROUTES.branches, Icon: HomeIcon },
   { id: 'myPlaces', label: L.navMyPlaces, to: ROUTES.myPlaces, Icon: PinIcon },
   { id: 'orgReport', label: L.navOrgReport, to: ROUTES.orgReport, Icon: ChartIcon },
@@ -202,7 +206,7 @@ export const navGroups = (counts: NavCounts, access: Access): NavGroup[] => {
     {
       id: 'account',
       label: L.groupAccount,
-      items: pick(rest, ['profile', 'members', 'branches', 'myPlaces', 'plans', 'importData']),
+      items: pick(rest, ['profile', 'members', 'audit', 'branches', 'myPlaces', 'plans', 'importData']),
     },
   ];
   // Nhóm rỗng (người cân không có Đối tác/Hàng hoá đầy đủ, nông dân) thì bỏ hẳn tiêu đề.

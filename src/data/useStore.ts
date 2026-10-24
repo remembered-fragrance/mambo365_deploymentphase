@@ -18,6 +18,7 @@ import type {
   DraftReceipt,
   Note,
   Payment,
+  PaymentMethod,
   PricingRule,
   Product,
   Supplier,
@@ -111,7 +112,8 @@ export interface StoreValue {
   upsertDraft: (draft: DraftInput) => DraftReceipt;
   deleteDraft: (draftId: string) => void;
   completeDraft: (draftId: string) => Transaction | null;
-  recordPayment: (txId: string, amount: number) => Payment | null;
+  /** `method` — gói Pro ghi hình thức trả (V13); không truyền = như cũ, không ghi. */
+  recordPayment: (txId: string, amount: number, method?: PaymentMethod) => Payment | null;
   removePayment: (txId: string, paymentId: string) => void;
   updateTransactionAttachments: (txId: string, attachmentIds: string[]) => void;
   deleteTransaction: (txId: string) => void;

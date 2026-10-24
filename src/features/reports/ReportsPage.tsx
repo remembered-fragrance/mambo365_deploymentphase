@@ -3,13 +3,17 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Dialog } from '@/components/ui/Dialog';
 import { Segmented } from '@/components/ui/Segmented';
 import { WarningIcon } from '@/components/ui/icons';
 import { formatVnd } from '@mambo/core/format';
-import { buildTaxReport } from '@mambo/core/taxReport';
+import { buildTaxReport, TAX_REPORT_DISCLAIMER } from '@mambo/core/taxReport';
 import { currentRange, monthsOfYear, type PeriodKind } from '@mambo/core/taxPeriods';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
+import { useOnceFlag } from '@/data/hooks/useOnceFlag';
 import { useStore } from '@/data/useStore';
 import { L, SUB } from '@/i18n/labels';
+import { PlanGate } from '../billing/PlanGate';
 import { HelpButton } from '../help/HelpButton';
 import { MonthlyTable } from './MonthlyTable';
 
@@ -47,6 +51,16 @@ export function ReportsPage() {
     await exportTaxReportXlsx(data, range, `thumua365-bao-cao-${year}.xlsx`);
   };
 
+  // Bảng kê thu mua (V12) — gói Pro; lần đầu phải bấm "Tôi hiểu" (cột CCCD, địa chỉ để trống, tự chịu trách nhiệm).
+  const ledgerPaid = useEntitlement('tax:docs');
+  const ack = useOnceFlag('tax-ledger-ack');
+  const [asking, setAsking] = useState(false);
+  const exportLedger = async () => {
+    const { exportPurchaseLedgerXlsx } = await import('@/export/purchaseLedgerXlsx');
+    const month = String(range.from.getMonth() + 1).padStart(2, '0');
+    await exportPurchaseLedgerXlsx(data, range, `thumua365-bang-ke-thu-mua-${year}-${month}.xlsx`);
+  };
+
   return (
     <PageContainer width="wide">
       <PageHeader
@@ -55,6 +69,9 @@ export function ReportsPage() {
         actions={
           <>
             <HelpButton topic="reports" />
+            {ledgerPaid && (
+              <Button onClick={() => (ack.done ? void exportLedger() : setAsking(true))}>{L.taxLedgerExport}</Button>
+            )}
             <Button tone="primary" onClick={exportXlsx}>
               {L.exportExcel}
             </Button>
@@ -91,6 +108,7 @@ export function ReportsPage() {
               {L.reportLegalBody}
             </p>
           </Card>
+          {!ledgerPaid && <PlanGate reason={L.gateTaxLedger} feature="tax" />}
         </div>
 
         {/* Bảng 12 tháng chỉ có ở màn rộng: điện thoại đã có bốn ô số ở trên,
@@ -99,6 +117,27 @@ export function ReportsPage() {
           <MonthlyTable reports={months} year={year} />
         </div>
       </div>
+
+      <Dialog open={asking} title={L.taxLedgerConfirmTitle} onClose={() => setAsking(false)}>
+        <p className="text-base text-ink-2">{L.taxLedgerConfirmBody}</p>
+        <p className="mt-3 text-base font-semibold text-ink">{TAX_REPORT_DISCLAIMER}</p>
+        <div className="mt-5 flex gap-3">
+          <Button tone="quiet" block onClick={() => setAsking(false)}>
+            {L.cancel}
+          </Button>
+          <Button
+            tone="primary"
+            block
+            onClick={() => {
+              ack.markDone();
+              setAsking(false);
+              void exportLedger();
+            }}
+          >
+            {L.taxLedgerIUnderstand}
+          </Button>
+        </div>
+      </Dialog>
     </PageContainer>
   );
 }

@@ -31,6 +31,7 @@ export const paymentFromRecord = (rec: PaymentRecord): Payment => ({
   date: rec.date,
   amount: rec.amount,
   note: rec.note ?? undefined,
+  ...(rec.method ? { method: rec.method } : {}),
 });
 
 export const transactionFromRecord = (

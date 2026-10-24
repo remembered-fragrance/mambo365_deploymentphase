@@ -3,6 +3,8 @@
  */
 
 import type {
+  AuditQuery,
+  AuditResult,
   MemberActivityReport,
   OrgBranch,
   OrgBranchCreateInput,
@@ -41,6 +43,9 @@ export const reportSummary = (from: string, to: string, branchId?: string): Prom
   api.reports.summary({ from, to, branchId });
 
 export const memberActivity = (from: string, to: string): Promise<MemberActivityReport> => api.reports.members({ from, to });
+
+/** Nhật ký sửa, xoá (V6) — chỉ chủ, cần gói `audit:view`. Mới nhất trước, `cursor` null = hết. */
+export const listAudit = (query: AuditQuery): Promise<AuditResult> => api.audit.list(query);
 
 /** Câu báo lỗi cho màn Nhân viên / Chi nhánh — rẽ theo `details.reason`, rồi theo `code`. */
 export const orgErrorMessage = (err: unknown): string => {

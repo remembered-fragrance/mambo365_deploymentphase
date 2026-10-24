@@ -158,6 +158,7 @@ export const TERMS: LegalDoc = {
       blocks: [
         list(
           'App tính đúng theo con số bạn nhập. Nhập sai số cân, đơn giá, người bán thì kết quả sai — chúng tôi không chịu trách nhiệm về thiệt hại do sai sót nhập liệu.',
+          'Báo cáo thuế, bảng kê thu mua là số liệu tổng hợp từ sổ của bạn, không phải tờ khai và không được kiểm theo luật. Bạn tự kiểm tra, tự điền phần còn thiếu (CCCD, địa chỉ người bán) và chịu trách nhiệm khi dùng để kê khai thuế.',
           'Chúng tôi nỗ lực hợp lý để app luôn chạy, nhưng không cam kết 100% thời gian. Vì vậy app ghi vào máy trước, mất mạng vẫn dùng được, và luôn cho lưu sổ ra file.',
           'Trong phạm vi pháp luật cho phép, mức bồi thường tối đa bằng số tiền bạn đã trả trong 3 tháng gần nhất. Điều này không loại trừ trách nhiệm mà pháp luật về bảo vệ người tiêu dùng hay bảo vệ dữ liệu cá nhân không cho phép loại trừ.',
         ),

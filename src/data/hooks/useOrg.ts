@@ -31,16 +31,25 @@ export const useBranches = (enabled = true): Loaded<OrgBranchesList> => {
   return useLoad(currentOrgId && enabled ? listBranches : null, currentOrgId ?? '');
 };
 
-export const useReportSummary = (from: string, to: string, branchId?: string): Loaded<ReportSummary> => {
+/** `enabled` = gói có `reports:org` (vựa, doanh nghiệp); hết gói thì không hỏi, màn hiện `PlanGate`. */
+export const useReportSummary = (
+  from: string,
+  to: string,
+  branchId?: string,
+  enabled = true,
+): Loaded<ReportSummary> => {
   const { currentOrgId } = useStore();
   return useLoad(
-    currentOrgId ? () => reportSummary(from, to, branchId) : null,
-    `${currentOrgId ?? ''}:${from}:${to}:${branchId ?? ''}`,
+    currentOrgId && enabled ? () => reportSummary(from, to, branchId) : null,
+    `${currentOrgId ?? ''}:${from}:${to}:${branchId ?? ''}:${enabled}`,
   );
 };
 
-/** Việc của từng người trong khoảng — chỉ chủ (`staff:manage`); `enabled` = có quyền đó. */
+/** Việc của từng người trong khoảng — chỉ chủ (`staff:manage`); `enabled` = có quyền đó và gói có `reports:org`. */
 export const useMemberActivity = (from: string, to: string, enabled = true): Loaded<MemberActivityReport> => {
   const { currentOrgId } = useStore();
-  return useLoad(currentOrgId && enabled ? () => memberActivity(from, to) : null, `${currentOrgId ?? ''}:${from}:${to}`);
+  return useLoad(
+    currentOrgId && enabled ? () => memberActivity(from, to) : null,
+    `${currentOrgId ?? ''}:${from}:${to}:${enabled}`,
+  );
 };

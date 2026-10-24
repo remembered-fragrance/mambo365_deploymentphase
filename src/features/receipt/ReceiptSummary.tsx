@@ -1,7 +1,10 @@
 import { Button } from '@/components/ui/Button';
+import { Segmented } from '@/components/ui/Segmented';
 import { formatVnd } from '@mambo/core/format';
 import { numberToVietnameseWords } from '@mambo/core/numberToWords';
+import type { PaymentMethod } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { PAY_METHOD_OPTIONS } from '../shared/payMethod';
 import type { SaveState } from './useDraftReceipt';
 
 interface ReceiptSummaryProps {
@@ -10,6 +13,9 @@ interface ReceiptSummaryProps {
   readonly saveState: SaveState;
   readonly onPayFull: () => void;
   readonly onPayPart: () => void;
+  /** Gói Pro, phiếu mua (V13): trả bằng gì. Không truyền = không hiện. */
+  readonly method?: PaymentMethod;
+  readonly onMethodChange?: (method: PaymentMethod) => void;
 }
 
 const SAVE_LABEL: Record<SaveState, string> = {
@@ -32,6 +38,8 @@ export function ReceiptSummary({
   saveState,
   onPayFull,
   onPayPart,
+  method,
+  onMethodChange,
 }: ReceiptSummaryProps) {
   return (
     // Điện thoại: thanh dính đáy phải gọn để không che ô đang nhập — tổng một dòng, hai nút một hàng,
@@ -54,6 +62,15 @@ export function ReceiptSummary({
           </p>
         )}
       </div>
+
+      {method && onMethodChange && (
+        <Segmented
+          label={L.payMethod}
+          value={method}
+          options={PAY_METHOD_OPTIONS}
+          onValueChange={(v) => onMethodChange(v as PaymentMethod)}
+        />
+      )}
 
       {/* Điện thoại: hai nút một hàng (chữ lg + px-5 sẽ xuống dòng ở 320–375px). Màn rộng: cột tổng
           chỉ 3/12, xếp chồng để mỗi nút một dòng chữ. */}

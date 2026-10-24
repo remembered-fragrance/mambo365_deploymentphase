@@ -9,8 +9,10 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { monthRange, thisMonth, useBranches, useReportSummary } from '@/data/hooks/useOrg';
 import { L } from '@/i18n/labels';
+import { PlanGate } from '../billing/PlanGate';
 import { useAccess } from '../shared/useAccess';
 
 function Side({ title, side }: { readonly title: string; readonly side: ReportSide }) {
@@ -42,7 +44,7 @@ const Figures = ({ figures }: { readonly figures: ReportFigures }) => (
 
 /**
  * Báo cáo tổng của doanh nghiệp — server tính bằng @mambo/core trên mọi máy, mọi chi nhánh.
- * Người gắn chi nhánh chỉ thấy chi nhánh mình (server lọc).
+ * Người gắn chi nhánh chỉ thấy chi nhánh mình (server lọc). Cần gói (`reports:org`, D3) — máy chủ cũng chặn.
  */
 export function OrgReportPage() {
   const { can } = useAccess();
@@ -50,52 +52,57 @@ export function OrgReportPage() {
   const [branchId, setBranchId] = useState('');
   const branches = useBranches(can('branch:manage'));
   const { from, to } = monthRange(month);
-  const report = useReportSummary(from, to, branchId || undefined);
+  const paid = useEntitlement('reports:org');
+  const report = useReportSummary(from, to, branchId || undefined, paid);
 
   return (
     <PageContainer width="content">
       <PageHeader title={L.navOrgReport} />
-      <div className="grid gap-4">
-        <Card>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input label={L.reportMonth} type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} />
-            {branches.data && branches.data.branches.length > 0 && (
-              <Select
-                label={L.reportBranch}
-                value={branchId}
-                options={[
-                  { value: '', label: L.reportAllBranches },
-                  ...branches.data.branches.map((b) => ({ value: b.id, label: b.name })),
-                ]}
-                onValueChange={setBranchId}
-              />
-            )}
-          </div>
-        </Card>
+      {!paid ? (
+        <PlanGate reason={L.gateReports} feature="reports" />
+      ) : (
+        <div className="grid gap-4">
+          <Card>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input label={L.reportMonth} type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} />
+              {branches.data && branches.data.branches.length > 0 && (
+                <Select
+                  label={L.reportBranch}
+                  value={branchId}
+                  options={[
+                    { value: '', label: L.reportAllBranches },
+                    ...branches.data.branches.map((b) => ({ value: b.id, label: b.name })),
+                  ]}
+                  onValueChange={setBranchId}
+                />
+              )}
+            </div>
+          </Card>
 
-        {report.loading && !report.data ? (
-          <Skeleton rows={3} label={L.loading} />
-        ) : report.error ? (
-          <ErrorState
-            title={L.errorTitle}
-            description={report.error}
-            actions={<Button onClick={report.reload}>{L.retry}</Button>}
-          />
-        ) : report.data ? (
-          <>
-            <Card title={L.reportAllBranches}>
-              <Figures figures={report.data.totals} />
-            </Card>
-            {!branchId &&
-              report.data.branches.length > 1 &&
-              report.data.branches.map((b) => (
-                <Card key={b.branch?.id ?? 'none'} title={b.branch?.name ?? L.reportNoBranch}>
-                  <Figures figures={b.figures} />
-                </Card>
-              ))}
-          </>
-        ) : null}
-      </div>
+          {report.loading && !report.data ? (
+            <Skeleton rows={3} label={L.loading} />
+          ) : report.error ? (
+            <ErrorState
+              title={L.errorTitle}
+              description={report.error}
+              actions={<Button onClick={report.reload}>{L.retry}</Button>}
+            />
+          ) : report.data ? (
+            <>
+              <Card title={L.reportAllBranches}>
+                <Figures figures={report.data.totals} />
+              </Card>
+              {!branchId &&
+                report.data.branches.length > 1 &&
+                report.data.branches.map((b) => (
+                  <Card key={b.branch?.id ?? 'none'} title={b.branch?.name ?? L.reportNoBranch}>
+                    <Figures figures={b.figures} />
+                  </Card>
+                ))}
+            </>
+          ) : null}
+        </div>
+      )}
     </PageContainer>
   );
 }

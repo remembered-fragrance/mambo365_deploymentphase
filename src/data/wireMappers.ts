@@ -69,6 +69,8 @@ export const paymentToInsert = (payment: Payment, transactionId: string) => ({
   date: payment.date,
   amount: money(payment.amount),
   note: payment.note?.trim() || null,
+  // V13 — chỉ gửi khi có: lần trả không chọn hình thức gửi lên y như trước.
+  ...(payment.method ? { method: payment.method } : {}),
 });
 
 /** V19 / V20 — chỉ gửi trường có giá trị: dòng không đo chỉ tiêu gửi lên y như trước. */

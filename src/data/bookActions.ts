@@ -162,8 +162,8 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
     return tx;
   },
 
-  recordPayment: (txId, amount) => {
-    const result = receipts.recordPayment(book(), txId, amount);
+  recordPayment: (txId, amount, method) => {
+    const result = receipts.recordPayment(book(), txId, amount, method);
     if (!result.payment) return null;
     commit(result.data, [
       opInsert('payment', result.payment.id, paymentToInsert(result.payment, txId)),

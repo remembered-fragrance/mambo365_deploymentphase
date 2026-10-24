@@ -84,7 +84,8 @@ function ActivityLine({ activity }: { readonly activity: MemberActivity | undefi
  * đổi vai trò / gỡ. Vựa chỉ thêm người cân (`staff`); doanh nghiệp thêm quản lý / nhân viên và gắn
  * chi nhánh. Người làm không tự rời được — chỉ chủ gỡ ra ở đây. Không có nút trên dòng của chủ và của chính mình.
  * Hết gói thì không thêm (hay bật lại) người được; vựa có gói tối đa `STAFF_LIMIT.trader` người cân — máy chủ
- * chặn y như vậy (PLAN_REQUIRED / MEMBER_LIMIT), ở đây chỉ khoá nút trước.
+ * chặn y như vậy (PLAN_REQUIRED / MEMBER_LIMIT), ở đây chỉ khoá nút trước. Việc từng người (tháng, số liệu)
+ * cần `reports:org` (D3); hết gói thì danh sách người vẫn hiện, chỉ phần số liệu nằm sau `PlanGate`.
  */
 export function MembersPage() {
   const { orgType, can } = useAccess();
@@ -93,11 +94,12 @@ export function MembersPage() {
   const branches = useBranches(enterprise && can('branch:manage'));
   const toast = useToast();
   const paid = useEntitlement('members:add');
+  const reports = useEntitlement('reports:org');
 
   const [month, setMonth] = useState(thisMonth);
   const [branchFilter, setBranchFilter] = useState('');
   const { from, to } = monthRange(month);
-  const activity = useMemberActivity(from, to);
+  const activity = useMemberActivity(from, to, reports);
 
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
@@ -198,27 +200,33 @@ export function MembersPage() {
             </p>
           )
         )}
-        <Card>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input label={L.reportMonth} type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} />
-            {liveBranches.length > 0 && (
-              <Select
-                label={L.memberBranch}
-                value={branchFilter}
-                options={[{ value: '', label: L.memberFilterAll }, ...liveBranches.map((b) => ({ value: b.id, label: b.name }))]}
-                onValueChange={setBranchFilter}
-              />
-            )}
-          </div>
-        </Card>
+        {!reports ? (
+          <PlanGate reason={L.gateReports} feature="reports" />
+        ) : (
+          <>
+            <Card>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input label={L.reportMonth} type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} />
+                {liveBranches.length > 0 && (
+                  <Select
+                    label={L.memberBranch}
+                    value={branchFilter}
+                    options={[{ value: '', label: L.memberFilterAll }, ...liveBranches.map((b) => ({ value: b.id, label: b.name }))]}
+                    onValueChange={setBranchFilter}
+                  />
+                )}
+              </div>
+            </Card>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Kpi label={L.membersActive} value={`${working.length} ${L.membersPeople}`} />
-          <Kpi label={L.membersReceipts} value={String(sum((a) => receiptCount(a)))} />
-          <Kpi label={L.membersBought} value={formatVnd(sum((a) => a.receipts.purchase.amount))} />
-          <Kpi label={L.membersPayments} value={String(sum((a) => a.payments.count))} />
-        </div>
-        {activity.error && <p className="text-sm text-alert">{L.memberActivityFailed}</p>}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <Kpi label={L.membersActive} value={`${working.length} ${L.membersPeople}`} />
+              <Kpi label={L.membersReceipts} value={String(sum((a) => receiptCount(a)))} />
+              <Kpi label={L.membersBought} value={formatVnd(sum((a) => a.receipts.purchase.amount))} />
+              <Kpi label={L.membersPayments} value={String(sum((a) => a.payments.count))} />
+            </div>
+            {activity.error && <p className="text-sm text-alert">{L.memberActivityFailed}</p>}
+          </>
+        )}
 
         {members.loading && !members.data ? (
           <Skeleton rows={3} label={L.loading} />

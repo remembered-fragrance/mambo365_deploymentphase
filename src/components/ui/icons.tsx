@@ -81,6 +81,9 @@ export const CameraIcon = (p: IconProps) => (
 );
 export const CheckIcon = (p: IconProps) => <Icon {...p} d="M5 13l4 4L19 7" />;
 export const LockIcon = (p: IconProps) => <Icon {...p} d="M6 11h12v9H6z|M8 11V8a4 4 0 0 1 8 0v3" />;
+export const ClockIcon = (p: IconProps) => (
+  <Icon {...p} d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z|M12 7v5l3 2" />
+);
 export const CloudIcon = (p: IconProps) => (
   <Icon {...p} d="M7 18a4 4 0 0 1 .6-8 5 5 0 0 1 9.6 1.4A3.5 3.5 0 0 1 17 18z" />
 );

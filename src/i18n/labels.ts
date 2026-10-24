@@ -18,6 +18,7 @@ import { MAP_LABELS } from './mapLabels';
 import { ONBOARDING_LABELS } from './onboardingLabels';
 import { ORDER_LABELS } from './orderLabels';
 import { ORG_LABELS } from './orgLabels';
+import { PRO_LABELS } from './proLabels';
 import { ROLE_LABELS } from './roleLabels';
 import { SCREEN_LABELS } from './screenLabels';
 
@@ -139,7 +140,7 @@ const BASE = {
   photoFull: 'Đủ số ảnh cho một phiếu rồi',
   photoSaveFailed: 'Chưa lưu được ảnh này vào máy. Thử chụp lại, hoặc chọn ảnh khác.',
   removePhoto: 'Bỏ ảnh này',
-  sendZalo: 'Gửi Zalo',
+  sendZalo: 'Chia sẻ',
   print: 'In',
   callPhone: 'Gọi điện',
   clearAll: 'Xoá hết',
@@ -344,6 +345,7 @@ export const L = {
   ...ORDER_LABELS,
   ...ORG_LABELS,
   ...MAP_LABELS,
+  ...PRO_LABELS,
 } as const;
 
 /** Phụ đề giải thích cho các thuật ngữ buộc phải giữ. */

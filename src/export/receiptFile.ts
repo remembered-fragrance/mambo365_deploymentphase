@@ -10,7 +10,7 @@ import { shareOrDownload, type ShareResult } from './downloadFile';
 const MARGIN_MM = 8;
 const RECEIPT_TITLE = 'Phiếu THUMUA365';
 
-const canvasToPdfBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
+export const canvasToPdfBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
   const { jsPDF } = await import('jspdf');
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
   const pageW = pdf.internal.pageSize.getWidth();
@@ -25,7 +25,7 @@ const canvasToPdfBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
   return pdf.output('blob');
 };
 
-const canvasToPngBlob = (canvas: HTMLCanvasElement): Promise<Blob> =>
+export const canvasToPngBlob = (canvas: HTMLCanvasElement): Promise<Blob> =>
   new Promise((resolve, reject) => {
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(new Error('Không tạo được ảnh PNG'))),
