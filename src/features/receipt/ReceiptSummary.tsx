@@ -37,7 +37,9 @@ export function ReceiptSummary({
     // Điện thoại: thanh dính đáy phải gọn để không che ô đang nhập — tổng một dòng, hai nút một hàng,
     // số bằng chữ một dòng chữ nhỏ (vẫn phải có: đây là câu đọc cho người bán nghe trước khi trả tiền).
     // Đáy = thanh dưới (5rem) + vùng home indicator của iPhone, không thì thanh dưới che mép nút chốt.
-    <div className="card sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex flex-col gap-2 p-3 lg:bottom-4 lg:gap-3 lg:p-4">
+    // `min-w-0`: điện thoại thì thẻ này là ô của lưới (`max-lg:contents`) — thiếu nó, dòng số bằng chữ
+    // `truncate` giữ nguyên độ dài và đẩy cả màn cuộn ngang khi tổng đọc ra dài (vd. 157.750.000 ₫).
+    <div className="card sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex min-w-0 flex-col gap-2 p-3 lg:bottom-4 lg:gap-3 lg:p-4">
       <div>
         <div className="max-lg:flex max-lg:items-baseline max-lg:justify-between max-lg:gap-3">
           <p className="text-sm font-semibold text-ink-3">{L.total}</p>
