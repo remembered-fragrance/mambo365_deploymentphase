@@ -122,6 +122,11 @@ body {
   &::placeholder {
     color: var(--color-ink-3);
   }
+
+  /* Edge tự thêm nút hiện mật khẩu, trùng với nút của Input. */
+  &::-ms-reveal {
+    display: none;
+  }
 }
 
 /* Vùng chạm tối thiểu — tay đeo găng, ngón cái, đi lại ngoài sân */
