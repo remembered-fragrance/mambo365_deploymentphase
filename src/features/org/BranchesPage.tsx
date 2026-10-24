@@ -9,16 +9,20 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { createBranch, orgErrorMessage, updateBranch, useBranches } from '@/data/hooks/useOrg';
 import { L } from '@/i18n/labels';
+import { PlanGate } from '../billing/PlanGate';
 
 /**
  * Chi nhánh của doanh nghiệp. Số chi nhánh đang dùng ≤ giới hạn của gói (vượt → BRANCH_LIMIT).
  * Chỉ lưu trữ, không xoá — phiếu cũ vẫn trỏ tới; còn người gắn thì không lưu trữ được.
+ * Hết gói: không tạo, không dùng lại chi nhánh đã lưu trữ (máy chủ: PLAN_REQUIRED); đổi tên, lưu trữ vẫn được.
  */
 export function BranchesPage() {
   const branches = useBranches();
   const toast = useToast();
+  const paid = useEntitlement('branches:add');
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [error, setError] = useState<string | undefined>();
@@ -58,22 +62,26 @@ export function BranchesPage() {
         subtitle={list ? `${L.branchUsed}: ${list.used} / ${list.limit ?? L.branchUnlimited}` : undefined}
       />
       <div className="grid gap-4">
-        <Card title={L.branchAdd}>
-          <form
-            className="flex flex-col gap-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void add();
-            }}
-          >
-            <Input label={L.branchName} value={name} required maxLength={120} onChange={(e) => setName(e.target.value)} />
-            <Input label={L.branchAddress} value={address} maxLength={300} onChange={(e) => setAddress(e.target.value)} />
-            {error && <p className="text-sm text-alert">{error}</p>}
-            <Button type="submit" tone="primary" block disabled={busy}>
-              {L.branchAdd}
-            </Button>
-          </form>
-        </Card>
+        {paid ? (
+          <Card title={L.branchAdd}>
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void add();
+              }}
+            >
+              <Input label={L.branchName} value={name} required maxLength={120} onChange={(e) => setName(e.target.value)} />
+              <Input label={L.branchAddress} value={address} maxLength={300} onChange={(e) => setAddress(e.target.value)} />
+              {error && <p className="text-sm text-alert">{error}</p>}
+              <Button type="submit" tone="primary" block disabled={busy}>
+                {L.branchAdd}
+              </Button>
+            </form>
+          </Card>
+        ) : (
+          <PlanGate reason={L.gateBranches} feature="branches" />
+        )}
 
         {branches.loading && !list ? (
           <Skeleton rows={3} label={L.loading} />
@@ -98,9 +106,11 @@ export function BranchesPage() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {b.archived && <Badge label={L.branchArchived} />}
-                  <Button onClick={() => void toggle(b.id, !b.archived)}>
-                    {b.archived ? L.branchUnarchive : L.branchArchive}
-                  </Button>
+                  {(paid || !b.archived) && (
+                    <Button onClick={() => void toggle(b.id, !b.archived)}>
+                      {b.archived ? L.branchUnarchive : L.branchArchive}
+                    </Button>
+                  )}
                 </div>
               </li>
             ))}

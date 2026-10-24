@@ -44,7 +44,7 @@ export const ORG_LABELS = {
   linkGetCode: 'Lấy mã',
   linkLinkedTag: 'Đã kết nối',
   linkCodesTitle: 'Mã kết nối cho nông hộ',
-  linkCodesHint: 'Đưa mã cho nông hộ — họ nhập ở Trang chủ app của họ để tự xem phiếu cân và tiền còn nợ.',
+  linkCodesHint: 'Đưa mã cho nông hộ — họ nhập ở Trang chủ app của họ để tự xem phiếu cân và tiền còn nợ. Họ chỉ thấy phiếu đã gửi lên mạng: gói hết hạn thì phiếu mới chưa tới họ.',
   linkCodesLinked: 'đã kết nối',
   linkCodesPending: 'đang chờ nhập mã',
   linkCodesNotInvited: 'chưa có mã',

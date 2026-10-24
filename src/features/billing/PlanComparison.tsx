@@ -6,27 +6,40 @@
  *
  * Ở điện thoại là hai cột hẹp chứ không phải bảng cuộn ngang — cùng nguyên tắc
  * với `DataView`: điện thoại không bao giờ cuộn ngang.
+ *
+ * 🔴 Chỉ hứa đúng cái code chặn (KE_HOACH_GOI_PRO §7): dòng khác nhau giữa hai bên phải gắn `entitlement` có
+ * trong bảng quyền lợi của contracts; dòng không gắn là dòng hai bên như nhau. Test giữ hai luật đó.
  */
 
+import { STAFF_LIMIT, type Entitlement } from '@mambo/contracts';
 import { FREE_RECEIPTS_PER_MONTH } from '@/config';
 import { L } from '@/i18n/labels';
 
-interface Row {
+export interface Row {
   readonly what: string;
   readonly free: string;
   readonly paid: string;
+  readonly entitlement?: Entitlement;
 }
 
-const ROWS: readonly Row[] = [
+export const ROWS: readonly Row[] = [
   {
     what: L.featureReceipts,
     free: `${FREE_RECEIPTS_PER_MONTH} ${L.featureReceiptsPerMonth}`,
     paid: L.featureReceiptsPaid,
+    entitlement: 'receipts:unlimited',
   },
-  { what: L.featureParties, free: L.featurePartiesFree, paid: L.featurePartiesPaid },
-  { what: L.featureDebts, free: L.featureDebtsFree, paid: L.featureDebtsPaid },
-  { what: L.featureExport, free: L.featureNo, paid: L.featureYes },
-  { what: L.featureSync, free: L.featureSyncFree, paid: L.featureSyncPaid },
+  { what: L.featureSync, free: L.featureSyncFree, paid: L.featureSyncPaid, entitlement: 'sync' },
+  {
+    what: L.featureStaff,
+    free: L.featureStaffFree,
+    paid: `${L.featureStaffPaidPrefix} ${STAFF_LIMIT.trader} ${L.featureStaffPaidSuffix}`,
+    entitlement: 'members:add',
+  },
+  { what: L.featurePhotos, free: L.featurePhotosFree, paid: L.featurePhotosPaid, entitlement: 'attachments' },
+  { what: L.featureParties, free: L.featurePartiesDetail, paid: L.featurePartiesDetail },
+  { what: L.featureDebts, free: L.featureDebtsDetail, paid: L.featureDebtsDetail },
+  { what: L.featureExport, free: L.featureYes, paid: L.featureYes },
 ];
 
 export function PlanComparison() {

@@ -28,27 +28,43 @@ export const BILLING_LABELS = {
   featureReceiptsPerMonth: 'phiếu mỗi tháng',
   featureReceiptsPaid: 'Không giới hạn',
   featureParties: 'Nông hộ và người mua',
-  featurePartiesFree: 'Lưu tên và số điện thoại',
-  featurePartiesPaid: 'Kèm lịch sử mua bán và dư nợ từng người',
+  featurePartiesDetail: 'Tên, số điện thoại, lịch sử mua bán và dư nợ từng người',
   featureDebts: 'Công nợ',
-  featureDebtsFree: 'Không có',
-  featureDebtsPaid: 'Ai nợ mình, mình nợ ai, hẹn ngày trả',
+  featureDebtsDetail: 'Ai nợ mình, mình nợ ai, hẹn ngày trả',
   featureExport: 'Xuất Excel và PDF',
   featureSync: 'Giữ sổ trên mạng',
   featureSyncFree: 'Sổ nằm trong một máy',
   featureSyncPaid: 'Nhiều máy dùng chung một sổ, mất máy vẫn còn sổ',
+  featureStaff: 'Người cân',
+  featureStaffFree: 'Không thêm được',
+  /** Ghép sau con số: "Tối đa 3 người". Số lấy từ `STAFF_LIMIT` của contracts. */
+  featureStaffPaidPrefix: 'Tối đa',
+  featureStaffPaidSuffix: 'người',
+  featurePhotos: 'Ảnh phiếu cân, hoá đơn',
+  featurePhotosFree: 'Xem ảnh cũ, không gửi ảnh mới',
+  featurePhotosPaid: 'Chụp ảnh gắn vào phiếu, lưu trên mạng',
   featureYes: 'Có',
-  featureNo: 'Không',
 
   // ─── Hạn mức ──────────────────────────────────────────────────────────────
   quotaWallTitle: 'Tháng này bạn đã ghi hết số phiếu miễn phí',
   quotaWallBody:
-    'Nâng cấp để ghi không giới hạn, xem công nợ và giữ sổ trên mạng phòng khi mất máy.',
+    'Nâng cấp để ghi không giới hạn, thêm người cân và giữ sổ trên mạng phòng khi mất máy.',
   quotaUsed: 'Đã ghi tháng này',
   quotaOfLimit: 'trên',
   quotaLeftWarning: 'Còn ghi được',
   quotaResetHint: 'Sang tháng mới số phiếu tự đếm lại từ đầu.',
   quotaDraftsKept: 'Phiếu đang cân dở vẫn còn nguyên, không mất đi đâu.',
+
+  // ─── Việc cần gói (PlanGate) ────────────────────────────────────────────────
+  gateMembers: 'Gói đã hết hạn — người đang có vẫn làm bình thường, gia hạn để thêm người mới.',
+  gatePhotos: 'Gói đã hết hạn — ảnh cũ vẫn xem được, gia hạn để chụp ảnh mới.',
+  gateBranches: 'Gói đã hết hạn — chi nhánh đang có vẫn giữ nguyên, gia hạn để thêm hoặc dùng lại chi nhánh.',
+  gateSeePlans: 'Xem gói',
+  gateAskOwner: 'Báo chủ gia hạn gói để dùng tiếp.',
+  planRequired: 'Gói đã hết hạn — gia hạn để làm việc này.',
+  staffUsed: 'người cân',
+  staffFull: 'Đã đủ số người cân của gói. Cần thêm thì nhắn Zalo hỗ trợ.',
+  memberLimit: 'Gói hiện tại cho tối đa số người cân:',
 
   // ─── Giá ──────────────────────────────────────────────────────────────────
   priceMonthly: 'Trả từng tháng',
@@ -88,6 +104,8 @@ export const BILLING_LABELS = {
   bannerGrace: 'Gói đã hết hạn, còn gửi lên mạng thêm',
   bannerExpired: 'Gói đã hết hạn — sổ vẫn dùng được trên máy này, chỉ ngừng gửi lên mạng',
   bannerExpiredCta: 'Mở lại',
+  /** Người không trả tiền được (người cân, quản lý): không có nút Mở lại, chỉ báo chủ. */
+  bannerExpiredStaff: 'Gói đã hết hạn — sổ vẫn ghi bình thường, chỉ tạm ngừng gửi lên mạng. Báo chủ gia hạn.',
   syncBlocked: 'Chưa gửi lên mạng vì gói đã hết hạn',
   syncBlockedDetail: 'Phiếu vẫn ghi bình thường và sẽ tự gửi đi khi mở lại gói.',
 
