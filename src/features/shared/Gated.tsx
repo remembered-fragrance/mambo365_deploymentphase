@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { L } from '@/i18n/labels';
-import { allows } from './access';
+import { allows, isFarmer } from './access';
 import { ROUTE_GATES, ROUTES } from './navItems';
 import { useAccess } from './useAccess';
 
@@ -19,7 +19,7 @@ export function Gated({ route, children }: { readonly route: string; readonly ch
     <PageContainer width="content">
       <EmptyState
         title={L.noAccessTitle}
-        description={L.noAccessHint}
+        description={isFarmer(access) ? L.noAccessFarmerHint : L.noAccessHint}
         icon="🔒"
         action={
           <Link to={ROUTES.dashboard} className="flex min-h-11 items-center font-semibold text-brand underline">

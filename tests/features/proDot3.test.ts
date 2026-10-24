@@ -17,7 +17,7 @@ import { ENTITY_TO_TABLE, TABLE_TO_ENTITY } from '@/data/queue';
 import { productToInsert, productToPatch, seasonContractToInsert, seasonContractToPatch, transactionToInsert } from '@/data/wireMappers';
 import { orgReportSheet } from '@/export/orgReportXlsx';
 import { salesLedgerSheet } from '@/export/purchaseLedgerXlsx';
-import { receiptListSheet } from '@/export/taxPackXlsx';
+import { receiptListSheet, taxSummarySheet } from '@/export/taxPackXlsx';
 import { contractNote, contractProblem, emptyContract, toContractInput } from '@/features/contracts/contractDraft';
 import { placeInput, pricesChanged, type PlaceFormValues } from '@/features/map/PlaceFormSheet';
 import { applyProduct, emptyLine, toLine } from '@/features/receipt/lineDraft';
@@ -149,6 +149,12 @@ describe('V17 — bộ hồ sơ kê khai', () => {
     expect(sheet[1]).toEqual([TAX_REPORT_DISCLAIMER]);
     expect(sheet[3]?.[2]).toBe(L.colBuyerName);
     expect(sheet.slice(4, -1).map((r) => r[2])).toEqual(['Nhà máy X']);
+  });
+
+  it('tổng hợp: có phiếu bán thì ghi lời; chưa bán gì thì ghi "Chưa có phiếu bán", không ghi số âm', () => {
+    const profit = (d: AppData) => taxSummarySheet(d, range).find((r) => r[0] === L.taxGrossProfit)?.[1];
+    expect(profit(data)).toBe(0);
+    expect(profit({ ...data, transactions: [tx({})] })).toBe(L.taxNoSaleYet);
   });
 
   it('chứng từ: mỗi phiếu một dòng theo ngày, mã phiếu như biên nhận, số ảnh', () => {

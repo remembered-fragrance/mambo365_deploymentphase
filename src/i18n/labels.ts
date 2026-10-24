@@ -119,6 +119,7 @@ const BASE = {
   taxTotalPurchase: 'Tổng chi mua',
   taxTotalSale: 'Tổng doanh thu bán',
   taxGrossProfit: 'Tạm tính lời',
+  taxNoSaleYet: 'Chưa có phiếu bán',
   taxPurchaseCount: 'Số phiếu mua',
   taxSaleCount: 'Số phiếu bán',
 

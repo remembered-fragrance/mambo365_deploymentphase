@@ -46,7 +46,7 @@ export const exportTaxReportXlsx = async (
     [L.taxPeriod, range.label],
     [L.taxTotalPurchase, report.totalPurchase],
     [L.taxTotalSale, report.totalSale],
-    [L.taxGrossProfit, report.grossProfit],
+    [L.taxGrossProfit, report.saleCount > 0 ? report.grossProfit : L.taxNoSaleYet],
     [L.taxPurchaseCount, report.purchaseCount],
     [L.taxSaleCount, report.saleCount],
     [L.note, report.disclaimer],

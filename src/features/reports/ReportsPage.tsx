@@ -104,7 +104,10 @@ export function ReportsPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <Figure label={L.taxTotalPurchase} value={formatVnd(report.totalPurchase)} />
             <Figure label={L.taxTotalSale} value={formatVnd(report.totalSale)} />
-            <Figure label={L.taxGrossProfit} value={formatVnd(report.grossProfit)} />
+            <Figure
+              label={L.taxGrossProfit}
+              value={report.saleCount > 0 ? formatVnd(report.grossProfit) : L.taxNoSaleYet}
+            />
             <Figure
               label={L.taxPurchaseCount}
               value={`${report.purchaseCount} / ${report.saleCount}`}

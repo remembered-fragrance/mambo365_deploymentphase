@@ -20,7 +20,8 @@ export const taxSummarySheet = (data: AppData, range: TaxReportRange): (string |
     [],
     [L.taxTotalPurchase, report.totalPurchase],
     [L.taxTotalSale, report.totalSale],
-    [L.taxGrossProfit, report.grossProfit],
+    // Chưa bán gì thì "lời" chỉ là tổng chi mua mang dấu âm — đọc dễ tưởng lỗ.
+    [L.taxGrossProfit, report.saleCount > 0 ? report.grossProfit : L.taxNoSaleYet],
     [L.taxPurchaseCount, report.purchaseCount],
     [L.taxSaleCount, report.saleCount],
   ];
