@@ -1,6 +1,6 @@
-import type { DraftReceipt, Note, Payment, PricingRule, Product, Supplier, Transaction } from '@mambo/core/types';
+import type { DraftReceipt, Note, Payment, PricingRule, Product, SeasonContract, Supplier, Transaction } from '@mambo/core/types';
 import { formulaFrom } from '@mambo/core/normalizeTransaction';
-import type { DraftRecord, NoteRecord, PartyRecord, PaymentRecord, PricingRuleRecord, ProductRecord, TransactionRecord } from '@mambo/contracts';
+import type { DraftRecord, NoteRecord, PartyRecord, PaymentRecord, PricingRuleRecord, ProductRecord, SeasonContractRecord, TransactionRecord } from '@mambo/contracts';
 import { partyIdFromWire } from './wireMappers';
 
 export const partyFromRecord = (rec: PartyRecord): Supplier => ({
@@ -24,6 +24,7 @@ export const productFromRecord = (rec: ProductRecord): Product => ({
   qualityGrades: rec.qualityGrades.length ? rec.qualityGrades : undefined,
   trackInventory: rec.trackInventory ?? undefined,
   rubberKind: rec.rubberKind ?? undefined,
+  greenRatio: rec.greenRatio ?? undefined,
 });
 
 export const paymentFromRecord = (rec: PaymentRecord): Payment => ({
@@ -97,6 +98,24 @@ export const noteFromRecord = (rec: NoteRecord): Note => ({
   body: rec.body,
   pinned: rec.pinned,
   done: rec.done,
+  createdAt: rec.createdAt,
+  updatedAt: rec.updatedAt,
+});
+
+export const seasonContractFromRecord = (rec: SeasonContractRecord): SeasonContract => ({
+  id: rec.id,
+  kind: rec.kind,
+  counterpartyId: rec.counterpartyId ?? undefined,
+  counterpartyName: rec.counterpartyName,
+  productId: rec.productId ?? undefined,
+  productName: rec.productName,
+  unit: rec.unit,
+  quantity: rec.quantity,
+  pricePerUnit: rec.pricePerUnit ?? undefined,
+  startDate: rec.startDate,
+  endDate: rec.endDate,
+  note: rec.note ?? undefined,
+  closed: rec.closed,
   createdAt: rec.createdAt,
   updatedAt: rec.updatedAt,
 });

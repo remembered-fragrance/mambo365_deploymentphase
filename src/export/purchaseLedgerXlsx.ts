@@ -9,8 +9,10 @@
 import { formatDate } from '@mambo/core/format';
 import {
   buildPurchaseLedger,
+  buildSalesLedger,
   TAX_REPORT_DISCLAIMER,
   type LedgerPaidBy,
+  type PurchaseLedgerRow,
   type TaxReportRange,
 } from '@mambo/core/taxReport';
 import type { AppData } from '@mambo/core/types';
@@ -23,10 +25,10 @@ const PAID_BY: Record<LedgerPaidBy, string> = {
   unpaid: L.paidByUnpaid,
 };
 
-const HEADER = [
+const header = (partyColumn: string) => [
   L.colIndex,
   L.colDate,
-  L.colSellerName,
+  partyColumn,
   L.colSellerAddress,
   L.colSellerIdNumber,
   L.colProduct,
@@ -37,14 +39,18 @@ const HEADER = [
   L.colPaidBy,
 ];
 
-export const purchaseLedgerSheet = (data: AppData, range: TaxReportRange): (string | number)[][] => {
-  const rows = buildPurchaseLedger(data, range);
+const ledgerSheet = (
+  rows: readonly PurchaseLedgerRow[],
+  title: string,
+  partyColumn: string,
+  range: TaxReportRange,
+): (string | number)[][] => {
   const total = rows.reduce((sum, r) => sum + r.amount, 0);
   return [
-    [`${L.taxLedgerExport} — ${range.label}`],
+    [`${title} — ${range.label}`],
     [TAX_REPORT_DISCLAIMER],
     [],
-    HEADER,
+    header(partyColumn),
     ...rows.map((r, i) => [
       i + 1,
       formatDate(r.date),
@@ -62,10 +68,19 @@ export const purchaseLedgerSheet = (data: AppData, range: TaxReportRange): (stri
   ];
 };
 
+export const purchaseLedgerSheet = (data: AppData, range: TaxReportRange): (string | number)[][] =>
+  ledgerSheet(buildPurchaseLedger(data, range), L.taxLedgerExport, L.colSellerName, range);
+
+/** (V17) Bảng kê bán ra — cùng cột với bảng kê thu mua, cột tên là người mua. */
+export const salesLedgerSheet = (data: AppData, range: TaxReportRange): (string | number)[][] =>
+  ledgerSheet(buildSalesLedger(data, range), L.salesLedgerTitle, L.colBuyerName, range);
+
+export const LEDGER_COLS = [6, 12, 24, 28, 16, 20, 12, 8, 12, 16, 22].map((wch) => ({ wch }));
+
 export const exportPurchaseLedgerXlsx = async (data: AppData, range: TaxReportRange, filename: string): Promise<void> => {
   const XLSX = await import('xlsx');
   const sheet = XLSX.utils.aoa_to_sheet(purchaseLedgerSheet(data, range));
-  sheet['!cols'] = [6, 12, 24, 28, 16, 20, 12, 8, 12, 16, 22].map((wch) => ({ wch }));
+  sheet['!cols'] = LEDGER_COLS;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, sheet, L.taxLedgerSheet);
   XLSX.writeFile(wb, filename);

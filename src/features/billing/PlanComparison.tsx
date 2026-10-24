@@ -38,12 +38,22 @@ export const ROWS: readonly Row[] = [
   },
   { what: L.featurePhotos, free: L.featurePhotosFree, paid: L.featurePhotosPaid, entitlement: 'attachments' },
   { what: L.featureQuality, free: L.featureQualityFree, paid: L.featureQualityPaid, entitlement: 'quality:pricing' },
+  { what: L.featureGreenRatio, free: L.featureGreenRatioFree, paid: L.featureYes, entitlement: 'quality:pricing' },
   {
     what: L.featureRubberKind,
     free: L.featureRubberKindFree,
     paid: L.featureRubberKindPaid,
     entitlement: 'rubber:grades',
   },
+  {
+    what: L.featureRubberReconcile,
+    free: L.featureRubberReconcileFree,
+    paid: L.featureRubberReconcilePaid,
+    entitlement: 'rubber:reconcile',
+  },
+  { what: L.featureAnalytics, free: L.featureAnalyticsFree, paid: L.featureAnalyticsPaid, entitlement: 'analytics' },
+  { what: L.featureSeason, free: L.featureSeasonFree, paid: L.featureSeasonPaid, entitlement: 'sync' },
+  { what: L.featureMapPrices, free: L.featureMapPricesFree, paid: L.featureMapPricesPaid, entitlement: 'map:prices' },
   { what: L.featureAudit, free: L.featureAuditFree, paid: L.featureAuditPaid, entitlement: 'audit:view' },
   { what: L.featureOrgReport, free: L.featureOrgReportFree, paid: L.featureYes, entitlement: 'reports:org' },
   {

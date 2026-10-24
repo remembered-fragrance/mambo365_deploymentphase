@@ -10,6 +10,7 @@ import type { DraftInput } from '@mambo/core/draftActions';
 import type { NewProduct } from '@mambo/core/productActions';
 import type { PartyMatch } from '@mambo/core/partyActions';
 import type { NewTransaction } from '@mambo/core/receiptActions';
+import type { NewSeasonContract } from '@mambo/core/seasonContracts';
 import type { ReceiptImport, SupplierImport } from '@mambo/core/sheetImport';
 import type {
   AppData,
@@ -21,6 +22,7 @@ import type {
   PaymentMethod,
   PricingRule,
   Product,
+  SeasonContract,
   Supplier,
   SyncStatus,
   Transaction,
@@ -128,6 +130,9 @@ export interface StoreValue {
   addPricingRule: (input: Omit<PricingRule, 'id'>) => PricingRule;
   updatePricingRule: (id: string, patch: Partial<PricingRule>) => void;
   deletePricingRule: (ruleId: string) => void;
+  addSeasonContract: (input: NewSeasonContract) => SeasonContract;
+  updateSeasonContract: (id: string, patch: Partial<SeasonContract>) => void;
+  deleteSeasonContract: (id: string) => void;
   importData: (payload: unknown) => void;
 
   importSuppliers: (rows: readonly SupplierImport[], match?: Pick<PartyMatch, 'keepApart'>) => number;

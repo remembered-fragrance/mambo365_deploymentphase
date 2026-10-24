@@ -18,6 +18,7 @@ export const forgetRecord = (book: AppData, entity: SyncEntity, id: string): App
     case 'note': return { ...book, notes: without(book.notes, id) };
     case 'draft': return { ...book, drafts: without(book.drafts, id) };
     case 'transaction': return { ...book, transactions: without(book.transactions, id) };
+    case 'seasonContract': return { ...book, seasonContracts: without(book.seasonContracts ?? [], id) };
     case 'payment': return {
       ...book,
       transactions: book.transactions.map((t) => {

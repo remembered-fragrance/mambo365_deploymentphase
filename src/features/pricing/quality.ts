@@ -55,5 +55,6 @@ export const qualityText = (line: TransactionLine): string => {
     const value = line[metric];
     if (value !== undefined) parts.push(`${METRIC_LABEL[metric]} ${num(value)}${METRIC_UNIT[metric] === '%' ? '%' : ` ${METRIC_UNIT[metric]}`}`);
   }
+  if (line.formulaType === 'lossPercent' && line.greenRatio !== undefined) parts.push(`${L.greenRatio} ${num(line.greenRatio)}`);
   return parts.join(' · ');
 };

@@ -67,7 +67,7 @@ export const isScopedOp = (value: unknown): value is QueuedOp => {
   return typeof op.orgId === 'string' && Boolean(op.orgId.trim()) &&
     typeof op.opId === 'string' && Boolean(op.opId) &&
     typeof op.id === 'string' && Boolean(op.id) &&
-    ['supplier', 'buyer', 'product', 'pricingRule', 'note', 'draft', 'transaction', 'payment'].includes(op.entity ?? '') &&
+    ['supplier', 'buyer', 'product', 'pricingRule', 'note', 'draft', 'transaction', 'payment', 'seasonContract'].includes(op.entity ?? '') &&
     ['insert', 'update', 'softDelete'].includes(op.kind ?? '') &&
     typeof op.recordId === 'string' && Boolean(op.recordId) &&
     Number.isSafeInteger(op.seq);

@@ -51,15 +51,21 @@ export function ReportsPage() {
     await exportTaxReportXlsx(data, range, `thumua365-bao-cao-${year}.xlsx`);
   };
 
-  // Bảng kê thu mua (V12) — gói Pro; lần đầu phải bấm "Tôi hiểu" (cột CCCD, địa chỉ để trống, tự chịu trách nhiệm).
+  // Bảng kê thu mua (V12) và bộ hồ sơ kê khai (V17) — gói Pro; lần đầu phải bấm "Tôi hiểu" (cột CCCD, địa chỉ để
+  // trống, tự chịu trách nhiệm). Bấm nút nào thì "Tôi hiểu" xuất đúng file đó.
   const ledgerPaid = useEntitlement('tax:docs');
   const ack = useOnceFlag('tax-ledger-ack');
-  const [asking, setAsking] = useState(false);
+  const [asking, setAsking] = useState<'ledger' | 'pack' | null>(null);
+  const month = String(range.from.getMonth() + 1).padStart(2, '0');
   const exportLedger = async () => {
     const { exportPurchaseLedgerXlsx } = await import('@/export/purchaseLedgerXlsx');
-    const month = String(range.from.getMonth() + 1).padStart(2, '0');
     await exportPurchaseLedgerXlsx(data, range, `thumua365-bang-ke-thu-mua-${year}-${month}.xlsx`);
   };
+  const exportPack = async () => {
+    const { exportTaxPackXlsx } = await import('@/export/taxPackXlsx');
+    await exportTaxPackXlsx(data, range, `thumua365-ho-so-ke-khai-${year}-${month}.xlsx`);
+  };
+  const run = (which: 'ledger' | 'pack') => void (which === 'ledger' ? exportLedger() : exportPack());
 
   return (
     <PageContainer width="wide">
@@ -70,7 +76,10 @@ export function ReportsPage() {
           <>
             <HelpButton topic="reports" />
             {ledgerPaid && (
-              <Button onClick={() => (ack.done ? void exportLedger() : setAsking(true))}>{L.taxLedgerExport}</Button>
+              <>
+                <Button onClick={() => (ack.done ? run('ledger') : setAsking('ledger'))}>{L.taxLedgerExport}</Button>
+                <Button onClick={() => (ack.done ? run('pack') : setAsking('pack'))}>{L.taxPackExport}</Button>
+              </>
             )}
             <Button tone="primary" onClick={exportXlsx}>
               {L.exportExcel}
@@ -118,11 +127,11 @@ export function ReportsPage() {
         </div>
       </div>
 
-      <Dialog open={asking} title={L.taxLedgerConfirmTitle} onClose={() => setAsking(false)}>
+      <Dialog open={asking !== null} title={L.taxLedgerConfirmTitle} onClose={() => setAsking(null)}>
         <p className="text-base text-ink-2">{L.taxLedgerConfirmBody}</p>
         <p className="mt-3 text-base font-semibold text-ink">{TAX_REPORT_DISCLAIMER}</p>
         <div className="mt-5 flex gap-3">
-          <Button tone="quiet" block onClick={() => setAsking(false)}>
+          <Button tone="quiet" block onClick={() => setAsking(null)}>
             {L.cancel}
           </Button>
           <Button
@@ -130,8 +139,8 @@ export function ReportsPage() {
             block
             onClick={() => {
               ack.markDone();
-              setAsking(false);
-              void exportLedger();
+              if (asking) run(asking);
+              setAsking(null);
             }}
           >
             {L.taxLedgerIUnderstand}

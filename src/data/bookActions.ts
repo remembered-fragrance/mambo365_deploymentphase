@@ -14,6 +14,7 @@ import * as parties from '@mambo/core/partyActions';
 import * as rules from '@mambo/core/pricingRuleActions';
 import * as products from '@mambo/core/productActions';
 import * as receipts from '@mambo/core/receiptActions';
+import * as contracts from '@mambo/core/seasonContracts';
 import { emptyData, normalize } from '@mambo/core/normalize';
 import type { AppData } from '@mambo/core/types';
 import { derivedOps } from './derivedOps';
@@ -29,6 +30,8 @@ import {
   pricingRuleToPatch,
   productToInsert,
   productToPatch,
+  seasonContractToInsert,
+  seasonContractToPatch,
   transactionToInsert,
   transactionToPatch,
 } from './mappers';
@@ -61,6 +64,9 @@ export type BookActions = Pick<
   | 'addPricingRule'
   | 'updatePricingRule'
   | 'deletePricingRule'
+  | 'addSeasonContract'
+  | 'updateSeasonContract'
+  | 'deleteSeasonContract'
   | 'importData'
   | 'importSuppliers'
   | 'importReceipts'
@@ -217,6 +223,23 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
 
   deletePricingRule: (ruleId) => {
     commit(rules.deletePricingRule(book(), ruleId), [opSoftDelete('pricingRule', ruleId)]);
+  },
+
+  addSeasonContract: (input) => {
+    const result = contracts.addSeasonContract(book(), input);
+    commit(result.data, [
+      opInsert('seasonContract', result.contract.id, seasonContractToInsert(result.contract)),
+    ]);
+    return result.contract;
+  },
+
+  updateSeasonContract: (id, patch) => {
+    const next = contracts.updateSeasonContract(book(), id, patch);
+    commit(next, [opUpdate('seasonContract', id, seasonContractToPatch(patch))]);
+  },
+
+  deleteSeasonContract: (id) => {
+    commit(contracts.deleteSeasonContract(book(), id), [opSoftDelete('seasonContract', id)]);
   },
 
   // Chế độ xem là lựa chọn của từng máy, không đẩy lên máy chủ.

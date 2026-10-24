@@ -112,6 +112,9 @@ export const PercentIcon = (p: IconProps) => (
 export const ChartIcon = (p: IconProps) => (
   <Icon {...p} d="M4 20h16|M7 20V10|M12 20V4|M17 20v-7" />
 );
+export const ContractIcon = (p: IconProps) => (
+  <Icon {...p} d="M6 3h8l4 4v14H6z|M14 3v4h4|M9 12h6|M9 16l2 1.5 4-3" />
+);
 export const ToolIcon = (p: IconProps) => (
   <Icon {...p} d="M6 3h12v18H6z|M9 7h6|M9 11h.01M12 11h.01M15 11h.01M9 15h.01M12 15h.01M15 15h3" />
 );

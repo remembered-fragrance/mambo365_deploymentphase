@@ -198,7 +198,8 @@ describe('Gói Pro Đợt 1b — chỉ tiêu chất lượng, loại mủ, quy t
     const meta = { id: 'q', createdBy: 'u', createdAt: '', updatedAt: '', deletedAt: null };
     const rule = pricingRuleFromRecord({ ...meta, name: 'Xe', kind: 'logistics', productId: null, fixedAmount: -1, percentOfTotal: null, minWeightKg: null, appliesOnPickup: null, active: true } as never);
     expect(rule.qualityMetric).toBeUndefined();
-    const product = productFromRecord({ ...meta, name: 'Mủ', unit: 'kg', formulaType: 'rubberLatex', isSuggested: false, isActive: true, crop: null, lastPricePerUnit: null, group: null, qualityGrades: [], trackInventory: null, rubberKind: 'cuplump' });
+    const product = productFromRecord({ ...meta, name: 'Mủ', unit: 'kg', formulaType: 'rubberLatex', isSuggested: false, isActive: true, crop: null, lastPricePerUnit: null, group: null, qualityGrades: [], trackInventory: null, rubberKind: 'cuplump' } as never);
     expect(product.rubberKind).toBe('cuplump');
+    expect(product.greenRatio).toBeUndefined();
   });
 });

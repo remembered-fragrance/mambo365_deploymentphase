@@ -73,6 +73,12 @@ const PricingPage = lazy(() =>
 const ReportsPage = lazy(() =>
   import('@/features/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })),
 );
+const AnalyticsPage = lazy(() =>
+  import('@/features/reports/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
+);
+const ContractsPage = lazy(() =>
+  import('@/features/contracts/ContractsPage').then((m) => ({ default: m.ContractsPage })),
+);
 const UtilitiesPage = lazy(() =>
   import('@/features/utilities/UtilitiesPage').then((m) => ({ default: m.UtilitiesPage })),
 );
@@ -149,6 +155,8 @@ export function App() {
                         <Route path={ROUTES.products} element={<Gated route={ROUTES.products}><ProductsPage /></Gated>} />
                         <Route path={ROUTES.pricing} element={<Gated route={ROUTES.pricing}><PricingPage /></Gated>} />
                         <Route path={ROUTES.reports} element={<Gated route={ROUTES.reports}><ReportsPage /></Gated>} />
+                        <Route path={ROUTES.analytics} element={<Gated route={ROUTES.analytics}><AnalyticsPage /></Gated>} />
+                        <Route path={ROUTES.contracts} element={<Gated route={ROUTES.contracts}><ContractsPage /></Gated>} />
                         <Route path={ROUTES.utilities} element={<Gated route={ROUTES.utilities}><UtilitiesPage /></Gated>} />
                         <Route path={ROUTES.profile} element={<ProfilePage />} />
                         <Route path={ROUTES.plans} element={<Gated route={ROUTES.plans}><PlansPage /></Gated>} />

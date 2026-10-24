@@ -18,7 +18,7 @@ import { enqueue, type NewOp } from './queue';
 
 const RESCUE_KEY = 'thumua365_rescue';
 
-const COLLECTIONS = ['suppliers', 'buyers', 'products', 'transactions', 'drafts', 'notes', 'pricingRules'] as const;
+const COLLECTIONS = ['suppliers', 'buyers', 'products', 'transactions', 'drafts', 'notes', 'pricingRules', 'seasonContracts'] as const;
 type Collection = (typeof COLLECTIONS)[number];
 interface Row { readonly id: string }
 

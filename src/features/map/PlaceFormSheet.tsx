@@ -1,38 +1,73 @@
-import { type Place, PlaceInput } from '@mambo/contracts';
+import { PLACE_PRICES_LIMIT, type Place, PlaceInput, type PlacePrice } from '@mambo/contracts';
 import { useId, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Input } from '@/components/ui/Input';
+import { PlusIcon, TrashIcon } from '@/components/ui/icons';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { createPlace, placeErrorMessage, placeFieldErrors, removePlace, updatePlace } from '@/data/hooks/usePlaces';
+import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { PlanGate } from '../billing/PlanGate';
+import { parseMoney } from '../shared/money';
+import { NumberField } from '../shared/NumberField';
 import { formatLatLng, type LatLng, roundLatLng } from './geo';
+
+/** (V9) Một dòng giá thu mua đang gõ — giá giữ chuỗi như mọi ô số. */
+export interface PriceRow {
+  readonly product: string;
+  readonly price: string;
+  readonly unit: string;
+}
 
 export interface PlaceFormValues {
   readonly name: string;
   readonly address: string;
   readonly phone: string;
   readonly description: string;
+  readonly prices?: readonly PriceRow[];
 }
 
-export const EMPTY_FORM: PlaceFormValues = { name: '', address: '', phone: '', description: '' };
+export const EMPTY_FORM: PlaceFormValues = { name: '', address: '', phone: '', description: '', prices: [] };
 
 export const formFromPlace = (p: Place): PlaceFormValues => ({
   name: p.name,
   address: p.address ?? '',
   phone: p.phone ?? '',
   description: p.description ?? '',
+  prices: p.prices.map((x) => ({ product: x.product, price: String(x.price), unit: x.unit })),
 });
 
+/** Dòng bỏ trống tên hoặc giá thì bỏ qua — không bắt người dùng xoá dòng thừa mới lưu được. */
+export const pricesOf = (rows: readonly PriceRow[] = []): PlacePrice[] =>
+  rows
+    .filter((r) => r.product.trim() !== '' && r.price.trim() !== '')
+    .map((r) => ({ product: r.product.trim(), price: parseMoney(r.price), unit: r.unit || 'kg' }));
+
+/**
+ * Gửi `prices` chỉ khi có gói và bảng giá đổi so với lúc mở form: sửa mỗi tên thì giờ khai giá giữ nguyên (máy chủ
+ * ghi lại giờ mỗi lần nhận `prices`). Hết gói thì không gửi — giá cũ nằm yên, gia hạn là hiện lại.
+ */
+export const placeInput = (values: PlaceFormValues, position: LatLng, sendPrices: boolean): PlaceInput => {
+  const { prices: rows, ...rest } = values;
+  const prices = pricesOf(rows);
+  return { ...rest, ...roundLatLng(position), ...(sendPrices ? { prices: prices.length > 0 ? prices : null } : {}) };
+};
+
+export const pricesChanged = (values: PlaceFormValues, target: Place | null): boolean =>
+  JSON.stringify(pricesOf(values.prices)) !== JSON.stringify(target?.prices ?? []);
+
+type TextField = Exclude<keyof PlaceFormValues, 'prices'>;
 type FieldName = keyof PlaceFormValues | 'lat';
 type Errors = Partial<Record<FieldName, string>>;
 
-const FIELD_NAMES: readonly FieldName[] = ['name', 'address', 'phone', 'description', 'lat'];
+const FIELD_NAMES: readonly FieldName[] = ['name', 'address', 'phone', 'description', 'prices', 'lat'];
 const isFieldName = (key: PropertyKey): key is FieldName => FIELD_NAMES.some((f) => f === key);
 
 /** Lỗi kiểm ở máy (cùng schema với máy chủ) → lỗi từng ô; `lng` gộp vào dòng "Vị trí". */
 export const validatePlace = (values: PlaceFormValues, position: LatLng): Errors => {
-  const parsed = PlaceInput.safeParse({ ...values, ...roundLatLng(position) });
+  const parsed = PlaceInput.safeParse(placeInput(values, position, true));
   if (parsed.success) return {};
   const errors: Errors = {};
   for (const issue of parsed.error.issues) {
@@ -116,8 +151,19 @@ export function PlaceFormSheet({
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const paidPrices = useEntitlement('map:prices');
+  const { data } = useStore();
+  const productList = useId();
+  const rows = values.prices ?? [];
 
-  const set = (key: keyof PlaceFormValues) => (value: string) => {
+  const setRows = (next: readonly PriceRow[]) => {
+    onChange({ ...values, prices: next });
+    if (errors.prices) setErrors(({ prices: _gone, ...rest }) => rest);
+  };
+  const setRow = (index: number, patch: Partial<PriceRow>) =>
+    setRows(rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+
+  const set = (key: TextField) => (value: string) => {
     onChange({ ...values, [key]: value });
     // Đang sửa ô nào thì thôi báo lỗi ô đó — bấm lưu sẽ kiểm lại.
     if (errors[key]) {
@@ -144,7 +190,7 @@ export function PlaceFormSheet({
 
     setBusy(true);
     try {
-      const input = { ...values, ...roundLatLng(position) };
+      const input = placeInput(values, position, paidPrices && pricesChanged(values, target));
       onSaved(target ? await updatePlace(target.id, input) : await createPlace(input));
     } catch (err) {
       fail(err);
@@ -220,6 +266,57 @@ export function PlaceFormSheet({
             onChange={set('description')}
             error={errors.description}
           />
+
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 text-sm font-semibold text-ink-2">{L.placePrices}</legend>
+            {paidPrices ? (
+              <>
+                <p className="text-sm text-ink-3">{L.placePricesHint}</p>
+                {rows.map((row, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+                    <Input
+                      label={L.placePriceProduct}
+                      value={row.product}
+                      list={productList}
+                      maxLength={60}
+                      onChange={(e) => setRow(i, { product: e.target.value })}
+                    />
+                    <NumberField
+                      label={L.placePriceValue}
+                      value={row.price}
+                      unit={`₫/${row.unit}`}
+                      money
+                      max={1e9}
+                      onValueChange={(price) => setRow(i, { price })}
+                    />
+                    <Button
+                      className="min-h-11 px-3"
+                      aria-label={`${L.del} ${row.product}`}
+                      onClick={() => setRows(rows.filter((_, j) => j !== i))}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {rows.length < PLACE_PRICES_LIMIT && (
+                  <Button className="self-start" onClick={() => setRows([...rows, { product: '', price: '', unit: 'kg' }])}>
+                    <PlusIcon className="h-4 w-4" />
+                    {L.placePriceAdd}
+                  </Button>
+                )}
+                <datalist id={productList}>
+                  {data.products
+                    .filter((p) => p.isActive)
+                    .map((p) => (
+                      <option key={p.id} value={p.name} />
+                    ))}
+                </datalist>
+                {errors.prices ? <p className="text-sm font-medium text-alert">{errors.prices}</p> : null}
+              </>
+            ) : (
+              <PlanGate reason={L.gatePlacePrices} feature="map_prices" />
+            )}
+          </fieldset>
 
           {formError ? (
             <p role="alert" className="text-sm font-medium text-alert">

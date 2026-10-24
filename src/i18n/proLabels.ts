@@ -1,6 +1,7 @@
 /**
  * Nhãn của gói Pro Đợt 2 (KE_HOACH_GOI_PRO): nhật ký, sao kê công nợ, bảng kê thu mua, hình thức trả, báo cáo
- * tổng theo gói, vượt số chi nhánh. Gộp vào `L` ở `labels.ts`.
+ * tổng theo gói, vượt số chi nhánh. Đợt 3: phân tích, đối chiếu độ mủ, hợp đồng mùa vụ, giá trên bản đồ, tỷ lệ
+ * tươi / nhân, bộ hồ sơ kê khai. Gộp vào `L` ở `labels.ts`.
  */
 
 export const PRO_LABELS = {
@@ -13,18 +14,37 @@ export const PRO_LABELS = {
   featureStatementPaid: 'Gửi ảnh, PDF qua Zalo, Messenger',
   featureTaxLedger: 'Bảng kê thu mua (mẫu 02/TNDN)',
   featureTaxLedgerFree: 'Báo cáo thuế tổng',
-  featureTaxLedgerPaid: 'Xuất bảng kê thu mua theo kỳ từ sổ của bạn',
+  featureTaxLedgerPaid: 'Xuất bảng kê thu mua, bộ hồ sơ kê khai (mua vào, bán ra, chứng từ) theo kỳ',
   featurePayTransfer: 'Trả nông hộ bằng chuyển khoản',
   featurePayTransferFree: 'Ghi số tiền đã trả',
   featurePayTransferPaid: 'Ghi hình thức trả, chép nội dung chuyển khoản, nhắc khi trả tiền mặt từ 5 triệu/ngày',
   featureOrgReport: 'Báo cáo việc từng người, báo cáo tổng',
   featureOrgReportFree: 'Không',
+  featureAnalytics: 'Phân tích lời theo mặt hàng',
+  featureAnalyticsFree: 'Báo cáo thuế tổng',
+  featureAnalyticsPaid: 'Giá mua, bán bình quân, lời ước tính, so kỳ trước',
+  featureRubberReconcile: 'Đối chiếu độ mủ với nhà máy',
+  featureRubberReconcileFree: 'Không',
+  featureRubberReconcilePaid: 'Độ vựa đo so với độ nhà máy chốt, tiền chênh, độ từng hộ',
+  featureSeason: 'Hợp đồng mùa vụ',
+  featureSeasonFree: 'Không',
+  featureSeasonPaid: 'Hẹn lượng, app tự cộng phiếu cân vào, báo còn bao nhiêu',
+  featureMapPrices: 'Giá thu mua trên bản đồ',
+  featureMapPricesFree: 'Điểm trên bản đồ, không có giá',
+  featureMapPricesPaid: 'Khai giá hôm nay, nông dân xem trước khi chở hàng tới',
+  featureGreenRatio: 'Quy đổi cà phê tươi → nhân',
+  featureGreenRatioFree: 'Trừ hao hụt gõ tay',
 
   // ─── Bức tường ────────────────────────────────────────────────────────────
   gateAudit: 'Nhật ký vẫn được ghi đầy đủ ở mọi gói — gia hạn gói Pro để xem lại ai sửa, xoá gì.',
   gateStatement: 'Công nợ vẫn xem được trong app — gói Pro gửi được sao kê cho khách.',
   gateTaxLedger: 'Báo cáo thuế tổng vẫn xem, xuất được — gói Pro xuất thêm bảng kê thu mua theo kỳ.',
   gateReports: 'Sổ, phiếu, công nợ vẫn xem được trong app — gói Pro xem việc từng người và báo cáo tổng.',
+  gateAnalytics: 'Báo cáo thuế tổng vẫn xem được — gói Pro tính thêm lời ước tính theo từng mặt hàng, so kỳ trước.',
+  gateRubberReconcile: 'Phiếu mủ vẫn cân, vẫn tính tiền như thường — gói Pro đối chiếu độ vựa đo với độ nhà máy chốt.',
+  gateSeason: 'Hợp đồng đang có vẫn xem được tiến độ — gia hạn gói Pro để thêm hợp đồng mới.',
+  gatePlacePrices: 'Điểm trên bản đồ vẫn hiện bình thường — gói Pro khai được giá thu mua hôm nay cho nông dân xem.',
+  gateGreenRatio: 'Trừ hao hụt vẫn gõ tay được — gói Pro tự quy đổi cà phê tươi ra nhân theo tỷ lệ.',
 
   // ─── Nhật ký ──────────────────────────────────────────────────────────────
   navAudit: 'Nhật ký',
@@ -119,4 +139,93 @@ export const PRO_LABELS = {
   branchOverLimitMiddle: 'chi nhánh, gói hiện tại cho',
   branchOverLimitSuffix:
     '. Chi nhánh đang có vẫn dùng bình thường; muốn thêm chi nhánh mới thì lưu trữ bớt hoặc nâng gói.',
+
+  // ─── Phân tích (V8) ───────────────────────────────────────────────────────
+  navAnalytics: 'Phân tích',
+  analyticsSubtitle: 'Lời ước tính theo mặt hàng — tính ở máy từ sổ',
+  analyticsBought: 'Mua · giá bình quân',
+  analyticsSold: 'Bán · giá bình quân',
+  analyticsProfit: 'Lời ước tính',
+  analyticsPrevious: 'Kỳ trước',
+  analyticsChange: 'Chênh với kỳ này:',
+  analyticsByProduct: 'Theo mặt hàng',
+  analyticsNoProfit: 'Chưa đủ mua và bán',
+  analyticsEmpty: 'Kỳ này chưa có phiếu nào',
+  analyticsEstimateNote:
+    'Lời ước tính = lượng đã bán × (giá bán bình quân − giá mua bình quân) trong kỳ. Chưa trừ phí xe, chiết khấu của cả phiếu; không dùng để kê khai.',
+
+  // ─── Đối chiếu độ mủ (V21) ────────────────────────────────────────────────
+  rubberReconcileTitle: 'Đối chiếu độ mủ với nhà máy',
+  rubberReconcileNote:
+    'Độ vựa đo: trung bình trên phiếu mua. Độ nhà máy: trung bình trên phiếu bán (độ nhà máy chốt). Lệch dương là vựa đo cao hơn — đang trả dư cho hộ.',
+  rubberBoughtPercent: 'Độ vựa đo',
+  rubberSoldPercent: 'Độ nhà máy',
+  rubberGap: 'Lệch',
+  rubberDegree: 'độ',
+  rubberGapAmount: 'Tiền chênh',
+  rubberNeedBoth: 'Cần cả phiếu mua và bán',
+  rubberBySeller: 'Độ trung bình từng hộ',
+  rubberWetKg: 'Kg mủ',
+  rubberAvgPercent: 'Độ trung bình',
+
+  // ─── Bộ hồ sơ kê khai (V17) ───────────────────────────────────────────────
+  taxPackExport: 'Bộ hồ sơ kê khai',
+  taxPackPurchaseSheet: 'Mua vào',
+  taxPackSaleSheet: 'Bán ra',
+  taxPackReceiptSheet: 'Chứng từ',
+  taxPackKind: 'Loại',
+  taxPackParty: 'Người mua / bán',
+  taxPackPhotos: 'Số ảnh',
+  salesLedgerTitle: 'Bảng kê bán ra',
+  colBuyerName: 'Tên người mua',
+
+  // ─── Tỷ lệ tươi / nhân (V24) ──────────────────────────────────────────────
+  greenRatio: 'Tỷ lệ tươi / nhân',
+  greenRatioHint: 'Bao nhiêu kg cà phê tươi ra 1 kg nhân, ví dụ 4,5. Phiếu tự tính kg nhân, đơn giá là giá nhân.',
+  greenRatioYields: 'Ra',
+
+  // ─── Giá trên bản đồ (V9) ─────────────────────────────────────────────────
+  placePrices: 'Giá thu mua',
+  placePricesHint: 'Nông dân thấy giá này khi bấm vào điểm của bạn, kèm ngày khai. Để trống tên hoặc giá thì dòng đó bỏ qua.',
+  placePriceProduct: 'Mặt hàng',
+  placePriceValue: 'Giá',
+  placePriceAdd: 'Thêm mặt hàng',
+  placePricesToday: 'Giá thu mua hôm nay',
+  placePricesOn: 'Giá thu mua khai ngày',
+
+  // ─── Hợp đồng mùa vụ (V15) ────────────────────────────────────────────────
+  navContracts: 'Hợp đồng mùa vụ',
+  contractsSubtitle: 'Hẹn lượng với nông hộ, nhà máy — app tự cộng phiếu cân vào',
+  addContract: 'Thêm hợp đồng',
+  editContract: 'Sửa hợp đồng',
+  contractEdit: 'Sửa',
+  contractKind: 'Loại',
+  contractBuy: 'Mua của nông hộ',
+  contractSell: 'Bán cho người mua',
+  contractParty: 'Với ai',
+  contractOtherParty: 'Người ngoài sổ — gõ tên',
+  contractPartyName: 'Tên người',
+  contractProduct: 'Mặt hàng',
+  contractPickProduct: 'Chọn mặt hàng',
+  contractQuantity: 'Lượng hẹn',
+  contractPrice: 'Giá giữ (nếu có)',
+  contractStart: 'Từ ngày',
+  contractEnd: 'Đến ngày',
+  contractPartyRequired: 'Chọn hoặc gõ tên người',
+  contractProductRequired: 'Chọn mặt hàng',
+  contractQuantityRequired: 'Nhập lượng hẹn',
+  contractEndBeforeStart: 'Ngày kết thúc phải từ ngày bắt đầu trở đi',
+  contractsFilter: 'Hợp đồng',
+  contractsOpen: 'Đang chạy',
+  contractsClosed: 'Đã đóng',
+  contractsEmpty: 'Chưa có hợp đồng nào',
+  contractsEmptyHint: 'Ghi lại lượng đã hẹn với nông hộ hoặc nhà máy — mỗi phiếu cân cùng người, cùng mặt hàng tự cộng vào.',
+  contractDelivered: 'Đã giao',
+  contractRemaining: 'còn',
+  contractReceipts: 'phiếu',
+  contractClose: 'Đóng hợp đồng',
+  contractReopen: 'Mở lại',
+  contractExpired: 'Đã quá hạn',
+  contractDeleteTitle: 'Xoá hợp đồng này?',
+  contractToastPrefix: 'Hợp đồng',
 } as const;

@@ -5,7 +5,7 @@ import { Chip } from '@/components/ui/Chip';
 import { Select } from '@/components/ui/Select';
 import { TrashIcon } from '@/components/ui/icons';
 import { lineTotals } from '@mambo/core/calc';
-import { formatVnd } from '@mambo/core/format';
+import { formatQuantity, formatVnd } from '@mambo/core/format';
 import type { Product, ProductFormulaType, QualityMetric } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { METRIC_LABEL, METRIC_UNIT, qualityPercentLabel } from '../pricing/quality';
@@ -53,6 +53,9 @@ interface LineEditorProps {
 export function LineEditor({ line, products, canRemove, metrics = [], onChange, onRemove }: LineEditorProps) {
   const [showFormula, setShowFormula] = useState(false);
   const totals = lineTotals(toLine(line));
+  // V24: mặt hàng có tỷ lệ tươi / nhân thì gõ tỷ lệ, hao hụt tự suy. Giữ ô tỷ lệ cả khi đang xoá trắng để gõ lại.
+  const picked = products.find((p) => p.id === line.productId);
+  const ratioMode = line.formulaType === 'lossPercent' && (line.greenRatio !== '' || Boolean(picked?.greenRatio));
 
   return (
     <div className="card flex flex-col gap-3 p-3">
@@ -97,7 +100,21 @@ export function LineEditor({ line, products, canRemove, metrics = [], onChange, 
         />
       )}
 
-      {line.formulaType === 'lossPercent' && (
+      {ratioMode && (
+        <div>
+          <NumberField
+            label={L.greenRatio}
+            value={line.greenRatio}
+            max={RECEIPT_LIMITS.greenRatio}
+            onValueChange={(greenRatio) => onChange({ greenRatio })}
+          />
+          <p className="num mt-1 text-sm text-ink-3">
+            {L.greenRatioYields} {formatQuantity(totals.netWeight, line.unit)}
+          </p>
+        </div>
+      )}
+
+      {line.formulaType === 'lossPercent' && !ratioMode && (
         <NumberField
           label={L.lossPercent}
           value={line.loss}

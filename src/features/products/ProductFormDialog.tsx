@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PRODUCT_LIMITS } from '@mambo/contracts';
+import { PRODUCT_LIMITS, RECEIPT_LIMITS } from '@mambo/contracts';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
@@ -8,6 +8,7 @@ import type { Product, ProductFormulaType, RubberKind } from '@mambo/core/types'
 import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { L } from '@/i18n/labels';
 import { PlanGate } from '../billing/PlanGate';
+import { NumberField } from '../shared/NumberField';
 
 export interface ProductDraft {
   readonly id?: string;
@@ -16,6 +17,8 @@ export interface ProductDraft {
   readonly formulaType: ProductFormulaType;
   /** Chỉ có nghĩa với công thức cao su (V20). */
   readonly rubberKind: RubberKind;
+  /** (V24) Chỉ có nghĩa với công thức trừ hao hụt: kg tươi ra 1 kg nhân. Chuỗi như ô nhập; rỗng = không dùng. */
+  readonly greenRatio: string;
   readonly trackInventory: boolean;
   readonly isActive: boolean;
 }
@@ -25,6 +28,7 @@ export const emptyProduct = (): ProductDraft => ({
   unit: 'kg',
   formulaType: 'standard',
   rubberKind: 'latex',
+  greenRatio: '',
   trackInventory: true,
   isActive: true,
 });
@@ -35,6 +39,7 @@ export const draftFromProduct = (product: Product): ProductDraft => ({
   unit: product.unit,
   formulaType: product.formulaType,
   rubberKind: product.rubberKind ?? 'latex',
+  greenRatio: product.greenRatio ? String(product.greenRatio).replace('.', ',') : '',
   trackInventory: product.trackInventory !== false,
   isActive: product.isActive,
 });
@@ -67,6 +72,9 @@ export function ProductFormDialog({ open, initial, onSave, onClose }: ProductFor
   const paidRubber = useEntitlement('rubber:grades');
   // Mặt hàng đã là mủ tạp thì vẫn sửa được khi hết gói (không rút lại thứ đang dùng); chỉ khoá chọn mới.
   const canPickKind = paidRubber || initial.rubberKind === 'cuplump';
+  // V24 cùng gói với giá theo chất lượng; tỷ lệ đã đặt thì vẫn sửa được khi hết gói.
+  const paidQuality = useEntitlement('quality:pricing');
+  const canSetRatio = paidQuality || initial.greenRatio !== '';
 
   useEffect(() => {
     if (open) {
@@ -117,6 +125,20 @@ export function ProductFormDialog({ open, initial, onSave, onClose }: ProductFor
             />
           ) : (
             <PlanGate reason={L.gateRubberKind} feature="rubber" />
+          ))}
+        {draft.formulaType === 'lossPercent' &&
+          (canSetRatio ? (
+            <div>
+              <NumberField
+                label={L.greenRatio}
+                value={draft.greenRatio}
+                max={RECEIPT_LIMITS.greenRatio}
+                onValueChange={(greenRatio) => set({ greenRatio })}
+              />
+              <p className="mt-1 text-sm text-ink-3">{L.greenRatioHint}</p>
+            </div>
+          ) : (
+            <PlanGate reason={L.gateGreenRatio} feature="quality" />
           ))}
 
         <label className="flex min-h-11 items-center gap-2 text-sm font-medium text-ink-2">

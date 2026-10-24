@@ -54,10 +54,28 @@ export function OrgReportPage() {
   const { from, to } = monthRange(month);
   const paid = useEntitlement('reports:org');
   const report = useReportSummary(from, to, branchId || undefined, paid);
+  const branchName = branches.data?.branches.find((b) => b.id === branchId)?.name;
+
+  // D5: xuất đúng thứ đang xem (tháng, chi nhánh đang lọc).
+  const exportXlsx = async () => {
+    if (!report.data) return;
+    const { exportOrgReportXlsx } = await import('@/export/orgReportXlsx');
+    const title = `${L.navOrgReport} — ${month}${branchName ? ` — ${branchName}` : ''}`;
+    await exportOrgReportXlsx(report.data, title, `thumua365-bao-cao-tong-${month}.xlsx`);
+  };
 
   return (
     <PageContainer width="content">
-      <PageHeader title={L.navOrgReport} />
+      <PageHeader
+        title={L.navOrgReport}
+        actions={
+          paid && report.data ? (
+            <Button tone="primary" onClick={() => void exportXlsx()}>
+              {L.exportExcel}
+            </Button>
+          ) : undefined
+        }
+      />
       {!paid ? (
         <PlanGate reason={L.gateReports} feature="reports" />
       ) : (

@@ -15,6 +15,7 @@ import { useSubscription } from '@/data/hooks/useSubscription';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { QuotaWall } from '../billing/QuotaWall';
+import { contractNote } from '../contracts/contractDraft';
 import { HelpButton } from '../help/HelpButton';
 import { metricsForProduct } from '../pricing/quality';
 import { FirstReceiptCoach } from '../onboarding/FirstReceiptCoach';
@@ -134,7 +135,9 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
     if (!tx) return;
     setPayPartOpen(false);
     const copied = paying === 'transfer' && amountPaid > 0 ? ` · ${await copyTransferContent(tx.id)}` : '';
-    toast({ message: `${finishMessage(tx)}${copied}` });
+    // V15: phiếu giao vào hợp đồng mùa vụ đang mở thì nói luôn đã giao bao nhiêu, còn bao nhiêu.
+    const contract = contractNote(data, tx);
+    toast({ message: `${finishMessage(tx)}${copied}${contract ? ` · ${contract}` : ''}` });
     goToDraft(nextSession(sessions, receipt.draftId));
   };
 

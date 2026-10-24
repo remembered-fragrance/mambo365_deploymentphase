@@ -1,3 +1,4 @@
+import { formatDate, formatVnd } from '@mambo/core/format';
 import { formatPhoneVn, normalizePhone } from '@mambo/core/identifier';
 import type { Place, PlaceKind } from '@mambo/contracts';
 import type { Marker as LeafletMarker } from 'leaflet';
@@ -68,6 +69,32 @@ const PhoneLine = ({ phone }: { readonly phone: string }) => {
   );
 };
 
+/**
+ * (V9) Giá thu mua chủ điểm tự khai. Khai hôm nay thì nói "hôm nay"; khai từ trước thì nói ngày khai — giá nông sản
+ * đổi theo ngày, giá cũ mà không ghi ngày là dẫn người ta chở hàng tới sai giá.
+ */
+const PriceList = ({ place }: { readonly place: Place }) => {
+  const at = place.pricesUpdatedAt;
+  const today = at !== null && new Date(at).toDateString() === new Date().toDateString();
+  return (
+    <div className="rounded-lg border border-rule bg-paper px-2 py-1.5">
+      <p className={`text-xs font-semibold ${today ? 'text-in' : 'text-ink-3'}`}>
+        {today ? L.placePricesToday : at ? `${L.placePricesOn} ${formatDate(at)}` : L.placePrices}
+      </p>
+      <ul className="mt-0.5">
+        {place.prices.map((p) => (
+          <li key={p.product} className="flex justify-between gap-3">
+            <span className="text-ink-2">{p.product}</span>
+            <span className="num font-semibold text-ink">
+              {formatVnd(p.price)}/{p.unit}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 const PlacePopup = ({
   place,
   me,
@@ -88,6 +115,7 @@ const PlacePopup = ({
     {place.address ? <p className="text-ink-2">{place.address}</p> : null}
     {place.phone ? <PhoneLine phone={place.phone} /> : null}
     {place.description ? <p className="whitespace-pre-line text-ink-2">{place.description}</p> : null}
+    {place.prices.length > 0 ? <PriceList place={place} /> : null}
     {me ? (
       <p className="text-ink-3">
         {L.mapDistance} {formatDistance(distanceMeters(me, place))} {L.mapDistanceNote}

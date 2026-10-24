@@ -20,7 +20,10 @@ interface Props {
     | 'statement'
     | 'reports'
     | 'tax'
-    | 'pay';
+    | 'pay'
+    | 'analytics'
+    | 'map_prices'
+    | 'season';
 }
 
 /**
