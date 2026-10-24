@@ -23,6 +23,7 @@ export const productFromRecord = (rec: ProductRecord): Product => ({
   group: rec.group ?? undefined,
   qualityGrades: rec.qualityGrades.length ? rec.qualityGrades : undefined,
   trackInventory: rec.trackInventory ?? undefined,
+  rubberKind: rec.rubberKind ?? undefined,
 });
 
 export const paymentFromRecord = (rec: PaymentRecord): Payment => ({
@@ -85,6 +86,9 @@ export const pricingRuleFromRecord = (rec: PricingRuleRecord): PricingRule => ({
   minWeightKg: rec.minWeightKg ?? undefined,
   appliesOnPickup: rec.appliesOnPickup ?? undefined,
   active: rec.active,
+  // Máy chủ bản trước 0.22 không có hai trường này.
+  qualityMetric: rec.qualityMetric ?? undefined,
+  qualitySteps: rec.qualitySteps ?? undefined,
 });
 
 export const noteFromRecord = (rec: NoteRecord): Note => ({

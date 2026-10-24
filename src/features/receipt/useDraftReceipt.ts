@@ -10,8 +10,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { AUTOSAVE_MS } from '@/config';
 import { computeReceiptTotal, totalAdjustments } from '@mambo/core/calc';
+import { suggestAdjustments } from '@mambo/core/pricing';
 import type { DraftStatus, PriceAdjustment, Transaction, TransactionKind } from '@mambo/core/types';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { useStore } from '@/data/useStore';
+import { qualityRules } from '../pricing/quality';
 import { emptyLine, fromLine, isUsable, toLine, type LineDraft } from './lineDraft';
 import type { PartyChoice } from './namesakes';
 
@@ -27,6 +30,11 @@ export interface DraftReceiptState {
   readonly partyName: string;
   readonly lines: readonly LineDraft[];
   readonly adjustments: readonly PriceAdjustment[];
+  /**
+   * Khoản theo chất lượng (V19), tính lại từ dòng mỗi lần gõ — không lưu vào nháp, chỉ ghi lên phiếu lúc
+   * chốt. Hết gói thì rỗng: quy tắc vẫn giữ, chỉ thôi tự áp.
+   */
+  readonly qualityAdjustments: readonly PriceAdjustment[];
   readonly note: string;
   readonly attachmentIds: readonly string[];
   /** Phiếu lập theo đơn (BE5): đồng bộ lên thì đơn tự sang "Đã cân xong". */
@@ -85,11 +93,27 @@ export function useDraftReceipt(
   // đúng cái nháp vừa xoá và khách đó hiện lại trên thanh "Đang cân".
   const finished = useRef(false);
 
-  const linesTotal = useMemo(
-    () => computeReceiptTotal(lines.filter(isUsable).map(toLine)).total,
-    [lines],
+  const paidQuality = useEntitlement('quality:pricing');
+  const rules = useMemo(
+    () => (paidQuality ? qualityRules(data.pricingRules ?? []) : []),
+    [paidQuality, data.pricingRules],
   );
-  const adjustmentTotal = useMemo(() => totalAdjustments(adjustments), [adjustments]);
+  const usableLines = useMemo(() => lines.filter(isUsable).map(toLine), [lines]);
+  const receiptTotal = useMemo(() => computeReceiptTotal(usableLines), [usableLines]);
+  const linesTotal = receiptTotal.total;
+  const qualityAdjustments = useMemo(
+    () =>
+      suggestAdjustments(rules, {
+        lines: usableLines,
+        totalKg: receiptTotal.netWeight,
+        totalAmount: receiptTotal.total,
+      }),
+    [rules, usableLines, receiptTotal],
+  );
+  const adjustmentTotal = useMemo(
+    () => totalAdjustments([...adjustments, ...qualityAdjustments]),
+    [adjustments, qualityAdjustments],
+  );
   const canFinish = lines.some(isUsable);
 
   const save = (nextStatus: DraftStatus) =>
@@ -158,7 +182,7 @@ export function useDraftReceipt(
         lines: usable,
         amountPaid,
         payments: [],
-        adjustments: adjustments.length > 0 ? adjustments : undefined,
+        adjustments: adjustments.length + qualityAdjustments.length > 0 ? [...adjustments, ...qualityAdjustments] : undefined,
         creditTerms:
           dueDate && debt > 0
             ? [{ dueDate: new Date(dueDate).toISOString(), amount: debt }]
@@ -186,6 +210,7 @@ export function useDraftReceipt(
       counterpartyId,
       partyName,
       adjustments,
+      qualityAdjustments,
       adjustmentTotal,
       linesTotal,
       note,
@@ -204,6 +229,7 @@ export function useDraftReceipt(
     partyName,
     lines,
     adjustments,
+    qualityAdjustments,
     note,
     attachmentIds,
     orderId,

@@ -6,13 +6,16 @@ import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { PlusIcon, TrashIcon } from '@/components/ui/icons';
+import { formatVnd } from '@mambo/core/format';
 import { newId } from '@mambo/core/id';
 import type { TransactionKind } from '@mambo/core/types';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { useSubscription } from '@/data/hooks/useSubscription';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { QuotaWall } from '../billing/QuotaWall';
 import { HelpButton } from '../help/HelpButton';
+import { metricsForProduct } from '../pricing/quality';
 import { FirstReceiptCoach } from '../onboarding/FirstReceiptCoach';
 import { ROUTES } from '../shared/navItems';
 import { CounterpartyPicker } from './CounterpartyPicker';
@@ -58,6 +61,7 @@ interface WorkspaceProps {
 
 function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   const { data } = useStore();
+  const paidQuality = useEntitlement('quality:pricing');
   const { quota } = useSubscription();
   const navigate = useNavigate();
   const toast = useToast();
@@ -208,10 +212,26 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
               line={line}
               products={data.products}
               canRemove={receipt.lines.length > 1}
+              metrics={paidQuality ? metricsForProduct(data.pricingRules ?? [], line.productId) : undefined}
               onChange={(patch) => receipt.updateLine(line.id, patch)}
               onRemove={() => receipt.removeLine(line.id)}
             />
           ))}
+
+          {receipt.qualityAdjustments.length > 0 && (
+            <section aria-label={L.qualityAdjustments} className="card flex flex-col gap-1 p-3">
+              <p className="text-sm font-bold text-ink">{L.qualityAdjustments}</p>
+              <p className="text-xs text-ink-3">{L.qualityAdjustmentsHint}</p>
+              <ul aria-live="polite" className="mt-1 flex flex-col gap-1">
+                {receipt.qualityAdjustments.map((adj) => (
+                  <li key={adj.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-ink-2">{adj.label}</span>
+                    <span className="num font-semibold text-ink">{formatVnd(adj.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <Button block disabled={!receipt.canAddLine} onClick={receipt.addLine}>
             <PlusIcon className="h-4 w-4" />

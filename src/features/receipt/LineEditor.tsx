@@ -6,8 +6,9 @@ import { Select } from '@/components/ui/Select';
 import { TrashIcon } from '@/components/ui/icons';
 import { lineTotals } from '@mambo/core/calc';
 import { formatVnd } from '@mambo/core/format';
-import type { Product, ProductFormulaType } from '@mambo/core/types';
+import type { Product, ProductFormulaType, QualityMetric } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { METRIC_LABEL, METRIC_UNIT, qualityPercentLabel } from '../pricing/quality';
 import { NumberField } from '../shared/NumberField';
 import { applyProduct, toLine, type LineDraft } from './lineDraft';
 
@@ -18,10 +19,27 @@ const FORMULA_OPTIONS: readonly { value: ProductFormulaType; label: string }[] =
   { value: 'lossPercent', label: L.formulaLossPercent },
 ];
 
+/** Chỉ tiêu (V19) → ô chuỗi tương ứng trong `LineDraft`. */
+const METRIC_FIELD = {
+  bulkDensity: 'density',
+  moisturePercent: 'moisture',
+  impurityPercent: 'impurity',
+  kor: 'kor',
+} as const satisfies Partial<Record<QualityMetric, keyof LineDraft>>;
+
+const METRIC_MAX: Record<keyof typeof METRIC_FIELD, number> = {
+  bulkDensity: RECEIPT_LIMITS.quantity,
+  moisturePercent: RECEIPT_LIMITS.percent,
+  impurityPercent: RECEIPT_LIMITS.percent,
+  kor: RECEIPT_LIMITS.quantity,
+};
+
 interface LineEditorProps {
   readonly line: LineDraft;
   readonly products: readonly Product[];
   readonly canRemove: boolean;
+  /** Chỉ tiêu cần đo ở dòng này — có quy tắc giá theo chất lượng đọc tới (`metricsForProduct`). */
+  readonly metrics?: readonly QualityMetric[];
   readonly onChange: (patch: Partial<LineDraft>) => void;
   readonly onRemove: () => void;
 }
@@ -32,7 +50,7 @@ interface LineEditorProps {
  * Ô "Cách tính" GẬP LẠI: chọn mặt hàng là cách tính đã tự đúng rồi, hiện nó
  * thường trực chỉ là nhiễu trong 90% trường hợp.
  */
-export function LineEditor({ line, products, canRemove, onChange, onRemove }: LineEditorProps) {
+export function LineEditor({ line, products, canRemove, metrics = [], onChange, onRemove }: LineEditorProps) {
   const [showFormula, setShowFormula] = useState(false);
   const totals = lineTotals(toLine(line));
 
@@ -71,7 +89,7 @@ export function LineEditor({ line, products, canRemove, onChange, onRemove }: Li
 
       {line.formulaType === 'rubberLatex' && (
         <NumberField
-          label={L.qualityPercent}
+          label={qualityPercentLabel(line)}
           value={line.quality}
           unit="%"
           max={RECEIPT_LIMITS.percent}
@@ -88,6 +106,21 @@ export function LineEditor({ line, products, canRemove, onChange, onRemove }: Li
           onValueChange={(loss) => onChange({ loss })}
         />
       )}
+
+      {metrics.map((metric) => {
+        if (metric === 'qualityPercent') return null;
+        const field = METRIC_FIELD[metric];
+        return (
+          <NumberField
+            key={metric}
+            label={METRIC_LABEL[metric]}
+            value={line[field]}
+            unit={METRIC_UNIT[metric]}
+            max={METRIC_MAX[metric]}
+            onValueChange={(value) => onChange({ [field]: value })}
+          />
+        );
+      })}
 
       <NumberField
         label={L.pricePerUnit}

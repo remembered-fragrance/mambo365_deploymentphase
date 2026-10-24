@@ -110,3 +110,28 @@ describe('số vượt mức máy chủ nhận', () => {
     expect(toLine({ ...filled(), gross: '2000000000' }).grossWeight).toBe(1e9);
   });
 });
+
+describe('chỉ tiêu chất lượng và loại mủ (Gói Pro Đợt 1b)', () => {
+  it('ô rỗng là KHÔNG đo (undefined), khác với gõ 0', () => {
+    const line = toLine({ ...emptyLine(), moisture: '0' });
+    expect(line.moisturePercent).toBe(0);
+    expect(line.bulkDensity).toBeUndefined();
+    expect(line.kor).toBeUndefined();
+  });
+
+  it('gõ kiểu Việt, kẹp trong khoảng máy chủ nhận', () => {
+    const line = toLine({ ...emptyLine(), density: '520', moisture: '13,5', impurity: '150' });
+    expect([line.bulkDensity, line.moisturePercent, line.impurityPercent]).toEqual([520, 13.5, 100]);
+  });
+
+  it('mở lại nháp: chỉ tiêu và loại mủ về đúng ô', () => {
+    const draft = { ...emptyLine(), formulaType: 'rubberLatex' as const, rubberKind: 'cuplump' as const, quality: '55', density: '520', kor: '48' };
+    expect(fromLine(toLine(draft))).toMatchObject({ rubberKind: 'cuplump', quality: '55', density: '520', kor: '48', moisture: '' });
+  });
+
+  it('loại mủ đi theo mặt hàng, và chỉ giữ khi công thức là cao su', () => {
+    const muChen = { ...rubber, rubberKind: 'cuplump' as const };
+    expect(applyProduct(emptyLine(), muChen).rubberKind).toBe('cuplump');
+    expect(toLine({ ...applyProduct(emptyLine(), muChen), formulaType: 'standard' }).rubberKind).toBeUndefined();
+  });
+});

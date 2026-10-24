@@ -37,6 +37,13 @@ export const ROWS: readonly Row[] = [
     entitlement: 'members:add',
   },
   { what: L.featurePhotos, free: L.featurePhotosFree, paid: L.featurePhotosPaid, entitlement: 'attachments' },
+  { what: L.featureQuality, free: L.featureQualityFree, paid: L.featureQualityPaid, entitlement: 'quality:pricing' },
+  {
+    what: L.featureRubberKind,
+    free: L.featureRubberKindFree,
+    paid: L.featureRubberKindPaid,
+    entitlement: 'rubber:grades',
+  },
   { what: L.featureParties, free: L.featurePartiesDetail, paid: L.featurePartiesDetail },
   { what: L.featureDebts, free: L.featureDebtsDetail, paid: L.featureDebtsDetail },
   { what: L.featureExport, free: L.featureYes, paid: L.featureYes },

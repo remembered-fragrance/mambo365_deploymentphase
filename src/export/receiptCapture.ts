@@ -11,6 +11,7 @@ import { formatDateTime, formatQuantity, formatVnd } from '@mambo/core/format';
 import { cropMeta } from '@mambo/core/catalog';
 import type { CropType, Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { METRIC_LABEL, METRIC_UNIT, qualityPercentLabel } from '@/features/pricing/quality';
 
 const INK = '#1A1714';
 const INK_2 = '#554E44';
@@ -68,7 +69,11 @@ const lineBlock = (
     block.appendChild(row(L.tareWeight, formatQuantity(line.tareWeight ?? 0, line.unit)));
   }
   if (line.formulaType === 'rubberLatex') {
-    block.appendChild(row(L.qualityPercent, `${line.qualityPercent ?? 0}%`));
+    block.appendChild(row(qualityPercentLabel(line), `${line.qualityPercent ?? 0}%`));
+  }
+  for (const metric of ['bulkDensity', 'moisturePercent', 'impurityPercent', 'kor'] as const) {
+    const value = line[metric];
+    if (value !== undefined) block.appendChild(row(METRIC_LABEL[metric], `${value} ${METRIC_UNIT[metric]}`));
   }
   if (line.qualityGrade) block.appendChild(row(L.qualityGrade, line.qualityGrade));
   block.appendChild(row(L.netWeight, formatQuantity(lt.netWeight, line.unit)));

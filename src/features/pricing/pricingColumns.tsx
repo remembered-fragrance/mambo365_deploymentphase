@@ -5,6 +5,7 @@ import { formatVnd, formatWeight } from '@mambo/core/format';
 import { previewRule } from '@mambo/core/pricingPreview';
 import type { PricingRule, Product } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { METRIC_LABEL } from './quality';
 
 const KIND_LABEL: Record<PricingRule['kind'], string> = {
   logistics: L.ruleKindLogistics,
@@ -14,6 +15,7 @@ const KIND_LABEL: Record<PricingRule['kind'], string> = {
 
 /** Số tiền của quy tắc nói bằng dấu và chữ, không bắt đọc số âm. */
 const amountText = (rule: PricingRule): string => {
+  if (rule.qualityMetric) return `${rule.qualitySteps?.length ?? 0} ${L.qualityRuleSummary}`;
   const parts: string[] = [];
   if (rule.fixedAmount !== undefined) {
     parts.push(`${rule.fixedAmount > 0 ? '+' : '−'} ${formatVnd(Math.abs(rule.fixedAmount))}`);
@@ -47,7 +49,8 @@ export const pricingColumns = (
   {
     id: 'kind',
     header: L.ruleKind,
-    cell: (rule) => KIND_LABEL[rule.kind],
+    cell: (rule) =>
+      rule.qualityMetric ? `${L.ruleModeQuality}: ${METRIC_LABEL[rule.qualityMetric]}` : KIND_LABEL[rule.kind],
     mobile: 'secondary',
     hideBelow: 'lg',
   },
@@ -83,6 +86,8 @@ export const pricingColumns = (
     id: 'preview',
     header: L.rulePreviewTitle,
     cell: (rule) => {
+      // Quy tắc chất lượng phụ thuộc chỉ tiêu từng phiếu, đơn mẫu không nói được gì.
+      if (rule.qualityMetric) return '—';
       const { applies, amount } = previewRule(rule);
       return applies && amount !== 0 ? formatVnd(amount) : L.ruleNoEffect;
     },

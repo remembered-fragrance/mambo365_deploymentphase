@@ -4,14 +4,18 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import type { Product, ProductFormulaType } from '@mambo/core/types';
+import type { Product, ProductFormulaType, RubberKind } from '@mambo/core/types';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { L } from '@/i18n/labels';
+import { PlanGate } from '../billing/PlanGate';
 
 export interface ProductDraft {
   readonly id?: string;
   readonly name: string;
   readonly unit: string;
   readonly formulaType: ProductFormulaType;
+  /** Chỉ có nghĩa với công thức cao su (V20). */
+  readonly rubberKind: RubberKind;
   readonly trackInventory: boolean;
   readonly isActive: boolean;
 }
@@ -20,6 +24,7 @@ export const emptyProduct = (): ProductDraft => ({
   name: '',
   unit: 'kg',
   formulaType: 'standard',
+  rubberKind: 'latex',
   trackInventory: true,
   isActive: true,
 });
@@ -29,6 +34,7 @@ export const draftFromProduct = (product: Product): ProductDraft => ({
   name: product.name,
   unit: product.unit,
   formulaType: product.formulaType,
+  rubberKind: product.rubberKind ?? 'latex',
   trackInventory: product.trackInventory !== false,
   isActive: product.isActive,
 });
@@ -43,6 +49,11 @@ export const FORMULA_LABEL: Record<ProductFormulaType, string> = {
 
 const FORMULA_OPTIONS = Object.entries(FORMULA_LABEL).map(([value, label]) => ({ value, label }));
 
+const RUBBER_KIND_OPTIONS = [
+  { value: 'latex', label: L.rubberLatex },
+  { value: 'cuplump', label: L.rubberCuplump },
+];
+
 interface ProductFormDialogProps {
   readonly open: boolean;
   readonly initial: ProductDraft;
@@ -53,6 +64,9 @@ interface ProductFormDialogProps {
 export function ProductFormDialog({ open, initial, onSave, onClose }: ProductFormDialogProps) {
   const [draft, setDraft] = useState(initial);
   const [touched, setTouched] = useState(false);
+  const paidRubber = useEntitlement('rubber:grades');
+  // Mặt hàng đã là mủ tạp thì vẫn sửa được khi hết gói (không rút lại thứ đang dùng); chỉ khoá chọn mới.
+  const canPickKind = paidRubber || initial.rubberKind === 'cuplump';
 
   useEffect(() => {
     if (open) {
@@ -93,6 +107,17 @@ export function ProductFormDialog({ open, initial, onSave, onClose }: ProductFor
           options={FORMULA_OPTIONS}
           onValueChange={(value) => set({ formulaType: value as ProductFormulaType })}
         />
+        {draft.formulaType === 'rubberLatex' &&
+          (canPickKind ? (
+            <Select
+              label={L.rubberKind}
+              value={draft.rubberKind}
+              options={RUBBER_KIND_OPTIONS}
+              onValueChange={(value) => set({ rubberKind: value as RubberKind })}
+            />
+          ) : (
+            <PlanGate reason={L.gateRubberKind} feature="rubber" />
+          ))}
 
         <label className="flex min-h-11 items-center gap-2 text-sm font-medium text-ink-2">
           <input

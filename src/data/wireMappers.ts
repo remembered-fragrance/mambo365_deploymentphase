@@ -1,4 +1,4 @@
-import type { Buyer, DraftReceipt, Note, Payment, PricingRule, Product, Supplier, Transaction } from '@mambo/core/types';
+import type { Buyer, DraftReceipt, Note, Payment, PricingRule, Product, Supplier, Transaction, TransactionLine } from '@mambo/core/types';
 import { GUEST_BUYER_ID, GUEST_SUPPLIER_ID } from '@mambo/core/normalizeTransaction';
 import { freezeLineTotals } from '@mambo/core/calc';
 
@@ -44,6 +44,7 @@ export const productToInsert = (product: Product) => ({
   group: product.group?.trim() || null,
   qualityGrades: product.qualityGrades ? [...product.qualityGrades] : [],
   trackInventory: product.trackInventory ?? null,
+  rubberKind: product.rubberKind ?? null,
 });
 
 export const productToPatch = (patch: Partial<Product>) => {
@@ -58,6 +59,8 @@ export const productToPatch = (patch: Partial<Product>) => {
   if (patch.group !== undefined) result.group = patch.group ? patch.group.trim() : null;
   if (patch.qualityGrades !== undefined) result.qualityGrades = patch.qualityGrades ? [...patch.qualityGrades] : [];
   if (patch.trackInventory !== undefined) result.trackInventory = patch.trackInventory ?? null;
+  // `in`, không phải `!== undefined`: đổi mủ tạp về mủ nước / sang công thức khác là gỡ (gửi null).
+  if ('rubberKind' in patch) result.rubberKind = patch.rubberKind ?? null;
   return result;
 };
 
@@ -66,6 +69,15 @@ export const paymentToInsert = (payment: Payment, transactionId: string) => ({
   date: payment.date,
   amount: money(payment.amount),
   note: payment.note?.trim() || null,
+});
+
+/** V19 / V20 — chỉ gửi trường có giá trị: dòng không đo chỉ tiêu gửi lên y như trước. */
+const lineQualityToWire = (l: TransactionLine) => ({
+  ...(l.rubberKind ? { rubberKind: l.rubberKind } : {}),
+  ...(l.bulkDensity !== undefined ? { bulkDensity: l.bulkDensity } : {}),
+  ...(l.moisturePercent !== undefined ? { moisturePercent: l.moisturePercent } : {}),
+  ...(l.impurityPercent !== undefined ? { impurityPercent: l.impurityPercent } : {}),
+  ...(l.kor !== undefined ? { kor: l.kor } : {}),
 });
 
 export const transactionToInsert = (tx: Transaction) => ({
@@ -94,6 +106,7 @@ export const transactionToInsert = (tx: Transaction) => ({
       rawTotal: frozen.rawTotal ?? 0,
       roundedTotal: frozen.roundedTotal ?? 0,
       ...(frozen.qualityGrade ? { qualityGrade: frozen.qualityGrade } : {}),
+      ...lineQualityToWire(frozen),
     };
   }),
   creditTerms: tx.creditTerms
@@ -152,6 +165,7 @@ export const draftToInsert = (draft: DraftReceipt) => ({
     rawTotal: l.rawTotal,
     roundedTotal: l.roundedTotal,
     ...(l.qualityGrade ? { qualityGrade: l.qualityGrade } : {}),
+    ...lineQualityToWire(l),
   })),
   amountPaid: money(draft.amountPaid ?? 0),
   adjustments: adjustmentsToWire(draft.adjustments),
@@ -189,6 +203,8 @@ export const pricingRuleToInsert = (rule: PricingRule) => ({
   minWeightKg: rule.minWeightKg ?? null,
   appliesOnPickup: rule.appliesOnPickup ?? null,
   active: rule.active,
+  qualityMetric: rule.qualityMetric ?? null,
+  qualitySteps: rule.qualitySteps ? [...rule.qualitySteps] : null,
 });
 
 export const pricingRuleToPatch = (patch: Partial<PricingRule>) => {
@@ -201,6 +217,8 @@ export const pricingRuleToPatch = (patch: Partial<PricingRule>) => {
   if (patch.minWeightKg !== undefined) result.minWeightKg = patch.minWeightKg ?? null;
   if (patch.appliesOnPickup !== undefined) result.appliesOnPickup = patch.appliesOnPickup ?? null;
   if (patch.active !== undefined) result.active = patch.active;
+  if (patch.qualityMetric !== undefined) result.qualityMetric = patch.qualityMetric;
+  if (patch.qualitySteps !== undefined) result.qualitySteps = [...patch.qualitySteps];
   return result;
 };
 

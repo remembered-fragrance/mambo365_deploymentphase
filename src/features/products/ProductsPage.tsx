@@ -132,6 +132,8 @@ export function ProductsPage() {
       name: next.name.trim(),
       unit: next.unit.trim() || 'kg',
       formulaType: next.formulaType,
+      // Luôn có khoá: đổi về mủ nước / công thức khác thì gỡ trên máy chủ (`productToPatch`).
+      rubberKind: next.formulaType === 'rubberLatex' && next.rubberKind === 'cuplump' ? ('cuplump' as const) : undefined,
       trackInventory: next.trackInventory,
       isActive: next.isActive,
     };

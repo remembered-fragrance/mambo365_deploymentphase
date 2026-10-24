@@ -43,6 +43,12 @@ export const BILLING_LABELS = {
   featurePhotos: 'Ảnh phiếu cân, hoá đơn',
   featurePhotosFree: 'Xem ảnh cũ, không gửi ảnh mới',
   featurePhotosPaid: 'Chụp ảnh gắn vào phiếu, lưu trên mạng',
+  featureQuality: 'Giá theo chất lượng',
+  featureQualityFree: 'Ghi giá tay',
+  featureQualityPaid: 'Tự cộng / trừ theo dung trọng, độ ẩm, KOR, bậc độ mủ',
+  featureRubberKind: 'Mủ nước + mủ tạp (DRC) trên một phiếu',
+  featureRubberKindFree: 'Hàm lượng mủ như hiện nay',
+  featureRubberKindPaid: 'Có',
   featureYes: 'Có',
 
   // ─── Hạn mức ──────────────────────────────────────────────────────────────
@@ -58,6 +64,8 @@ export const BILLING_LABELS = {
   // ─── Việc cần gói (PlanGate) ────────────────────────────────────────────────
   gateMembers: 'Gói đã hết hạn — người đang có vẫn làm bình thường, gia hạn để thêm người mới.',
   gatePhotos: 'Gói đã hết hạn — ảnh cũ vẫn xem được, gia hạn để chụp ảnh mới.',
+  gateQuality: 'Giá tự tính theo chất lượng (dung trọng, độ ẩm, KOR, bậc độ mủ) là tính năng của gói Pro — quy tắc đã khai vẫn giữ nguyên.',
+  gateRubberKind: 'Mủ tạp tính theo DRC là tính năng của gói Pro — mặt hàng đang có vẫn cân được.',
   gateBranches: 'Gói đã hết hạn — chi nhánh đang có vẫn giữ nguyên, gia hạn để thêm hoặc dùng lại chi nhánh.',
   gateSeePlans: 'Xem gói',
   gateAskOwner: 'Báo chủ gia hạn gói để dùng tiếp.',

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseSyncOp } from '@mambo/contracts';
 import type { DraftReceipt, PriceAdjustment, Transaction } from '@mambo/core/types';
-import { draftFromRecord, transactionFromRecord } from '@/data/recordMappers';
-import { draftToInsert, draftToPatch, paymentToInsert, pricingRuleToInsert, pricingRuleToPatch, transactionToInsert } from '@/data/wireMappers';
+import { draftFromRecord, pricingRuleFromRecord, productFromRecord, transactionFromRecord } from '@/data/recordMappers';
+import { draftToInsert, draftToPatch, paymentToInsert, pricingRuleToInsert, pricingRuleToPatch, productToInsert, productToPatch, transactionToInsert } from '@/data/wireMappers';
 
 const ORDER = 'cccccccc-1111-4111-8111-111111111111';
 
@@ -138,5 +138,67 @@ describe('tiền lẻ có sẵn trong máy — làm tròn khi gửi, op không b
     expect(opOk('pricingRule', 'insert', insert)).toBe(true);
     expect(pricingRuleToInsert({ id: 'r2', name: 'Hao', kind: 'logistics', percentOfTotal: 1.5, active: true }).fixedAmount).toBeNull();
     expect(pricingRuleToPatch({ fixedAmount: 20_000.5 })).toEqual({ fixedAmount: 20_001 });
+  });
+});
+
+describe('Gói Pro Đợt 1b — chỉ tiêu chất lượng, loại mủ, quy tắc theo chỉ tiêu', () => {
+  const tieu = {
+    id: 'eeeeeeee-2222-4111-8111-111111111111',
+    productName: 'Tiêu',
+    unit: 'kg',
+    formulaType: 'netAfterTare' as const,
+    grossWeight: 1_010,
+    tareWeight: 10,
+    pricePerUnit: 150_000,
+    bulkDensity: 520,
+    moisturePercent: 14,
+  };
+  const muChen = {
+    id: 'eeeeeeee-3333-4111-8111-111111111111',
+    productName: 'Mủ chén',
+    unit: 'kg',
+    formulaType: 'rubberLatex' as const,
+    rubberKind: 'cuplump' as const,
+    grossWeight: 500,
+    qualityPercent: 55,
+    pricePerUnit: 30_000,
+  };
+
+  it('phiếu mang chỉ tiêu và loại mủ lên máy chủ; dòng không đo gì gửi y như trước', () => {
+    const lines = transactionToInsert(tx({ lines: [tieu, muChen, ...tx().lines] })).lines;
+    expect(lines[0]).toMatchObject({ bulkDensity: 520, moisturePercent: 14 });
+    expect(lines[1]).toMatchObject({ rubberKind: 'cuplump', qualityPercent: 55 });
+    expect(Object.keys(lines[2] ?? {})).not.toContain('bulkDensity');
+    expect(Object.keys(lines[2] ?? {})).not.toContain('rubberKind');
+    expect(check(tx({ lines: [tieu, muChen] })).ok).toBe(true);
+  });
+
+  it('nháp cũng mang chỉ tiêu', () => {
+    const draft = { id: 'd', status: 'draft' as const, supplierName: '', lines: [tieu], amountPaid: 0, createdAt: '', updatedAt: '' };
+    expect(draftToInsert(draft).lines[0]).toMatchObject({ bulkDensity: 520, moisturePercent: 14 });
+  });
+
+  it('quy tắc theo chỉ tiêu: gửi bảng mốc; quy tắc thường gửi null', () => {
+    const steps = [{ from: 500, amountPerUnit: 0 }, { from: 520, amountPerUnit: 1_500 }];
+    const insert = pricingRuleToInsert({ id: 'q', name: 'Dung trọng', kind: 'manual', active: true, qualityMetric: 'bulkDensity', qualitySteps: steps });
+    expect(insert).toMatchObject({ qualityMetric: 'bulkDensity', qualitySteps: steps });
+    const op = { opId: 'ffffffff-1111-4111-8111-111111111111', seq: 1, entity: 'pricingRule', kind: 'insert', recordId: 'bbbbbbbb-1111-4111-8111-111111111111', data: insert };
+    expect(parseSyncOp(op).ok).toBe(true);
+    expect(pricingRuleToInsert({ id: 'x', name: 'Xe', kind: 'logistics', active: true, fixedAmount: -1_000 })).toMatchObject({ qualityMetric: null, qualitySteps: null });
+    expect(pricingRuleToPatch({ qualitySteps: steps })).toEqual({ qualitySteps: steps });
+  });
+
+  it('mặt hàng: mủ tạp gửi lên; đổi về mủ nước thì gỡ (null), không đụng thì không gửi', () => {
+    expect(productToInsert({ id: 'p', name: 'Mủ chén', unit: 'kg', formulaType: 'rubberLatex', isSuggested: false, isActive: true, rubberKind: 'cuplump' }).rubberKind).toBe('cuplump');
+    expect(productToPatch({ rubberKind: undefined })).toEqual({ rubberKind: null });
+    expect(productToPatch({ name: 'Mủ chén' })).toEqual({ name: 'Mủ chén' });
+  });
+
+  it('kéo về: quy tắc và mặt hàng của máy chủ cũ (không có trường mới) vẫn đọc được', () => {
+    const meta = { id: 'q', createdBy: 'u', createdAt: '', updatedAt: '', deletedAt: null };
+    const rule = pricingRuleFromRecord({ ...meta, name: 'Xe', kind: 'logistics', productId: null, fixedAmount: -1, percentOfTotal: null, minWeightKg: null, appliesOnPickup: null, active: true } as never);
+    expect(rule.qualityMetric).toBeUndefined();
+    const product = productFromRecord({ ...meta, name: 'Mủ', unit: 'kg', formulaType: 'rubberLatex', isSuggested: false, isActive: true, crop: null, lastPricePerUnit: null, group: null, qualityGrades: [], trackInventory: null, rubberKind: 'cuplump' });
+    expect(product.rubberKind).toBe('cuplump');
   });
 });
