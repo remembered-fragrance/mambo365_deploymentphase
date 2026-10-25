@@ -21,10 +21,13 @@ interface PayDebtDialogProps {
  * phím số như màn tạo phiếu — hai chỗ ghi tiền mà gõ hai kiểu là cách nhanh
  * nhất để người dùng gõ sai một con số 0.
  */
-export function PayDebtDialog({ tx, side, onConfirm, onCancel }: PayDebtDialogProps) {
-  const [amount, setAmount] = useState('');
+export function PayDebtDialog({ tx, ...rest }: PayDebtDialogProps) {
+  // Ô tiền sống theo đúng một lần mở: đóng là mất, mở phiếu khác là ô mới — số gõ dở không theo sang phiếu khác.
+  return tx ? <PayDebtForm key={tx.id} tx={tx} {...rest} /> : null;
+}
 
-  if (!tx) return null;
+function PayDebtForm({ tx, side, onConfirm, onCancel }: PayDebtDialogProps & { readonly tx: Transaction }) {
+  const [amount, setAmount] = useState('');
 
   const { debt } = transactionTotals(tx);
   const paying = Math.min(parseMoney(amount), debt);
