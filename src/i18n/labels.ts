@@ -244,7 +244,7 @@ const BASE = {
   adjustmentsFull: 'Một phiếu tối đa 20 khoản cộng/trừ',
   draftNotSaved: 'Chưa lưu được — xem lại các ô vừa nhập',
   importNotBook: 'File này không phải file sổ THUMUA365 (thumua365-so.json). Sổ đang có vẫn giữ nguyên.',
-  importWhileSyncing:'Sổ của tổ chức nằm trên máy chủ nên không thay bằng file được. Đăng nhập trên máy mới là sổ tự về, kể cả khi gói đã hết hạn.',
+  importWhileSyncing: 'Sổ của tổ chức nằm trên máy chủ nên không thay bằng file được. Đăng nhập trên máy mới là sổ tự về, kể cả khi gói đã hết hạn.',
   rowPending: 'Chưa gửi',
   rowConflict: 'Cần xem lại',
 
