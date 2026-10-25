@@ -73,7 +73,7 @@ tests/e2e/       kịch bản chạy trên trình duyệt
 
 Nghiệp vụ tính tiền là gói `@mambo/core` (import `@mambo/core/<file>`), sửa ở
 [`packages/core` của repo BE](https://github.com/remembered-fragrance/Thumua365_BE/tree/master/packages/core) — không chép lại vào `src/`.
-Ba gói `@mambo/*` cài từ GitHub Release của repo BE, **cùng một số phiên bản** (hiện `v0.20.0`); nâng thì đọc
+Ba gói `@mambo/*` cài từ GitHub Release của repo BE, **cùng một số phiên bản** (hiện `v0.20.2`); nâng thì đọc
 `packages/contracts/CHANGELOG.md` bên đó trước — có bản phải nâng app trước, có bản phải deploy API trước.
 
 Ai được import ai: xem bảng ở [deploy_plan/README.md §3.1](deploy_plan/README.md).

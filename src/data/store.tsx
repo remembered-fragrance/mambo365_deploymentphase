@@ -34,6 +34,8 @@ const SYNC_INTERVAL_MS = 30_000;
 const IDLE_STATUS: SyncStatus = { loading: false, pendingCount: 0 };
 const NO_PERMISSIONS: readonly Permission[] = [];
 const NO_FEATURES: readonly Feature[] = [];
+const isBookFile = (value: unknown): boolean =>
+  typeof value === 'object' && value !== null && Array.isArray((value as { transactions?: unknown }).transactions);
 /** Bản ghi một thao tác chạm tới — lần trả tiền chạm cả phiếu cha (như `pendingRecordIds`). */
 const touchedIds = (op: NewOp): string[] => {
   const parentId = op.entity === 'payment' ? op.data?.transactionId : undefined;
@@ -469,6 +471,8 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
       importData: (payload) => {
         // Xem `importsFromFile`. Dữ liệu mẫu thì được — nó không bao giờ rời máy.
         if (!importsFromFile && !isDemoActive(activeKey)) throw new Error(L.importWhileSyncing);
+        // `normalize` biến file JSON bất kỳ thành sổ rỗng hợp lệ: chọn nhầm file là mất sổ. File sổ luôn có `transactions`.
+        if (!isBookFile(payload)) throw new Error(L.importNotBook);
         replaceBook(normalize(payload), false);
       },
       // Sổ trống mà con trỏ còn thì lần kéo sau không dựng lại sổ từ máy chủ.

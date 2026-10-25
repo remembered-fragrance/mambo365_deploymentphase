@@ -365,6 +365,22 @@ describe('dữ liệu mẫu và nạp file trên sổ đang đồng bộ', () =>
     expect(store.data.suppliers.some((s) => s.id === SERVER_SUPPLIER)).toBe(false);
   });
 
+  it('🔴 chọn nhầm file JSON không phải file sổ: báo lỗi, sổ giữ nguyên; file sổ thật thì nạp được', async () => {
+    act(() => demo.startDemo());
+    await settle();
+    const before = store.data.transactions.length;
+    expect(before).toBeGreaterThan(0);
+
+    expect(() => store.importData({ name: 'cau-hinh-may-in' })).toThrow(L.importNotBook);
+    expect(() => store.importData([1, 2, 3])).toThrow(L.importNotBook);
+    expect(store.data.transactions).toHaveLength(before);
+
+    act(() => store.importData({ transactions: [], suppliers: [{ id: SERVER_SUPPLIER, name: 'Từ file' }] }));
+    expect(store.data.suppliers.map((s) => s.name)).toEqual(['Từ file']);
+    act(() => demo.endDemo());
+    await settle();
+  });
+
   it('ghi trên dữ liệu mẫu không lên máy chủ; tắt mẫu thì sổ thật kéo về lại từ đầu', async () => {
     // Đã có `c-full` = đã kéo trọn sổ; không có con trỏ (hoặc con trỏ cũ) = trả cả sổ.
     net.pull.mockImplementation(({ cursor }: { cursor?: string } = {}) => Promise.resolve(cursor === 'c-full'

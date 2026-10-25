@@ -56,7 +56,9 @@ export function WelcomeScreen() {
       importData(JSON.parse(await file.text()) as unknown);
       toast({ message: L.importedToast });
     } catch (err) {
-      toast({ message: err instanceof Error ? err.message : String(err), tone: 'alert' });
+      // File không phải JSON: lỗi của trình duyệt là tiếng Anh, không nói được gì với người dùng.
+      const message = err instanceof SyntaxError ? L.importNotBook : err instanceof Error ? err.message : String(err);
+      toast({ message, tone: 'alert' });
     }
   };
 
