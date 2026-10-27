@@ -32,7 +32,11 @@ export function useTheme(): Theme {
   const theme = toTheme(data.settings.displayMode);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    // Thanh trạng thái điện thoại theo chế độ: Ban đêm mà thanh trên cùng vẫn xanh sáng thì chói. Lấy màu từ token.
+    const color = getComputedStyle(root).getPropertyValue(theme === 'night' ? '--color-card' : '--color-brand').trim();
+    if (color) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color);
   }, [theme]);
 
   const setTheme = useCallback(

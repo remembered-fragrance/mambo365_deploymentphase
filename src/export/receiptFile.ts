@@ -4,7 +4,7 @@
  */
 
 import type { Transaction } from '@mambo/core/types';
-import { captureReceipt } from './receiptCapture';
+import { captureReceipt, PDF_JPEG_QUALITY } from './receiptCapture';
 import { shareOrDownload, type ShareResult } from './downloadFile';
 
 const MARGIN_MM = 8;
@@ -21,7 +21,7 @@ export const canvasToPdfBlob = async (canvas: HTMLCanvasElement): Promise<Blob> 
     h = pageH - MARGIN_MM * 2;
     w = (canvas.width * h) / canvas.height;
   }
-  pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (pageW - w) / 2, MARGIN_MM, w, h);
+  pdf.addImage(canvas.toDataURL('image/jpeg', PDF_JPEG_QUALITY), 'JPEG', (pageW - w) / 2, MARGIN_MM, w, h);
   return pdf.output('blob');
 };
 

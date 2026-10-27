@@ -68,6 +68,8 @@ export default defineConfig(({ mode }) => {
           name: 'THUMUA365 — Sổ vựa',
           short_name: 'THUMUA365',
           description: 'Sổ thu mua nông sản — chạy được khi không có mạng',
+          // Plugin mặc định 'en'; TWA / app đã cài đọc ngôn ngữ ở đây.
+          lang: 'vi',
           theme_color: '#14663C',
           background_color: '#EDEAE3',
           display: 'standalone',

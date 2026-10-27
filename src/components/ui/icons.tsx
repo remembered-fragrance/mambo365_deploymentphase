@@ -130,6 +130,9 @@ export const CardIcon = (p: IconProps) => (
 export const UploadIcon = (p: IconProps) => (
   <Icon {...p} d="M12 16V4|M8 8l4-4 4 4|M4 18v2h16v-2" />
 );
+export const DownloadIcon = (p: IconProps) => (
+  <Icon {...p} d="M12 4v12|M8 12l4 4 4-4|M4 18v2h16v-2" />
+);
 export const GiftIcon = (p: IconProps) => (
   <Icon {...p} d="M4 10h16v10H4z|M4 7h16v3H4z|M12 7v13|M12 7c-3 0-4-3-2-3s2 3 2 3zm0 0c3 0 4-3 2-3s-2 3-2 3z" />
 );

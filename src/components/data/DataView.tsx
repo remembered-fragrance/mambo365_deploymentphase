@@ -113,7 +113,7 @@ export function DataView<TRow>({
       <ul className="flex flex-col gap-2 md:hidden">
         {ordered.map((row) => (
           <li key={getKey(row)}>
-            <RowCard row={row} columns={columns} caption={caption} onRowClick={onRowClick} />
+            <RowCard row={row} columns={columns} onRowClick={onRowClick} />
           </li>
         ))}
       </ul>
@@ -133,12 +133,10 @@ const ABOVE_STRETCH = '[&_a]:relative [&_button]:relative [&_.select-all]:relati
 function RowCard<TRow>({
   row,
   columns,
-  caption,
   onRowClick,
 }: {
   readonly row: TRow;
   readonly columns: readonly Column<TRow>[];
-  readonly caption: string;
   readonly onRowClick?: (row: TRow) => void;
 }) {
   const title = pickColumn(columns, 'title');
@@ -176,11 +174,12 @@ function RowCard<TRow>({
 
   if (!onRowClick) return <div className="relative card p-3">{body}</div>;
 
+  // Không đặt aria-label: tên đọc lấy từ chữ trong thẻ (người, ngày, tiền). Từng gắn tên bảng ⇒ thẻ nào cũng đọc
+  // là "Lịch sử giao dịch".
   return (
     <button
       type="button"
       onClick={() => onRowClick(row)}
-      aria-label={caption}
       className="card flex w-full items-center gap-2 p-3 text-left"
     >
       <span className="min-w-0 flex-1">{body}</span>

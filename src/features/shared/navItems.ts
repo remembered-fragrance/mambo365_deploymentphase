@@ -220,3 +220,12 @@ export const navGroups = (counts: NavCounts, access: Access): NavGroup[] => {
   // Nhóm rỗng (người cân không có Đối tác/Hàng hoá đầy đủ, nông dân) thì bỏ hẳn tiêu đề.
   return groups.filter((g) => g.items.length > 0);
 };
+
+/** Trang "Thêm" ở điện thoại: đúng các nhóm của sidebar, bỏ mục đã nằm trên thanh dưới (số huy hiệu vì thế không cần). */
+export const moreGroups = (access: Access): NavGroup[] => {
+  const counts = { drafts: 0, overdue: 0 };
+  const onBar = new Set(navItems(counts, access).map((item) => item.id));
+  return navGroups(counts, access)
+    .map((g) => ({ ...g, items: g.items.filter((item) => !onBar.has(item.id)) }))
+    .filter((g) => g.items.length > 0);
+};

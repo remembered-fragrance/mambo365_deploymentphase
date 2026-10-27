@@ -135,6 +135,7 @@ export const SCREEN_LABELS = {
   reportMonthTable: 'Từng tháng trong năm',
   colMonth: 'Tháng',
   exportExcel: 'Xuất Excel',
+  exportPdf: 'Xuất PDF',
   reportLegalTitle: 'Số liệu tham khảo',
   reportLegalBody:
     'Số liệu tổng hợp từ sổ của bạn, không phải tờ khai thuế. Bạn tự kiểm tra và chịu trách nhiệm khi dùng để kê khai thuế — nên đưa kế toán xem trước khi nộp.',

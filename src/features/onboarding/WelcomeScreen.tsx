@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { useToast } from '@/components/ui/Toast';
-import { PlusIcon, ReceiptIcon, ToolIcon } from '@/components/ui/icons';
+import { EyeIcon, PlusIcon, UploadIcon } from '@/components/ui/icons';
 import { useDemoMode } from '@/data/hooks/useDemoMode';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
@@ -56,7 +56,9 @@ export function WelcomeScreen() {
       importData(JSON.parse(await file.text()) as unknown);
       toast({ message: L.importedToast });
     } catch (err) {
-      toast({ message: err instanceof Error ? err.message : String(err), tone: 'alert' });
+      // File không phải JSON: lỗi của trình duyệt là tiếng Anh, không nói được gì với người dùng.
+      const message = err instanceof SyntaxError ? L.importNotBook : err instanceof Error ? err.message : String(err);
+      toast({ message, tone: 'alert' });
     }
   };
 
@@ -83,7 +85,7 @@ export function WelcomeScreen() {
           index="2"
           title={L.welcomeDemo}
           hint={L.welcomeDemoHint}
-          Icon={ReceiptIcon}
+          Icon={EyeIcon}
           onPick={() => {
             startDemo();
             toast({ message: L.demoStarted });
@@ -93,7 +95,7 @@ export function WelcomeScreen() {
           index="3"
           title={L.welcomeImport}
           hint={L.welcomeImportHint}
-          Icon={ToolIcon}
+          Icon={UploadIcon}
           onPick={() => fileInput.current?.click()}
         />}
       </div>

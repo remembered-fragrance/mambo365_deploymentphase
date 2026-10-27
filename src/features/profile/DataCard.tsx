@@ -24,8 +24,11 @@ export function DataCard() {
 
   const pickFile = async (file: File | undefined) => {
     if (!file) return;
-    const text = await file.text();
-    setPending(JSON.parse(text) as unknown);
+    try {
+      setPending(JSON.parse(await file.text()) as unknown);
+    } catch {
+      toast({ message: L.importNotBook, tone: 'alert' });
+    }
   };
 
   const applyFile = () => {

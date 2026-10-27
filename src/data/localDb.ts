@@ -90,6 +90,14 @@ interface LocalDbSchema extends DBSchema {
 
 let dbPromise: Promise<IDBPDatabase<LocalDbSchema>> | null = null;
 
+/**
+ * Xin trình duyệt đừng tự dọn sổ khi máy đầy bộ nhớ: phiếu chưa gửi chỉ nằm ở đây. Chrome tự quyết (app đã cài thì
+ * gần như luôn cho), không hỏi người dùng; trình duyệt không hỗ trợ thì thôi.
+ */
+export const keepBookOnDevice = (): void => {
+  void navigator.storage?.persist?.().catch(() => undefined);
+};
+
 export const openLocalDb = (): Promise<IDBPDatabase<LocalDbSchema>> => {
   if (dbPromise) return dbPromise;
   const opening = openDB<LocalDbSchema>(DB_NAME, DB_VERSION, {

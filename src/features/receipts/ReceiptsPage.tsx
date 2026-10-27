@@ -130,10 +130,11 @@ export function ReceiptsPage() {
     setParams(merged, { replace: true });
   };
 
-  const exportSelected = async () => {
+  const exportSelected = async (format: 'xlsx' | 'pdf') => {
     const chosen = data.transactions.filter((t) => selected.includes(t.id));
-    const { exportTransactionsXlsx } = await import('@/export/transactionsFile');
-    await exportTransactionsXlsx(chosen, 'thumua365-phieu.xlsx');
+    const file = await import('@/export/transactionsFile');
+    if (format === 'pdf') await file.exportTransactionsPdf(chosen, 'thumua365-phieu.pdf');
+    else await file.exportTransactionsXlsx(chosen, 'thumua365-phieu.xlsx');
   };
 
   return (
@@ -148,9 +149,12 @@ export function ReceiptsPage() {
               {L.filterButton}
             </Button>
             {selected.length > 0 && (
-              <Button tone="primary" onClick={exportSelected}>
-                {L.exportSelected} ({selected.length})
-              </Button>
+              <>
+                <Button tone="primary" onClick={() => void exportSelected('xlsx')}>
+                  {L.exportSelected} ({selected.length})
+                </Button>
+                <Button onClick={() => void exportSelected('pdf')}>{L.exportPdf}</Button>
+              </>
             )}
           </>
         }

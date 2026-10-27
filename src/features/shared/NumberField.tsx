@@ -34,7 +34,7 @@ interface NumberFieldProps {
  *
  * Trên thiết bị cảm ứng, chạm ô mở BÀN PHÍM SỐ chứ không phải bàn phím hệ
  * thống — phím 56px là lợi thế lớn nhất của app với tệp người dùng này. Quyết
- * định bằng `pointer: coarse`, không bằng bề rộng màn hình.
+ * định bằng kiểu con trỏ (`useCoarsePointer`), không bằng bề rộng màn hình.
  */
 export function NumberField({
   label,
