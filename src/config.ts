@@ -47,6 +47,12 @@ export const BANK_ACCOUNT_NUMBER = '102879806462';
 export const BANK_ACCOUNT_NAME = 'NGUYEN THE TAI';
 export const BANK_NAME = 'VietinBank';
 
+/**
+ * Từ khoá đứng đầu nội dung chuyển khoản. VietinBank chỉ báo biến động số dư cho SePay khi nội dung
+ * bắt đầu bằng `SEVQR` — thiếu nó thì tiền vẫn vào mà gói không tự mở. Đổi ngân hàng thì xem lại.
+ */
+export const BANK_MEMO_PREFIX = 'SEVQR';
+
 /** Chờ bao lâu sau lần gõ cuối thì tự lưu nháp (ms). */
 export const AUTOSAVE_MS = 700;
 
