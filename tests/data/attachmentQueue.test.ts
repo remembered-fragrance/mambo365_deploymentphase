@@ -46,6 +46,20 @@ describe('hàng đợi ảnh chứng từ', () => {
     expect(await queued()).toEqual(['a']);
   });
 
+  it('hết gói (PLAN_REQUIRED): ảnh nằm chờ, không tính lần thử — gia hạn bao lâu cũng không thành "ảnh kẹt"', async () => {
+    upload.mockRejectedValue(new ApiError('PLAN_REQUIRED', 402, 'x', undefined, { entitlement: 'attachments' }));
+    await putLocalAttachment('a', photo);
+    await queueAttachmentUpload('a', 'org-1', 'u-1');
+    for (let i = 0; i < MAX_PHOTO_TRIES + 1; i++) {
+      expect(await flushAttachments('org-1')).toEqual({ uploaded: 0, alerts: [] });
+    }
+    expect(await (await openLocalDb()).get('attachmentQueue', 'a')).toEqual({ orgId: 'org-1', userId: 'u-1', tries: 0 });
+
+    upload.mockResolvedValue(undefined);
+    expect(await flushAttachments('org-1')).toEqual({ uploaded: 1, alerts: [] });
+    expect(await queued()).toEqual([]);
+  });
+
   it('bị từ chối (sai loại / quá 3MB) hay không còn trong máy: bỏ khỏi hàng đợi, không kẹt ảnh sau', async () => {
     upload.mockRejectedValueOnce(new ApiError('VALIDATION_FAILED', 422, 'x')).mockResolvedValue(undefined);
     await putLocalAttachment('a', photo);

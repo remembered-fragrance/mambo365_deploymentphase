@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { todayRange, useMemberActivity } from '@/data/hooks/useOrg';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
 
-/** Ai làm gì hôm nay — chỉ chủ (`staff:manage`). Chi tiết theo tháng ở màn Nhân viên. */
+/** Ai làm gì hôm nay — chỉ chủ (`staff:manage`), cần gói (`reports:org`). Chi tiết theo tháng ở màn Nhân viên. */
 export function StaffTodayCard() {
   const { from, to } = todayRange();
-  const report = useMemberActivity(from, to);
+  const report = useMemberActivity(from, to, useEntitlement('reports:org'));
   if (!report.data) return null;
 
   const staff = report.data.members.filter((a) => a.member.role !== 'owner' && a.member.status === 'active');

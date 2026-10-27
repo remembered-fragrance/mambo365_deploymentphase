@@ -107,7 +107,7 @@ export const TERMS: LegalDoc = {
           ['Mục', 'Nội dung'],
           ['Nông dân', 'Miễn phí.'],
           ['Dùng thử (vựa, doanh nghiệp)', `${TRIAL_DAYS} ngày đầy đủ tính năng, tính từ lúc tạo vựa / doanh nghiệp. Không cần trả trước.`],
-          ['Gói miễn phí', `Sau dùng thử: ${FREE_RECEIPTS_PER_MONTH} phiếu mỗi tháng.`],
+          ['Gói miễn phí', `Sau dùng thử: ${FREE_RECEIPTS_PER_MONTH} phiếu mỗi tháng; công nợ, nông hộ và xuất file như gói trả phí. Không thêm người cân, chi nhánh hay ảnh chứng từ mới.`],
           ['Gói trả phí', `${PRICE_TEXT}. Giá đã hiện trong app trước khi bạn chuyển tiền.`],
           ['Cách trả', 'Chuyển khoản ngân hàng theo mã QR trong app, kèm đúng nội dung app đưa sẵn.'],
         ),
@@ -131,6 +131,7 @@ export const TERMS: LegalDoc = {
       title: '9. Khi hết hạn gói',
       blocks: [
         p(`Không khoá dữ liệu. Hết hạn, app còn đồng bộ thêm ${GRACE_DAYS} ngày kèm nhắc nhở, rồi chuyển về gói miễn phí. Bạn vẫn xem, tìm và xuất được toàn bộ sổ như thường.`),
+        p('Người cân, chi nhánh và ảnh đã có vẫn giữ nguyên: người cân vẫn đăng nhập và ghi phiếu trên máy, ảnh cũ vẫn xem được. Chỉ thêm người, thêm hoặc dùng lại chi nhánh và gửi ảnh mới là chờ gia hạn.'),
       ],
     },
     {
@@ -157,6 +158,7 @@ export const TERMS: LegalDoc = {
       blocks: [
         list(
           'App tính đúng theo con số bạn nhập. Nhập sai số cân, đơn giá, người bán thì kết quả sai — chúng tôi không chịu trách nhiệm về thiệt hại do sai sót nhập liệu.',
+          'Báo cáo thuế, bảng kê thu mua là số liệu tổng hợp từ sổ của bạn, không phải tờ khai và không được kiểm theo luật. Bạn tự kiểm tra, tự điền phần còn thiếu (CCCD, địa chỉ người bán) và chịu trách nhiệm khi dùng để kê khai thuế.',
           'Chúng tôi nỗ lực hợp lý để app luôn chạy, nhưng không cam kết 100% thời gian. Vì vậy app ghi vào máy trước, mất mạng vẫn dùng được, và luôn cho lưu sổ ra file.',
           'Trong phạm vi pháp luật cho phép, mức bồi thường tối đa bằng số tiền bạn đã trả trong 3 tháng gần nhất. Điều này không loại trừ trách nhiệm mà pháp luật về bảo vệ người tiêu dùng hay bảo vệ dữ liệu cá nhân không cho phép loại trừ.',
         ),

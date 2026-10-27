@@ -106,6 +106,7 @@ const isPermanent = (err: unknown): boolean =>
  * Đẩy ảnh đang chờ của tổ chức. 409 (đã lên từ lần trước) SDK coi là xong.
  *
  * - Mất mạng → dừng, giữ hàng đợi, không tính lần thử.
+ * - Hết gói (`PLAN_REQUIRED`, 0.21.0) → như mất mạng: ảnh nằm chờ, gia hạn xong tự lên (như `PLAN_EXPIRED` ở sync).
  * - Máy chủ lỗi tạm (401/403/429/5xx — B6: trước đây mọi 4xx thành "sai dữ liệu" và ảnh bị bỏ, chỉ còn trên máy
  *   chụp) → giữ ảnh, cộng `tries`, dừng lượt này. Đủ `MAX_PHOTO_TRIES` lần thì báo người dùng một lần; từ đó ảnh
  *   này lỗi không chặn các ảnh sau nữa, nhưng vẫn được thử lại mỗi lượt.
@@ -128,7 +129,7 @@ export const flushAttachments = async (orgId: string): Promise<PhotoFlush> => {
         if (isPermanent(err)) {
           alerts.push({ id, reason: 'rejected' });
         } else {
-          if (!(err instanceof ApiError)) return { uploaded, alerts };
+          if (!(err instanceof ApiError) || err.code === 'PLAN_REQUIRED') return { uploaded, alerts };
           const tries = triesOf(entry) + 1;
           await db.put('attachmentQueue', typeof entry === 'string' ? { orgId, tries } : { ...entry, tries }, id);
           if (tries === MAX_PHOTO_TRIES) alerts.push({ id, reason: 'stalled' });

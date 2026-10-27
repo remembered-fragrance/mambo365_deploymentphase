@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { formatDate, formatVnd } from '@mambo/core/format';
 import { formatPhoneVn, normalizePhone } from '@mambo/core/identifier';
-import type { AssignableRole, MemberActivity, MemberRole, OrgMember } from '@mambo/contracts';
+import { STAFF_LIMIT, type AssignableRole, type MemberActivity, type MemberRole, type OrgMember } from '@mambo/contracts';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -27,8 +27,10 @@ import {
   useMemberActivity,
   useMembers,
 } from '@/data/hooks/useOrg';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { MAX_PASSWORD_LENGTH } from '@/config';
 import { L } from '@/i18n/labels';
+import { PlanGate } from '../billing/PlanGate';
 import { passwordProblem } from '../shared/password';
 import { useAccess } from '../shared/useAccess';
 
@@ -81,6 +83,9 @@ function ActivityLine({ activity }: { readonly activity: MemberActivity | undefi
  * Quản lý nhân viên của chủ (FRONTEND §5.9): ai đang làm, mỗi người làm được gì trong tháng, thêm /
  * đổi vai trò / gỡ. Vựa chỉ thêm người cân (`staff`); doanh nghiệp thêm quản lý / nhân viên và gắn
  * chi nhánh. Người làm không tự rời được — chỉ chủ gỡ ra ở đây. Không có nút trên dòng của chủ và của chính mình.
+ * Hết gói thì không thêm (hay bật lại) người được; vựa có gói tối đa `STAFF_LIMIT.trader` người cân — máy chủ
+ * chặn y như vậy (PLAN_REQUIRED / MEMBER_LIMIT), ở đây chỉ khoá nút trước. Việc từng người (tháng, số liệu)
+ * cần `reports:org` (D3); hết gói thì danh sách người vẫn hiện, chỉ phần số liệu nằm sau `PlanGate`.
  */
 export function MembersPage() {
   const { orgType, can } = useAccess();
@@ -88,11 +93,13 @@ export function MembersPage() {
   const members = useMembers();
   const branches = useBranches(enterprise && can('branch:manage'));
   const toast = useToast();
+  const paid = useEntitlement('members:add');
+  const reports = useEntitlement('reports:org');
 
   const [month, setMonth] = useState(thisMonth);
   const [branchFilter, setBranchFilter] = useState('');
   const { from, to } = monthRange(month);
-  const activity = useMemberActivity(from, to);
+  const activity = useMemberActivity(from, to, reports);
 
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
@@ -106,6 +113,11 @@ export function MembersPage() {
 
   const liveBranches = (branches.data?.branches ?? []).filter((b) => !b.archived);
   const branchOptions = [{ value: '', label: L.memberBranchAll }, ...liveBranches.map((b) => ({ value: b.id, label: b.name }))];
+
+  const staffLimit = orgType ? STAFF_LIMIT[orgType] : undefined;
+  const staffCount = (members.data ?? []).filter((m) => m.status === 'active' && m.role !== 'owner').length;
+  const full = staffLimit !== undefined && staffCount >= staffLimit;
+  const addable = paid && !full;
 
   const byId = new Map((activity.data?.members ?? []).map((a) => [a.member.id, a]));
   const shown = (members.data ?? []).filter((m) => !branchFilter || m.branch?.id === branchFilter);
@@ -166,34 +178,55 @@ export function MembersPage() {
       <PageHeader
         title={L.navMembers}
         actions={
-          <Button tone="primary" onClick={() => setAdding(true)}>
-            <PlusIcon className="h-4 w-4" />
-            {L.memberAdd}
-          </Button>
+          addable && (
+            <Button tone="primary" onClick={() => setAdding(true)}>
+              <PlusIcon className="h-4 w-4" />
+              {L.memberAdd}
+            </Button>
+          )
         }
       />
       <div className="grid gap-4">
-        <Card>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input label={L.reportMonth} type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} />
-            {liveBranches.length > 0 && (
-              <Select
-                label={L.memberBranch}
-                value={branchFilter}
-                options={[{ value: '', label: L.memberFilterAll }, ...liveBranches.map((b) => ({ value: b.id, label: b.name }))]}
-                onValueChange={setBranchFilter}
-              />
-            )}
-          </div>
-        </Card>
+        {!paid ? (
+          <PlanGate reason={L.gateMembers} feature="members" />
+        ) : (
+          staffLimit !== undefined && (
+            <p className="text-sm text-ink-2">
+              <span className="num font-bold text-ink">
+                {staffCount} / {staffLimit}
+              </span>{' '}
+              {L.staffUsed}
+              {full && ` — ${L.staffFull}`}
+            </p>
+          )
+        )}
+        {!reports ? (
+          <PlanGate reason={L.gateReports} feature="reports" />
+        ) : (
+          <>
+            <Card>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input label={L.reportMonth} type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} />
+                {liveBranches.length > 0 && (
+                  <Select
+                    label={L.memberBranch}
+                    value={branchFilter}
+                    options={[{ value: '', label: L.memberFilterAll }, ...liveBranches.map((b) => ({ value: b.id, label: b.name }))]}
+                    onValueChange={setBranchFilter}
+                  />
+                )}
+              </div>
+            </Card>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Kpi label={L.membersActive} value={`${working.length} ${L.membersPeople}`} />
-          <Kpi label={L.membersReceipts} value={String(sum((a) => receiptCount(a)))} />
-          <Kpi label={L.membersBought} value={formatVnd(sum((a) => a.receipts.purchase.amount))} />
-          <Kpi label={L.membersPayments} value={String(sum((a) => a.payments.count))} />
-        </div>
-        {activity.error && <p className="text-sm text-alert">{L.memberActivityFailed}</p>}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <Kpi label={L.membersActive} value={`${working.length} ${L.membersPeople}`} />
+              <Kpi label={L.membersReceipts} value={String(sum((a) => receiptCount(a)))} />
+              <Kpi label={L.membersBought} value={formatVnd(sum((a) => a.receipts.purchase.amount))} />
+              <Kpi label={L.membersPayments} value={String(sum((a) => a.payments.count))} />
+            </div>
+            {activity.error && <p className="text-sm text-alert">{L.memberActivityFailed}</p>}
+          </>
+        )}
 
         {members.loading && !members.data ? (
           <Skeleton rows={3} label={L.loading} />
@@ -209,9 +242,11 @@ export function MembersPage() {
             description={L.memberAddHint}
             icon="👥"
             action={
-              <Button tone="primary" onClick={() => setAdding(true)}>
-                {L.memberAdd}
-              </Button>
+              addable && (
+                <Button tone="primary" onClick={() => setAdding(true)}>
+                  {L.memberAdd}
+                </Button>
+              )
             }
           />
         ) : (

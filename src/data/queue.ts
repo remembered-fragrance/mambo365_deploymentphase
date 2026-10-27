@@ -25,6 +25,7 @@ export const TABLE_TO_ENTITY: Readonly<Record<string, SyncEntity>> = {
   drafts: 'draft',
   transactions: 'transaction',
   payments: 'payment',
+  season_contracts: 'seasonContract',
 };
 
 export const ENTITY_TO_TABLE: Readonly<Record<SyncEntity, TableName>> = {
@@ -36,6 +37,7 @@ export const ENTITY_TO_TABLE: Readonly<Record<SyncEntity, TableName>> = {
   draft: 'drafts',
   transaction: 'transactions',
   payment: 'payments',
+  seasonContract: 'season_contracts',
 };
 
 export interface NewOp {

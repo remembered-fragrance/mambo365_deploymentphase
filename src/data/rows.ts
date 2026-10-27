@@ -151,6 +151,7 @@ export const TABLES = [
   'drafts',
   'pricing_rules',
   'notes',
+  'season_contracts',
 ] as const;
 
 export type TableName = (typeof TABLES)[number];

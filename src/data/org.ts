@@ -3,6 +3,8 @@
  */
 
 import type {
+  AuditQuery,
+  AuditResult,
   MemberActivityReport,
   OrgBranch,
   OrgBranchCreateInput,
@@ -42,6 +44,9 @@ export const reportSummary = (from: string, to: string, branchId?: string): Prom
 
 export const memberActivity = (from: string, to: string): Promise<MemberActivityReport> => api.reports.members({ from, to });
 
+/** Nhật ký sửa, xoá (V6) — chỉ chủ, cần gói `audit:view`. Mới nhất trước, `cursor` null = hết. */
+export const listAudit = (query: AuditQuery): Promise<AuditResult> => api.audit.list(query);
+
 /** Câu báo lỗi cho màn Nhân viên / Chi nhánh — rẽ theo `details.reason`, rồi theo `code`. */
 export const orgErrorMessage = (err: unknown): string => {
   if (err instanceof ApiError) {
@@ -49,6 +54,8 @@ export const orgErrorMessage = (err: unknown): string => {
     if (reason === 'ACCOUNT_EXISTS') return L.memberAccountExists;
     if (reason === 'ALREADY_MEMBER') return L.memberAlreadyIn;
     if (err.code === 'BRANCH_LIMIT') return `${L.branchLimit} ${String(err.details?.limit ?? '')}`.trim();
+    if (err.code === 'MEMBER_LIMIT') return `${L.memberLimit} ${String(err.details?.limit ?? '')}`.trim();
+    if (err.code === 'PLAN_REQUIRED') return L.planRequired;
     if (err.code === 'VALIDATION_FAILED') {
       // `fields` = { tên trường: câu lỗi } — câu để hiện cho người dùng. Không có `fields`: lưu trữ chi nhánh còn người gắn.
       const first = Object.values((err.details?.fields as Record<string, unknown> | undefined) ?? {})[0];

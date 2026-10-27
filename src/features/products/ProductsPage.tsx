@@ -14,6 +14,7 @@ import type { Product } from '@mambo/core/types';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { HelpButton } from '../help/HelpButton';
+import { greenRatioOf } from '../receipt/lineDraft';
 import { ROUTES } from '../shared/navItems';
 import { useAccess } from '../shared/useAccess';
 import { useAttempt } from '../shared/useAttempt';
@@ -132,6 +133,10 @@ export function ProductsPage() {
       name: next.name.trim(),
       unit: next.unit.trim() || 'kg',
       formulaType: next.formulaType,
+      // Luôn có khoá: đổi về mủ nước / công thức khác thì gỡ trên máy chủ (`productToPatch`).
+      rubberKind: next.formulaType === 'rubberLatex' && next.rubberKind === 'cuplump' ? ('cuplump' as const) : undefined,
+      // Như rubberKind: luôn có khoá, tỷ lệ không hợp lệ / đổi công thức là gỡ.
+      greenRatio: greenRatioOf(next),
       trackInventory: next.trackInventory,
       isActive: next.isActive,
     };

@@ -18,6 +18,7 @@ import { MAP_LABELS } from './mapLabels';
 import { ONBOARDING_LABELS } from './onboardingLabels';
 import { ORDER_LABELS } from './orderLabels';
 import { ORG_LABELS } from './orgLabels';
+import { PRO_LABELS } from './proLabels';
 import { ROLE_LABELS } from './roleLabels';
 import { SCREEN_LABELS } from './screenLabels';
 
@@ -118,6 +119,7 @@ const BASE = {
   taxTotalPurchase: 'Tổng chi mua',
   taxTotalSale: 'Tổng doanh thu bán',
   taxGrossProfit: 'Tạm tính lời',
+  taxNoSaleYet: 'Chưa có phiếu bán',
   taxPurchaseCount: 'Số phiếu mua',
   taxSaleCount: 'Số phiếu bán',
 
@@ -139,7 +141,7 @@ const BASE = {
   photoFull: 'Đủ số ảnh cho một phiếu rồi',
   photoSaveFailed: 'Chưa lưu được ảnh này vào máy. Thử chụp lại, hoặc chọn ảnh khác.',
   removePhoto: 'Bỏ ảnh này',
-  sendZalo: 'Gửi Zalo',
+  sendZalo: 'Chia sẻ',
   sendImage: 'Gửi ảnh phiếu',
   savePdf: 'Lưu PDF',
   receiptCopied: 'Đã chép nội dung phiếu. Mở Zalo, dán vào tin nhắn là gửi được.',
@@ -352,6 +354,7 @@ export const L = {
   ...ORDER_LABELS,
   ...ORG_LABELS,
   ...MAP_LABELS,
+  ...PRO_LABELS,
 } as const;
 
 /** Phụ đề giải thích cho các thuật ngữ buộc phải giữ. */

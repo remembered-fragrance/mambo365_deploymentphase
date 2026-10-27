@@ -89,5 +89,6 @@ export const ROLE_LABELS = {
   // ─── Không có quyền ───────────────────────────────────────────────────────
   noAccessTitle: 'Bạn chưa có quyền vào mục này',
   noAccessHint: 'Mục này dành cho chủ hoặc quản lý. Nhờ chủ vựa / doanh nghiệp mở quyền nếu cần.',
+  noAccessFarmerHint: 'Mục này dành cho sổ của vựa và doanh nghiệp, tài khoản nông dân không dùng đến.',
   noAccessHome: 'Về trang chủ',
 } as const;

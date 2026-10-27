@@ -6,15 +6,22 @@ import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { PlusIcon, TrashIcon } from '@/components/ui/icons';
+import { formatVnd } from '@mambo/core/format';
+import { cashPaidOnDay, needsCashReminder } from '@mambo/core/cashReminder';
 import { newId } from '@mambo/core/id';
-import type { TransactionKind } from '@mambo/core/types';
+import type { PaymentMethod, TransactionKind } from '@mambo/core/types';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { useSubscription } from '@/data/hooks/useSubscription';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { QuotaWall } from '../billing/QuotaWall';
+import { contractNote } from '../contracts/contractDraft';
 import { HelpButton } from '../help/HelpButton';
+import { metricsForProduct } from '../pricing/quality';
 import { FirstReceiptCoach } from '../onboarding/FirstReceiptCoach';
+import { CashReminderDialog } from '../shared/CashReminderDialog';
 import { ROUTES } from '../shared/navItems';
+import { copyTransferContent } from '../shared/payMethod';
 import { CounterpartyPicker } from './CounterpartyPicker';
 import { discardConsequence, nextSession } from './draftSessions';
 import { finishMessage } from './finishText';
@@ -58,14 +65,28 @@ interface WorkspaceProps {
 
 function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   const { data } = useStore();
+  const paidQuality = useEntitlement('quality:pricing');
   const { quota } = useSubscription();
   const navigate = useNavigate();
   const toast = useToast();
   const receipt = useDraftReceipt(draftId, kind);
+  // Khoản nhận từ lời mời của quy tắc nằm ở khối "Theo quy tắc giá", không lặp lại ở ô cộng / trừ gõ tay.
+  const acceptedStored = receipt.adjustments.filter((a) => a.ruleId);
+  const typed = receipt.adjustments.filter((a) => !a.ruleId);
+  const accepted = receipt.acceptedAdjustments;
   const [payPartOpen, setPayPartOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   /** Lần bấm chốt đang chờ người dùng trả lời "người này hay người mới?" (B3). */
   const [askParty, setAskParty] = useState<{ readonly amountPaid: number; readonly dueDate?: string } | null>(null);
+  // V13: gói Pro ghi hình thức trả cho người bán (phiếu mua); tiền mặt từ 5 triệu/ngày thì nhắc trước khi chốt.
+  const payQr = useEntitlement('pay:qr') && kind === 'purchase';
+  const [method, setMethod] = useState<PaymentMethod>('cash');
+  const [cashAsk, setCashAsk] = useState<{
+    readonly amountPaid: number;
+    readonly dueDate?: string;
+    readonly party?: PartyChoice;
+    readonly partyId?: string;
+  } | null>(null);
   const namesakes = useMemo(
     () => namesakesOf(data, kind, receipt.partyName, receipt.counterpartyId),
     [data, kind, receipt.partyName, receipt.counterpartyId],
@@ -98,7 +119,8 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
     }
   };
 
-  const finish = (amountPaid: number, dueDate?: string, party?: PartyChoice) => {
+  /** `paidBy`: hình thức đã chốt qua hộp nhắc tiền mặt — có rồi thì không hỏi lại. */
+  const finish = async (amountPaid: number, dueDate?: string, party?: PartyChoice, paidBy?: PaymentMethod) => {
     // Gõ tên trùng người đã có mà chưa chọn ai: hỏi trước, không tự gộp vào người cũ (B3).
     if (!party && namesakes.length > 0) {
       setPayPartOpen(false);
@@ -106,10 +128,20 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
       return;
     }
     setAskParty(null);
-    const tx = attempt(() => receipt.finish(amountPaid, dueDate, party));
+    const partyId = party && 'id' in party ? party.id : party && 'asNew' in party ? undefined : receipt.counterpartyId;
+    if (payQr && !paidBy && needsCashReminder(data, partyId, amountPaid, method)) {
+      setPayPartOpen(false);
+      setCashAsk({ amountPaid, dueDate, party, partyId });
+      return;
+    }
+    const paying = payQr ? (paidBy ?? method) : undefined;
+    const tx = attempt(() => receipt.finish(amountPaid, dueDate, party, paying));
     if (!tx) return;
     setPayPartOpen(false);
-    toast({ message: finishMessage(tx) });
+    const copied = paying === 'transfer' && amountPaid > 0 ? ` · ${await copyTransferContent(tx.id)}` : '';
+    // V15: phiếu giao vào hợp đồng mùa vụ đang mở thì nói luôn đã giao bao nhiêu, còn bao nhiêu.
+    const contract = contractNote(data, tx);
+    toast({ message: `${finishMessage(tx)}${copied}${contract ? ` · ${contract}` : ''}` });
     goToDraft(nextSession(sessions, receipt.draftId));
   };
 
@@ -208,10 +240,66 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
               line={line}
               products={data.products}
               canRemove={receipt.lines.length > 1}
+              // Phiếu bán không áp quy tắc giá nên cũng không hỏi chỉ tiêu.
+              metrics={paidQuality && kind !== 'sale' ? metricsForProduct(data.pricingRules ?? [], line.productId) : undefined}
               onChange={(patch) => receipt.updateLine(line.id, patch)}
               onRemove={() => receipt.removeLine(line.id)}
             />
           ))}
+
+          {(receipt.ruleAdjustments.length > 0 || accepted.length > 0 || receipt.offeredAdjustments.length > 0) && (
+            <section aria-label={L.ruleAdjustments} className="card flex flex-col gap-1 p-3">
+              <p className="text-sm font-bold text-ink">{L.ruleAdjustments}</p>
+              <p className="text-xs text-ink-3">{L.ruleAdjustmentsHint}</p>
+              <ul aria-live="polite" className="mt-1 flex flex-col gap-1">
+                {receipt.ruleAdjustments.map((adj) => (
+                  <li key={adj.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-ink-2">{adj.label}</span>
+                    <span className="num font-semibold text-ink">{formatVnd(adj.amount)}</span>
+                  </li>
+                ))}
+                {accepted.map((adj) => (
+                  <li key={adj.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-ink-2">{adj.label}</span>
+                    {adj.amount === 0 ? (
+                      <span className="text-xs text-ink-3">{L.ruleNotMet}</span>
+                    ) : (
+                      <span className="num font-semibold text-ink">{formatVnd(adj.amount)}</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => receipt.setAdjustments(receipt.adjustments.filter((a) => a.id !== adj.id))}
+                      aria-label={`${L.del} ${adj.label}`}
+                      className="text-sm font-semibold text-alert"
+                    >
+                      {L.del}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {receipt.offeredAdjustments.length > 0 && (
+                <>
+                  <p className="mt-2 text-xs text-ink-3">{L.ruleOffersHint}</p>
+                  {receipt.offeredAdjustments.map((offer) => (
+                    <Button
+                      key={offer.adjustment.id}
+                      block
+                      className="py-2"
+                      disabled={receipt.adjustmentsFull}
+                      onClick={() => receipt.acceptOffer(offer)}
+                    >
+                      <PlusIcon className="h-4 w-4 shrink-0" />
+                      {/* Xuống dòng, không cắt chữ: tên quy tắc dài mà ép một dòng thì cả màn cuộn ngang ở 390px. */}
+                      <span className="flex-1 text-left">
+                        {offer.adjustment.label} · {offer.pickup ? L.rulePickupOnly : L.ruleBringOnly}
+                      </span>
+                      <span className="num shrink-0">{formatVnd(offer.adjustment.amount)}</span>
+                    </Button>
+                  ))}
+                </>
+              )}
+            </section>
+          )}
 
           <Button block disabled={!receipt.canAddLine} onClick={receipt.addLine}>
             <PlusIcon className="h-4 w-4" />
@@ -219,10 +307,11 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
           </Button>
 
           <MoreInfoPanel
-            adjustments={receipt.adjustments}
+            adjustments={typed}
+            full={receipt.adjustmentsFull}
             note={receipt.note}
             attachmentIds={receipt.attachmentIds}
-            onAdjustmentsChange={receipt.setAdjustments}
+            onAdjustmentsChange={(next) => receipt.setAdjustments([...next, ...acceptedStored])}
             onNoteChange={receipt.setNote}
             onAttachmentsChange={receipt.setAttachmentIds}
           />
@@ -258,8 +347,9 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
             total={receipt.finalTotal}
             canFinish={receipt.canFinish}
             saveState={receipt.saveState}
-            onPayFull={() => finish(receipt.finalTotal)}
+            onPayFull={() => void finish(receipt.finalTotal)}
             onPayPart={() => setPayPartOpen(true)}
+            {...(payQr ? { method, onMethodChange: setMethod } : {})}
           />
         </div>
       </div>
@@ -267,7 +357,7 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
       <PayPartDialog
         open={payPartOpen}
         total={receipt.finalTotal}
-        onConfirm={(amountPaid, dueDate) => finish(amountPaid, dueDate)}
+        onConfirm={(amountPaid, dueDate) => void finish(amountPaid, dueDate)}
         onCancel={() => setPayPartOpen(false)}
       />
 
@@ -275,8 +365,25 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
         open={askParty !== null && namesakes.length > 0}
         name={receipt.partyName}
         namesakes={namesakes}
-        onPick={(choice) => askParty && finish(askParty.amountPaid, askParty.dueDate, choice)}
+        onPick={(choice) => askParty && void finish(askParty.amountPaid, askParty.dueDate, choice)}
         onCancel={() => setAskParty(null)}
+      />
+
+      <CashReminderDialog
+        open={cashAsk !== null}
+        paidToday={cashAsk?.partyId ? cashPaidOnDay(data, cashAsk.partyId, new Date()) : 0}
+        onTransfer={() => {
+          if (!cashAsk) return;
+          setCashAsk(null);
+          setMethod('transfer');
+          void finish(cashAsk.amountPaid, cashAsk.dueDate, cashAsk.party, 'transfer');
+        }}
+        onCash={() => {
+          if (!cashAsk) return;
+          setCashAsk(null);
+          void finish(cashAsk.amountPaid, cashAsk.dueDate, cashAsk.party, 'cash');
+        }}
+        onCancel={() => setCashAsk(null)}
       />
 
       <ConfirmDialog

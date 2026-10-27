@@ -25,7 +25,7 @@ const columns: Column<TaxReport>[] = [
   {
     id: 'profit',
     header: L.taxGrossProfit,
-    cell: (r) => formatVnd(r.grossProfit),
+    cell: (r) => (r.saleCount > 0 ? formatVnd(r.grossProfit) : r.purchaseCount > 0 ? L.taxNoSaleYet : formatVnd(0)),
     align: 'right',
     numeric: true,
     mobile: 'value',

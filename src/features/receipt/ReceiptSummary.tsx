@@ -1,7 +1,10 @@
 import { Button } from '@/components/ui/Button';
+import { Segmented } from '@/components/ui/Segmented';
 import { formatVnd } from '@mambo/core/format';
 import { numberToVietnameseWords } from '@mambo/core/numberToWords';
+import type { PaymentMethod } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { PAY_METHOD_OPTIONS } from '../shared/payMethod';
 import type { SaveState } from './useDraftReceipt';
 
 interface ReceiptSummaryProps {
@@ -10,6 +13,9 @@ interface ReceiptSummaryProps {
   readonly saveState: SaveState;
   readonly onPayFull: () => void;
   readonly onPayPart: () => void;
+  /** Gói Pro, phiếu mua (V13): trả bằng gì. Không truyền = không hiện. */
+  readonly method?: PaymentMethod;
+  readonly onMethodChange?: (method: PaymentMethod) => void;
 }
 
 const SAVE_LABEL: Record<SaveState, string> = {
@@ -32,12 +38,16 @@ export function ReceiptSummary({
   saveState,
   onPayFull,
   onPayPart,
+  method,
+  onMethodChange,
 }: ReceiptSummaryProps) {
   return (
     // Điện thoại: thanh dính đáy phải gọn để không che ô đang nhập — tổng một dòng, hai nút một hàng,
     // số bằng chữ một dòng chữ nhỏ (vẫn phải có: đây là câu đọc cho người bán nghe trước khi trả tiền).
     // Đáy = thanh dưới (5rem) + vùng home indicator của iPhone, không thì thanh dưới che mép nút chốt.
-    <div className="card sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex flex-col gap-2 p-3 lg:bottom-4 lg:gap-3 lg:p-4">
+    // `min-w-0`: điện thoại thì thẻ này là ô của lưới (`max-lg:contents`) — thiếu nó, dòng số bằng chữ
+    // `truncate` giữ nguyên độ dài và đẩy cả màn cuộn ngang khi tổng đọc ra dài (vd. 157.750.000 ₫).
+    <div className="card sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex min-w-0 flex-col gap-2 p-3 lg:bottom-4 lg:gap-3 lg:p-4">
       <div>
         <div className="max-lg:flex max-lg:items-baseline max-lg:justify-between max-lg:gap-3">
           <p className="text-sm font-semibold text-ink-3">{L.total}</p>
@@ -52,6 +62,15 @@ export function ReceiptSummary({
           </p>
         )}
       </div>
+
+      {method && onMethodChange && (
+        <Segmented
+          label={L.payMethod}
+          value={method}
+          options={PAY_METHOD_OPTIONS}
+          onValueChange={(v) => onMethodChange(v as PaymentMethod)}
+        />
+      )}
 
       {/* Điện thoại: hai nút một hàng (chữ lg + px-5 sẽ xuống dòng ở 320–375px). Màn rộng: cột tổng
           chỉ 3/12, xếp chồng để mỗi nút một dòng chữ. */}

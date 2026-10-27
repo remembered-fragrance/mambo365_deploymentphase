@@ -87,7 +87,8 @@ describe('chi tiết phiếu — trả nợ tại chỗ', () => {
   it('🔴 phiếu mua còn nợ: "Trả đủ" ghi đúng số còn nợ vào đúng phiếu', () => {
     render(tx('purchase', 400_000));
     act(() => button(L.payFull)?.click());
-    expect(recordPayment).toHaveBeenCalledWith(TX_ID, 600_000);
+    // Sổ của máy này không chặn quyền lợi: như màn Công nợ, trả nông hộ ghi kèm hình thức (dưới ngưỡng nhắc → tiền mặt).
+    expect(recordPayment).toHaveBeenCalledWith(TX_ID, 600_000, 'cash');
   });
 
   it('phiếu bán còn nợ: nút là "Thu đủ"', () => {

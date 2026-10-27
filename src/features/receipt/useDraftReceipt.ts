@@ -10,10 +10,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { AUTOSAVE_MS } from '@/config';
 import { computeReceiptTotal, totalAdjustments } from '@mambo/core/calc';
-import type { DraftStatus, PriceAdjustment, Transaction, TransactionKind } from '@mambo/core/types';
+import { newId } from '@mambo/core/id';
+import type { DraftStatus, PaymentMethod, PriceAdjustment, Transaction, TransactionKind } from '@mambo/core/types';
 import { useStore } from '@/data/useStore';
+import { L } from '@/i18n/labels';
 import { emptyLine, fromLine, isUsable, toLine, type LineDraft } from './lineDraft';
 import type { PartyChoice } from './namesakes';
+import {
+  adjustmentsFromRules,
+  receiptAdjustments,
+  rulesForKind,
+  useReceiptRules,
+  type RuleOffer,
+} from '@/data/hooks/useReceiptRules';
 
 /** `failed`: máy không nhận bản nháp (số vượt mức máy chủ nhận) — xem `opCheck.ts`. */
 export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
@@ -27,6 +36,15 @@ export interface DraftReceiptState {
   readonly partyName: string;
   readonly lines: readonly LineDraft[];
   readonly adjustments: readonly PriceAdjustment[];
+  /**
+   * Khoản tự áp theo Quy tắc giá (kể cả theo chất lượng — V19), tính lại từ dòng mỗi lần gõ: không lưu vào nháp,
+   * chỉ ghi lên phiếu lúc chốt. Xem `ruleAdjustments.ts`.
+   */
+  readonly ruleAdjustments: readonly PriceAdjustment[];
+  /** Quy tắc chỉ cho xe đến lấy / tự mang tới — phiếu không biết nên mời thêm, không tự áp. */
+  readonly offeredAdjustments: readonly RuleOffer[];
+  /** Lời mời đã nhận, số tiền tính lại theo dòng; `0` = phiếu chưa đủ điều kiện của quy tắc. */
+  readonly acceptedAdjustments: readonly PriceAdjustment[];
   readonly note: string;
   readonly attachmentIds: readonly string[];
   /** Phiếu lập theo đơn (BE5): đồng bộ lên thì đơn tự sang "Đã cân xong". */
@@ -34,6 +52,11 @@ export interface DraftReceiptState {
   readonly linesTotal: number;
   readonly adjustmentTotal: number;
   readonly finalTotal: number;
+  /**
+   * Hết chỗ cho khoản mới: máy chủ nhận tối đa `RECEIPT_LIMITS.adjustments` khoản một phiếu, đếm cả khoản gõ tay, khoản
+   * đã nhận từ lời mời và khoản tự áp theo quy tắc.
+   */
+  readonly adjustmentsFull: boolean;
   readonly canFinish: boolean;
   readonly saveState: SaveState;
   setPartyName: (name: string) => void;
@@ -44,14 +67,17 @@ export interface DraftReceiptState {
   addLine: () => void;
   removeLine: (id: string) => void;
   setAdjustments: (next: readonly PriceAdjustment[]) => void;
+  /** Nhận khoản mời: thành một khoản cộng / trừ thêm như gõ tay. */
+  acceptOffer: (offer: RuleOffer) => void;
   setNote: (note: string) => void;
   setAttachmentIds: (ids: readonly string[]) => void;
   setOrderId: (orderId: string | undefined) => void;
   /**
    * `dueDate` chỉ có nghĩa khi phiếu còn nợ — xem `PayPartDialog`. `party`: câu trả lời khi tên gõ trùng người đã
-   * có (B3, `namesakes.ts`) — không có thì core dùng lại người cùng tên như cũ.
+   * có (B3, `namesakes.ts`) — không có thì core dùng lại người cùng tên như cũ. `method`: gói Pro ghi hình thức
+   * của lần trả lúc chốt (V13); không có thì core tự tạo lần trả không ghi hình thức như cũ.
    */
-  finish: (amountPaid: number, dueDate?: string, party?: PartyChoice) => Transaction | null;
+  finish: (amountPaid: number, dueDate?: string, party?: PartyChoice, method?: PaymentMethod) => Transaction | null;
   discard: () => void;
   /** Lưu ngay thành "Để dành" và ngừng tự lưu — trang rời màn lập phiếu ngay sau đó. */
   saveForLater: () => void;
@@ -85,11 +111,16 @@ export function useDraftReceipt(
   // đúng cái nháp vừa xoá và khách đó hiện lại trên thanh "Đang cân".
   const finished = useRef(false);
 
-  const linesTotal = useMemo(
-    () => computeReceiptTotal(lines.filter(isUsable).map(toLine)).total,
-    [lines],
+  const rules = useReceiptRules();
+  const usableLines = useMemo(() => lines.filter(isUsable).map(toLine), [lines]);
+  const linesTotal = useMemo(() => computeReceiptTotal(usableLines).total, [usableLines]);
+  const adjusted = useMemo(
+    () => adjustmentsFromRules(rulesForKind(rules, kind), usableLines, adjustments),
+    [rules, kind, usableLines, adjustments],
   );
-  const adjustmentTotal = useMemo(() => totalAdjustments(adjustments), [adjustments]);
+  const finalAdjustments = useMemo(() => receiptAdjustments(adjusted), [adjusted]);
+  const adjustmentTotal = useMemo(() => totalAdjustments(finalAdjustments), [finalAdjustments]);
+  const autoCount = adjusted.applied.length;
   const canFinish = lines.some(isUsable);
 
   const save = (nextStatus: DraftStatus) =>
@@ -139,9 +170,13 @@ export function useDraftReceipt(
   }, []);
 
   const finish = useCallback(
-    (amountPaid: number, dueDate?: string, party?: PartyChoice): Transaction | null => {
+    (amountPaid: number, dueDate?: string, party?: PartyChoice, method?: PaymentMethod): Transaction | null => {
+      // Đã chốt (hay đã xoá / cất): bấm "Trả hết" lần nữa lúc trang còn chờ chép nội dung chuyển khoản thì thôi,
+      // không ghi thêm một phiếu cho cùng lô hàng.
+      if (finished.current) return null;
       const usable = lines.filter(isUsable).map(toLine);
       if (usable.length === 0) return null;
+      if (finalAdjustments.length > RECEIPT_LIMITS.adjustments) throw new Error(L.adjustmentsFull);
 
       finished.current = true;
       if (timer.current) clearTimeout(timer.current);
@@ -149,16 +184,17 @@ export function useDraftReceipt(
       const debt = linesTotal + adjustmentTotal - amountPaid;
       const picked = party && 'id' in party ? party : undefined;
       const partyId = picked ? picked.id : counterpartyId;
+      const date = new Date().toISOString();
       const record = () => addTransaction({
-        date: new Date().toISOString(),
+        date,
         kind,
         counterpartyId: partyId ?? '',
         supplierId: partyId,
         supplierName: picked ? picked.name : partyName,
         lines: usable,
         amountPaid,
-        payments: [],
-        adjustments: adjustments.length > 0 ? adjustments : undefined,
+        payments: method && amountPaid > 0 ? [{ id: newId(), date, amount: amountPaid, method }] : [],
+        adjustments: finalAdjustments.length > 0 ? finalAdjustments : undefined,
         creditTerms:
           dueDate && debt > 0
             ? [{ dueDate: new Date(dueDate).toISOString(), amount: debt }]
@@ -185,7 +221,7 @@ export function useDraftReceipt(
       kind,
       counterpartyId,
       partyName,
-      adjustments,
+      finalAdjustments,
       adjustmentTotal,
       linesTotal,
       note,
@@ -204,12 +240,16 @@ export function useDraftReceipt(
     partyName,
     lines,
     adjustments,
+    ruleAdjustments: adjusted.applied,
+    offeredAdjustments: adjusted.offered,
+    acceptedAdjustments: adjusted.accepted,
     note,
     attachmentIds,
     orderId,
     linesTotal,
     adjustmentTotal,
     finalTotal: linesTotal + adjustmentTotal,
+    adjustmentsFull: adjustments.length + autoCount >= RECEIPT_LIMITS.adjustments,
     canFinish,
     saveState,
     setPartyName: mark(setPartyName),
@@ -232,6 +272,13 @@ export function useDraftReceipt(
       setLines((cur) => (cur.length === 1 ? cur : cur.filter((l) => l.id !== lineId)));
     },
     setAdjustments: mark(setAdjustments),
+    // Máy chủ nhận tối đa `RECEIPT_LIMITS.adjustments` khoản một phiếu, tính cả khoản tự áp — như `adjustmentsFull`.
+    acceptOffer: ({ adjustment }) => {
+      touched.current = true;
+      setAdjustments((cur) =>
+        cur.length + autoCount >= RECEIPT_LIMITS.adjustments ? cur : [...cur, { ...adjustment, id: newId() }],
+      );
+    },
     setNote: mark(setNote),
     setAttachmentIds: mark(setAttachmentIds),
     setOrderId: mark(setOrderId),

@@ -8,6 +8,7 @@ import { dueDateOf, isOverdue } from '@mambo/core/debtSelectors';
 import { formatDate, formatVnd } from '@mambo/core/format';
 import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { StatementBar } from './StatementBar';
 
 interface DebtGroupCardProps {
   readonly group: DebtGroup;
@@ -18,7 +19,7 @@ interface DebtGroupCardProps {
 
 /**
  * Một đối tác, gập lại. Mở ra mới thấy từng phiếu — chủ vựa cần biết "Cô Mai
- * còn nợ bao nhiêu" trước, "nợ ở phiếu nào" sau.
+ * còn nợ bao nhiêu" trước, "nợ ở phiếu nào" sau. Cuối thẻ đã mở là sao kê gửi khách (gói Pro).
  */
 export function DebtGroupCard({ group, side, onPayFull, onPayPart }: DebtGroupCardProps) {
   const [open, setOpen] = useState(false);
@@ -60,17 +61,22 @@ export function DebtGroupCard({ group, side, onPayFull, onPayPart }: DebtGroupCa
       </button>
 
       {open && (
-        <ul className="border-t border-rule">
-          {unpaid.map((tx) => (
-            <DebtRow
-              key={tx.id}
-              tx={tx}
-              side={side}
-              onPayFull={onPayFull}
-              onPayPart={onPayPart}
-            />
-          ))}
-        </ul>
+        <>
+          <ul className="border-t border-rule">
+            {unpaid.map((tx) => (
+              <DebtRow
+                key={tx.id}
+                tx={tx}
+                side={side}
+                onPayFull={onPayFull}
+                onPayPart={onPayPart}
+              />
+            ))}
+          </ul>
+          <div className="border-t border-rule">
+            <StatementBar group={group} side={side} />
+          </div>
+        </>
       )}
     </li>
   );

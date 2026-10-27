@@ -7,7 +7,10 @@
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { emptyData } from '@mambo/core/normalize';
 import type { Transaction } from '@mambo/core/types';
+import { ToastProvider } from '@/components/ui/Toast';
+import { StoreContext, type StoreValue } from '@/data/useStore';
 import { PayDebtDialog } from '@/features/debts/PayDebtDialog';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -41,9 +44,15 @@ const B = tx('cccccccc-1111-4111-8111-111111111111', 'Chú Bảy');
 let root: Root;
 let host: HTMLDivElement;
 
+// Hộp đọc sổ để nhắc tiền mặt (gói Pro) — sổ trống là đủ.
+const store = { data: emptyData() } as unknown as StoreValue;
 const show = (target: Transaction | null) =>
   act(() =>
-    root.render(createElement(PayDebtDialog, { tx: target, side: 'payable', onConfirm: () => undefined, onCancel: () => undefined })),
+    root.render(
+      createElement(ToastProvider, null,
+        createElement(StoreContext.Provider, { value: store },
+          createElement(PayDebtDialog, { tx: target, side: 'payable', onConfirm: () => undefined, onCancel: () => undefined }))),
+    ),
   );
 
 const amountInput = (): HTMLInputElement | null => document.querySelector('[role=dialog] input');

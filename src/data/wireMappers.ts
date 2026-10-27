@@ -1,4 +1,4 @@
-import type { Buyer, DraftReceipt, Note, Payment, PricingRule, Product, Supplier, Transaction } from '@mambo/core/types';
+import type { Buyer, DraftReceipt, Note, Payment, PricingRule, Product, SeasonContract, Supplier, Transaction, TransactionLine } from '@mambo/core/types';
 import { GUEST_BUYER_ID, GUEST_SUPPLIER_ID } from '@mambo/core/normalizeTransaction';
 import { freezeLineTotals } from '@mambo/core/calc';
 
@@ -44,6 +44,8 @@ export const productToInsert = (product: Product) => ({
   group: product.group?.trim() || null,
   qualityGrades: product.qualityGrades ? [...product.qualityGrades] : [],
   trackInventory: product.trackInventory ?? null,
+  rubberKind: product.rubberKind ?? null,
+  greenRatio: product.greenRatio ?? null,
 });
 
 export const productToPatch = (patch: Partial<Product>) => {
@@ -58,6 +60,9 @@ export const productToPatch = (patch: Partial<Product>) => {
   if (patch.group !== undefined) result.group = patch.group ? patch.group.trim() : null;
   if (patch.qualityGrades !== undefined) result.qualityGrades = patch.qualityGrades ? [...patch.qualityGrades] : [];
   if (patch.trackInventory !== undefined) result.trackInventory = patch.trackInventory ?? null;
+  // `in`, không phải `!== undefined`: đổi mủ tạp về mủ nước / sang công thức khác là gỡ (gửi null).
+  if ('rubberKind' in patch) result.rubberKind = patch.rubberKind ?? null;
+  if ('greenRatio' in patch) result.greenRatio = patch.greenRatio ?? null;
   return result;
 };
 
@@ -66,6 +71,18 @@ export const paymentToInsert = (payment: Payment, transactionId: string) => ({
   date: payment.date,
   amount: money(payment.amount),
   note: payment.note?.trim() || null,
+  // V13 — chỉ gửi khi có: lần trả không chọn hình thức gửi lên y như trước.
+  ...(payment.method ? { method: payment.method } : {}),
+});
+
+/** V19 / V20 / V24 — chỉ gửi trường có giá trị: dòng không đo chỉ tiêu gửi lên y như trước. */
+const lineQualityToWire = (l: TransactionLine) => ({
+  ...(l.rubberKind ? { rubberKind: l.rubberKind } : {}),
+  ...(l.bulkDensity !== undefined ? { bulkDensity: l.bulkDensity } : {}),
+  ...(l.moisturePercent !== undefined ? { moisturePercent: l.moisturePercent } : {}),
+  ...(l.impurityPercent !== undefined ? { impurityPercent: l.impurityPercent } : {}),
+  ...(l.kor !== undefined ? { kor: l.kor } : {}),
+  ...(l.greenRatio !== undefined ? { greenRatio: l.greenRatio } : {}),
 });
 
 export const transactionToInsert = (tx: Transaction) => ({
@@ -94,6 +111,7 @@ export const transactionToInsert = (tx: Transaction) => ({
       rawTotal: frozen.rawTotal ?? 0,
       roundedTotal: frozen.roundedTotal ?? 0,
       ...(frozen.qualityGrade ? { qualityGrade: frozen.qualityGrade } : {}),
+      ...lineQualityToWire(frozen),
     };
   }),
   creditTerms: tx.creditTerms
@@ -152,6 +170,7 @@ export const draftToInsert = (draft: DraftReceipt) => ({
     rawTotal: l.rawTotal,
     roundedTotal: l.roundedTotal,
     ...(l.qualityGrade ? { qualityGrade: l.qualityGrade } : {}),
+    ...lineQualityToWire(l),
   })),
   amountPaid: money(draft.amountPaid ?? 0),
   adjustments: adjustmentsToWire(draft.adjustments),
@@ -189,18 +208,24 @@ export const pricingRuleToInsert = (rule: PricingRule) => ({
   minWeightKg: rule.minWeightKg ?? null,
   appliesOnPickup: rule.appliesOnPickup ?? null,
   active: rule.active,
+  qualityMetric: rule.qualityMetric ?? null,
+  qualitySteps: rule.qualitySteps ? [...rule.qualitySteps] : null,
 });
 
 export const pricingRuleToPatch = (patch: Partial<PricingRule>) => {
   const result: Record<string, unknown> = {};
   if (patch.name !== undefined) result.name = patch.name.trim();
   if (patch.kind !== undefined) result.kind = patch.kind;
-  if (patch.productId !== undefined) result.productId = patch.productId ?? null;
-  if (patch.fixedAmount !== undefined) result.fixedAmount = optionalMoney(patch.fixedAmount);
-  if (patch.percentOfTotal !== undefined) result.percentOfTotal = patch.percentOfTotal ?? null;
-  if (patch.minWeightKg !== undefined) result.minWeightKg = patch.minWeightKg ?? null;
-  if (patch.appliesOnPickup !== undefined) result.appliesOnPickup = patch.appliesOnPickup ?? null;
+  // Có khoá mà không có giá trị là gỡ (đổi về "Mọi mặt hàng", xoá số tiền…): phải gửi null, không thì máy chủ
+  // giữ giá trị cũ và lần kéo về sau dựng lại đúng cái vừa gỡ.
+  if ('productId' in patch) result.productId = patch.productId ?? null;
+  if ('fixedAmount' in patch) result.fixedAmount = optionalMoney(patch.fixedAmount);
+  if ('percentOfTotal' in patch) result.percentOfTotal = patch.percentOfTotal ?? null;
+  if ('minWeightKg' in patch) result.minWeightKg = patch.minWeightKg ?? null;
+  if ('appliesOnPickup' in patch) result.appliesOnPickup = patch.appliesOnPickup ?? null;
   if (patch.active !== undefined) result.active = patch.active;
+  if (patch.qualityMetric !== undefined) result.qualityMetric = patch.qualityMetric;
+  if (patch.qualitySteps !== undefined) result.qualitySteps = [...patch.qualitySteps];
   return result;
 };
 
@@ -215,5 +240,38 @@ export const noteToPatch = (patch: Partial<Note>) => {
   if (patch.body !== undefined) result.body = patch.body.trim();
   if (patch.pinned !== undefined) result.pinned = patch.pinned;
   if (patch.done !== undefined) result.done = patch.done;
+  return result;
+};
+
+export const seasonContractToInsert = (c: SeasonContract) => ({
+  kind: c.kind,
+  counterpartyId: partyIdToWire(c.counterpartyId),
+  counterpartyName: c.counterpartyName.trim(),
+  productId: c.productId ?? null,
+  productName: c.productName.trim(),
+  unit: c.unit,
+  quantity: c.quantity,
+  pricePerUnit: optionalMoney(c.pricePerUnit),
+  startDate: c.startDate,
+  endDate: c.endDate,
+  note: c.note?.trim() || null,
+  closed: c.closed,
+});
+
+/** Như `draftToPatch`: có khoá là gửi, `undefined` = xoá. */
+export const seasonContractToPatch = (patch: Partial<SeasonContract>) => {
+  const result: Record<string, unknown> = {};
+  if (patch.kind !== undefined) result.kind = patch.kind;
+  if ('counterpartyId' in patch) result.counterpartyId = partyIdToWire(patch.counterpartyId);
+  if (patch.counterpartyName !== undefined) result.counterpartyName = patch.counterpartyName.trim();
+  if ('productId' in patch) result.productId = patch.productId ?? null;
+  if (patch.productName !== undefined) result.productName = patch.productName.trim();
+  if (patch.unit !== undefined) result.unit = patch.unit;
+  if (patch.quantity !== undefined) result.quantity = patch.quantity;
+  if ('pricePerUnit' in patch) result.pricePerUnit = optionalMoney(patch.pricePerUnit);
+  if (patch.startDate !== undefined) result.startDate = patch.startDate;
+  if (patch.endDate !== undefined) result.endDate = patch.endDate;
+  if ('note' in patch) result.note = patch.note?.trim() || null;
+  if (patch.closed !== undefined) result.closed = patch.closed;
   return result;
 };

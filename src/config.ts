@@ -90,8 +90,8 @@ export const MAIL_LINKS = {
 } as const;
 
 /** Phiên bản và ngày áp dụng của Điều khoản + Chính sách — đổi nội dung thì đổi cả hai. */
-export const LEGAL_VERSION = '2.2';
-export const LEGAL_EFFECTIVE_DATE = '16/10/2026';
+export const LEGAL_VERSION = '2.4';
+export const LEGAL_EFFECTIVE_DATE = '27/10/2026';
 
 /**
  * Thông tin chủ thể vận hành — Luật BVDLCN 2025 và Luật TMĐT 2025 bắt buộc công khai.

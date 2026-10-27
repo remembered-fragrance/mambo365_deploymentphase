@@ -80,6 +80,10 @@ export const CameraIcon = (p: IconProps) => (
   <Icon {...p} d="M4 8h3l2-2h6l2 2h3v12H4z|M12 11a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" />
 );
 export const CheckIcon = (p: IconProps) => <Icon {...p} d="M5 13l4 4L19 7" />;
+export const LockIcon = (p: IconProps) => <Icon {...p} d="M6 11h12v9H6z|M8 11V8a4 4 0 0 1 8 0v3" />;
+export const ClockIcon = (p: IconProps) => (
+  <Icon {...p} d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z|M12 7v5l3 2" />
+);
 export const CloudIcon = (p: IconProps) => (
   <Icon {...p} d="M7 18a4 4 0 0 1 .6-8 5 5 0 0 1 9.6 1.4A3.5 3.5 0 0 1 17 18z" />
 );
@@ -107,6 +111,9 @@ export const PercentIcon = (p: IconProps) => (
 );
 export const ChartIcon = (p: IconProps) => (
   <Icon {...p} d="M4 20h16|M7 20V10|M12 20V4|M17 20v-7" />
+);
+export const ContractIcon = (p: IconProps) => (
+  <Icon {...p} d="M6 3h8l4 4v14H6z|M14 3v4h4|M9 12h6|M9 16l2 1.5 4-3" />
 );
 export const ToolIcon = (p: IconProps) => (
   <Icon {...p} d="M6 3h12v18H6z|M9 7h6|M9 11h.01M12 11h.01M15 11h.01M9 15h.01M12 15h.01M15 15h3" />

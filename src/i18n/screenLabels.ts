@@ -73,7 +73,7 @@ export const SCREEN_LABELS = {
 
   // ─── Quy tắc giá ──────────────────────────────────────────────────────────
   navPricing: 'Quy tắc giá',
-  pricingSubtitle: 'khoản cộng / trừ tự đề xuất khi lập phiếu',
+  pricingSubtitle: 'khoản cộng / trừ tự áp khi lập phiếu mua',
   addRule: 'Thêm quy tắc',
   editRule: 'Sửa quy tắc',
   ruleName: 'Tên quy tắc',
@@ -98,6 +98,37 @@ export const SCREEN_LABELS = {
   noRules: 'Chưa có quy tắc nào',
   noRulesHint: 'Quy tắc giúp phiếu tự cộng phí xe hoặc tự bớt giá, khỏi nhẩm tay.',
 
+  // ─── Giá theo chất lượng (V19) · mủ tạp (V20) ──────────────────────────────
+  ruleMode: 'Kiểu quy tắc',
+  ruleModeAmount: 'Khoản cộng / trừ',
+  ruleModeQuality: 'Theo chất lượng',
+  ruleMetric: 'Chỉ tiêu',
+  metricBulkDensity: 'Dung trọng',
+  metricMoisture: 'Độ ẩm',
+  metricImpurity: 'Tạp chất',
+  metricKor: 'KOR (thu hồi nhân)',
+  metricRubber: 'Độ mủ (TSC / DRC)',
+  qualitySteps: 'Bảng mốc',
+  qualityStepsHint: 'Chỉ tiêu TỪ mốc trở lên (tới mốc kế) thì cộng / trừ số tiền đó cho mỗi kg tính tiền. Dưới mốc đầu: không cộng trừ.',
+  qualityStepFrom: 'Từ',
+  qualityStepAmount: 'Mỗi kg',
+  addQualityStep: 'Thêm mốc',
+  removeQualityStep: 'Bỏ mốc',
+  qualityStepsFull: 'Đủ 20 mốc',
+  qualityTry: 'Thử với chỉ tiêu',
+  qualityTryNone: 'Không cộng / trừ',
+  qualityStepsMissing: 'Cần ít nhất một mốc có số tiền',
+  qualityRuleSummary: 'mốc',
+  ruleAdjustments: 'Theo quy tắc giá',
+  ruleAdjustmentsHint: 'Tự cộng / trừ theo Quy tắc giá đang bật',
+  ruleOffersHint: 'Phiếu không biết hàng đến bằng cách nào — đúng trường hợp thì chạm để thêm',
+  ruleNotMet: 'Chưa đủ điều kiện',
+  rubberKind: 'Loại mủ',
+  rubberLatex: 'Mủ nước (độ TSC)',
+  rubberCuplump: 'Mủ tạp — mủ chén, mủ đông (DRC)',
+  qualityPercentDrc: 'DRC',
+  qualityPercentTsc: 'Độ TSC',
+
   // ─── Báo cáo ──────────────────────────────────────────────────────────────
   navReports: 'Báo cáo thuế',
   periodQuarter: 'Quý này',
@@ -107,7 +138,7 @@ export const SCREEN_LABELS = {
   exportPdf: 'Xuất PDF',
   reportLegalTitle: 'Số liệu tham khảo',
   reportLegalBody:
-    'Đây là số liệu do app cộng từ phiếu của bạn, không phải tờ khai thuế. Đưa cho kế toán xem trước khi nộp.',
+    'Số liệu tổng hợp từ sổ của bạn, không phải tờ khai thuế. Bạn tự kiểm tra và chịu trách nhiệm khi dùng để kê khai thuế — nên đưa kế toán xem trước khi nộp.',
 
   // ─── Tiện ích ─────────────────────────────────────────────────────────────
   navUtilities: 'Tiện ích',

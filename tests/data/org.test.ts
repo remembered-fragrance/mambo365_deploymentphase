@@ -24,6 +24,10 @@ describe('orgErrorMessage', () => {
   it('vượt giới hạn chi nhánh của gói: kèm số', () => {
     expect(orgErrorMessage(new ApiError('BRANCH_LIMIT', 402, 'x', undefined, { limit: 3 }))).toBe(`${L.branchLimit} 3`);
   });
+  it('đủ người cân của gói: kèm số; hết gói: câu gia hạn', () => {
+    expect(orgErrorMessage(new ApiError('MEMBER_LIMIT', 402, 'x', undefined, { limit: 3 }))).toBe(`${L.memberLimit} 3`);
+    expect(orgErrorMessage(new ApiError('PLAN_REQUIRED', 402, 'x', undefined, { entitlement: 'members:add' }))).toBe(L.planRequired);
+  });
   it('lỗi ô nhập: hiện câu máy chủ gắn cho ô đó; không có ô: chi nhánh còn người', () => {
     expect(orgErrorMessage(v({ fields: { phone: 'Số điện thoại chưa đúng' } }))).toBe('Số điện thoại chưa đúng');
     expect(orgErrorMessage(v({}))).toBe(L.branchHasMembers);

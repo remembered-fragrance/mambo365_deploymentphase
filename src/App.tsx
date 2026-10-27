@@ -37,6 +37,7 @@ const NotificationsPage = lazy(() =>
   import('@/features/notifications/NotificationsPage').then((m) => ({ default: m.NotificationsPage })),
 );
 const MembersPage = lazy(() => import('@/features/org/MembersPage').then((m) => ({ default: m.MembersPage })));
+const AuditPage = lazy(() => import('@/features/org/AuditPage').then((m) => ({ default: m.AuditPage })));
 const BranchesPage = lazy(() => import('@/features/org/BranchesPage').then((m) => ({ default: m.BranchesPage })));
 const OrgReportPage = lazy(() => import('@/features/org/OrgReportPage').then((m) => ({ default: m.OrgReportPage })));
 const ConnectPage = lazy(() => import('@/features/farmer/ConnectPage').then((m) => ({ default: m.ConnectPage })));
@@ -71,6 +72,12 @@ const PricingPage = lazy(() =>
 );
 const ReportsPage = lazy(() =>
   import('@/features/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })),
+);
+const AnalyticsPage = lazy(() =>
+  import('@/features/reports/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
+);
+const ContractsPage = lazy(() =>
+  import('@/features/contracts/ContractsPage').then((m) => ({ default: m.ContractsPage })),
 );
 const UtilitiesPage = lazy(() =>
   import('@/features/utilities/UtilitiesPage').then((m) => ({ default: m.UtilitiesPage })),
@@ -148,6 +155,8 @@ export function App() {
                         <Route path={ROUTES.products} element={<Gated route={ROUTES.products}><ProductsPage /></Gated>} />
                         <Route path={ROUTES.pricing} element={<Gated route={ROUTES.pricing}><PricingPage /></Gated>} />
                         <Route path={ROUTES.reports} element={<Gated route={ROUTES.reports}><ReportsPage /></Gated>} />
+                        <Route path={ROUTES.analytics} element={<Gated route={ROUTES.analytics}><AnalyticsPage /></Gated>} />
+                        <Route path={ROUTES.contracts} element={<Gated route={ROUTES.contracts}><ContractsPage /></Gated>} />
                         <Route path={ROUTES.utilities} element={<Gated route={ROUTES.utilities}><UtilitiesPage /></Gated>} />
                         <Route path={ROUTES.profile} element={<ProfilePage />} />
                         <Route path={ROUTES.plans} element={<Gated route={ROUTES.plans}><PlansPage /></Gated>} />
@@ -158,6 +167,7 @@ export function App() {
                         <Route path="/don-hang/:id" element={<Gated route={ROUTES.orders}><OrderDetailPage /></Gated>} />
                         <Route path={ROUTES.notifications} element={<Gated route={ROUTES.notifications}><NotificationsPage /></Gated>} />
                         <Route path={ROUTES.members} element={<Gated route={ROUTES.members}><MembersPage /></Gated>} />
+                        <Route path={ROUTES.audit} element={<Gated route={ROUTES.audit}><AuditPage /></Gated>} />
                         <Route path={ROUTES.branches} element={<Gated route={ROUTES.branches}><BranchesPage /></Gated>} />
                         <Route path={ROUTES.orgReport} element={<Gated route={ROUTES.orgReport}><OrgReportPage /></Gated>} />
                         <Route path={ROUTES.connect} element={<Gated route={ROUTES.connect}><ConnectPage /></Gated>} />
