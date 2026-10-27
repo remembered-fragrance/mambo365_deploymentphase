@@ -11,7 +11,7 @@ import { lossFromGreenRatio } from '@mambo/core/calc';
 import { newId } from '@mambo/core/id';
 import { parseNumber } from '@mambo/core/parseNumber';
 import type { CropType, Product, ProductFormulaType, RubberKind, TransactionLine } from '@mambo/core/types';
-import { usableLine } from '@/data/receiptRules';
+import { usableLine } from '@/data/hooks/useReceiptRules';
 
 export interface LineDraft {
   readonly id: string;
@@ -111,6 +111,8 @@ export const toLine = (draft: LineDraft): TransactionLine => {
 
 const numberText = (value?: number): string =>
   value === undefined || value === 0 ? '' : String(value).replace('.', ',');
+/** Chỉ tiêu (V19): đo được 0 vẫn là số đo — bậc giá "từ 0" phải áp như lúc gõ. */
+const measuredText = (value?: number): string => (value === undefined ? '' : String(value).replace('.', ','));
 
 export const fromLine = (line: TransactionLine): LineDraft => ({
   id: line.id,
@@ -126,10 +128,10 @@ export const fromLine = (line: TransactionLine): LineDraft => ({
   price: numberText(line.pricePerUnit),
   qualityGrade: line.qualityGrade,
   rubberKind: line.rubberKind,
-  density: numberText(line.bulkDensity),
-  moisture: numberText(line.moisturePercent),
-  impurity: numberText(line.impurityPercent),
-  kor: numberText(line.kor),
+  density: measuredText(line.bulkDensity),
+  moisture: measuredText(line.moisturePercent),
+  impurity: measuredText(line.impurityPercent),
+  kor: measuredText(line.kor),
   greenRatio: numberText(line.greenRatio),
 });
 

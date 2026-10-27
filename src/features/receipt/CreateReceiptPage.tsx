@@ -281,7 +281,13 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
                 <>
                   <p className="mt-2 text-xs text-ink-3">{L.ruleOffersHint}</p>
                   {receipt.offeredAdjustments.map((offer) => (
-                    <Button key={offer.adjustment.id} block className="py-2" onClick={() => receipt.acceptOffer(offer)}>
+                    <Button
+                      key={offer.adjustment.id}
+                      block
+                      className="py-2"
+                      disabled={receipt.adjustmentsFull}
+                      onClick={() => receipt.acceptOffer(offer)}
+                    >
                       <PlusIcon className="h-4 w-4 shrink-0" />
                       {/* Xuống dòng, không cắt chữ: tên quy tắc dài mà ép một dòng thì cả màn cuộn ngang ở 390px. */}
                       <span className="flex-1 text-left">
@@ -302,6 +308,7 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
 
           <MoreInfoPanel
             adjustments={typed}
+            full={receipt.adjustmentsFull}
             note={receipt.note}
             attachmentIds={receipt.attachmentIds}
             onAdjustmentsChange={(next) => receipt.setAdjustments([...next, ...acceptedStored])}

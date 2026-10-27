@@ -2,8 +2,7 @@ import { formatVndShort } from '@mambo/core/format';
 import type { DraftReceipt } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { PlusIcon } from '@/components/ui/icons';
-import { useReceiptRules } from '@/data/hooks/useReceiptRules';
-import { draftTotal } from '@/data/receiptRules';
+import { draftTotal, useReceiptRules } from '@/data/hooks/useReceiptRules';
 
 interface SessionRailProps {
   readonly drafts: readonly DraftReceipt[];

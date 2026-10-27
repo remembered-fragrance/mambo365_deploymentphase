@@ -10,7 +10,7 @@ const push = vi.fn();
 vi.mock('@/data/client', () => ({ apiForOrg: () => ({ sync: { pull, push } }) }));
 
 const { rebasePulled, syncOnce } = await import('@/data/sync');
-const { readCursor } = await import('@/data/localDb');
+const { openLocalDb, readCursor, writeCursor } = await import('@/data/localDb');
 const { readSyncMark } = await import('@/data/cache');
 const { enqueue, opInsert } = await import('@/data/queue');
 
@@ -19,6 +19,21 @@ describe('syncOnce — con trỏ đi cùng sổ, store mới là nơi ghi', () =
     const outcome = await syncOnce(null, 'org-a', 'u-1', emptyData());
     expect(outcome.cursor).toBe('c-1');
     expect(await readCursor('org-a')).toBeNull();
+  });
+});
+
+describe('con trỏ do app bản cũ ghi', () => {
+  it('không còn đọc: máy kéo lại từ đầu một lần để nhận loại bản ghi / trường bản cũ đã bỏ qua', async () => {
+    const db = await openLocalDb();
+    await db.put('cursors', 'cu-cua-ban-cu', 'org-cu');
+    expect(await readCursor('org-cu')).toBeNull();
+
+    pull.mockClear();
+    await syncOnce(null, 'org-cu', 'u-1', emptyData());
+    expect(pull).toHaveBeenCalledWith({});
+
+    await writeCursor('org-cu', 'c-moi');
+    expect(await readCursor('org-cu')).toBe('c-moi');
   });
 });
 

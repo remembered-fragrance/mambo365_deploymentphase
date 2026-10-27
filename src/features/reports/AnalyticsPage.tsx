@@ -133,8 +133,18 @@ const sellerColumns: Column<SellerRubber>[] = [
  * Lời là lời ƯỚC TÍNH theo giá bình quân, nói rõ trên màn để không ai đem chép sang tờ khai.
  */
 export function AnalyticsPage() {
-  const { data } = useStore();
   const paid = useEntitlement('analytics');
+  return (
+    <PageContainer width="wide">
+      <PageHeader title={L.navAnalytics} subtitle={L.analyticsSubtitle} />
+      {paid ? <AnalyticsView /> : <PlanGate reason={L.gateAnalytics} feature="analytics" />}
+    </PageContainer>
+  );
+}
+
+/** Chỉ dựng khi có gói: không có thì trang chỉ hiện `PlanGate`, khỏi tính phân tích trên cả sổ. */
+function AnalyticsView() {
+  const { data } = useStore();
   const rubberPaid = useEntitlement('rubber:reconcile');
   const [kind, setKind] = useState<PeriodKind>('month');
 
@@ -146,66 +156,59 @@ export function AnalyticsPage() {
   const delta = report.profit - before.profit;
 
   return (
-    <PageContainer width="wide">
-      <PageHeader title={L.navAnalytics} subtitle={L.analyticsSubtitle} />
-      {!paid ? (
-        <PlanGate reason={L.gateAnalytics} feature="analytics" />
-      ) : (
-        <div className="flex flex-col gap-4">
-          <Segmented
-            label={L.taxPeriod}
-            value={kind}
-            options={PERIOD_OPTIONS}
-            onValueChange={(value) => setKind(value as PeriodKind)}
-          />
+    <div className="flex flex-col gap-4">
+      <Segmented
+        label={L.taxPeriod}
+        value={kind}
+        options={PERIOD_OPTIONS}
+        onValueChange={(value) => setKind(value as PeriodKind)}
+      />
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Figure label={`${L.analyticsProfit} · ${range.label}`} value={formatVnd(report.profit)} />
-            <Figure
-              label={`${L.analyticsPrevious} · ${prev.label}`}
-              value={formatVnd(before.profit)}
-              note={`${L.analyticsChange} ${signed(delta, formatVnd(delta))}`}
-            />
-          </div>
-          <p className="text-sm text-ink-3">{L.analyticsEstimateNote}</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Figure label={`${L.analyticsProfit} · ${range.label}`} value={formatVnd(report.profit)} />
+        <Figure
+          label={`${L.analyticsPrevious} · ${prev.label}`}
+          value={formatVnd(before.profit)}
+          note={`${L.analyticsChange} ${signed(delta, formatVnd(delta))}`}
+        />
+      </div>
+      <p className="text-sm text-ink-3">{L.analyticsEstimateNote}</p>
 
-          <section>
-            <h2 className="mb-2 text-base font-bold text-ink">{L.analyticsByProduct}</h2>
-            {report.products.length === 0 ? (
-              <Card>
-                <p className="text-sm text-ink-3">{L.analyticsEmpty}</p>
-              </Card>
-            ) : (
-              <DataView rows={report.products} columns={productColumns} getKey={(r) => r.key} caption={L.analyticsByProduct} />
-            )}
-          </section>
+      <section>
+        <h2 className="mb-2 text-base font-bold text-ink">{L.analyticsByProduct}</h2>
+        {report.products.length === 0 ? (
+          <Card>
+            <p className="text-sm text-ink-3">{L.analyticsEmpty}</p>
+          </Card>
+        ) : (
+          <DataView rows={report.products} columns={productColumns} getKey={(r) => r.key} caption={L.analyticsByProduct} />
+        )}
+      </section>
 
-          {rubber.products.length > 0 && (
-            <section>
-              <h2 className="mb-2 text-base font-bold text-ink">{L.rubberReconcileTitle}</h2>
-              {!rubberPaid ? (
-                <PlanGate reason={L.gateRubberReconcile} feature="rubber" />
-              ) : (
-                <div className="flex flex-col gap-3">
-                  <p className="text-sm text-ink-3">{L.rubberReconcileNote}</p>
-                  <DataView rows={rubber.products} columns={rubberColumns} getKey={(r) => r.key} caption={L.rubberReconcileTitle} />
-                  {rubber.sellers.length > 0 && (
-                    <>
-                      <h3 className="mt-2 text-sm font-bold text-ink">{L.rubberBySeller}</h3>
-                      <DataView
-                        rows={rubber.sellers}
-                        columns={sellerColumns}
-                        getKey={(r) => `${r.sellerName}\u0000${r.product}`}
-                        caption={L.rubberBySeller}
-                      />
-                    </>
-                  )}
-                </div>
+      {rubber.products.length > 0 && (
+        <section>
+          <h2 className="mb-2 text-base font-bold text-ink">{L.rubberReconcileTitle}</h2>
+          {!rubberPaid ? (
+            <PlanGate reason={L.gateRubberReconcile} feature="rubber" />
+          ) : (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-ink-3">{L.rubberReconcileNote}</p>
+              <DataView rows={rubber.products} columns={rubberColumns} getKey={(r) => r.key} caption={L.rubberReconcileTitle} />
+              {rubber.sellers.length > 0 && (
+                <>
+                  <h3 className="mt-2 text-sm font-bold text-ink">{L.rubberBySeller}</h3>
+                  <DataView
+                    rows={rubber.sellers}
+                    columns={sellerColumns}
+                    getKey={(r) => `${r.sellerName}\u0000${r.product}`}
+                    caption={L.rubberBySeller}
+                  />
+                </>
               )}
-            </section>
+            </div>
           )}
-        </div>
+        </section>
       )}
-    </PageContainer>
+    </div>
   );
 }

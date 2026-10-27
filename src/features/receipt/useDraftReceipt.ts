@@ -13,10 +13,16 @@ import { computeReceiptTotal, totalAdjustments } from '@mambo/core/calc';
 import { newId } from '@mambo/core/id';
 import type { DraftStatus, PaymentMethod, PriceAdjustment, Transaction, TransactionKind } from '@mambo/core/types';
 import { useStore } from '@/data/useStore';
+import { L } from '@/i18n/labels';
 import { emptyLine, fromLine, isUsable, toLine, type LineDraft } from './lineDraft';
 import type { PartyChoice } from './namesakes';
-import { useReceiptRules } from '@/data/hooks/useReceiptRules';
-import { adjustmentsFromRules, receiptAdjustments, rulesForKind, type RuleOffer } from '@/data/receiptRules';
+import {
+  adjustmentsFromRules,
+  receiptAdjustments,
+  rulesForKind,
+  useReceiptRules,
+  type RuleOffer,
+} from '@/data/hooks/useReceiptRules';
 
 /** `failed`: máy không nhận bản nháp (số vượt mức máy chủ nhận) — xem `opCheck.ts`. */
 export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
@@ -46,6 +52,11 @@ export interface DraftReceiptState {
   readonly linesTotal: number;
   readonly adjustmentTotal: number;
   readonly finalTotal: number;
+  /**
+   * Hết chỗ cho khoản mới: máy chủ nhận tối đa `RECEIPT_LIMITS.adjustments` khoản một phiếu, đếm cả khoản gõ tay, khoản
+   * đã nhận từ lời mời và khoản tự áp theo quy tắc.
+   */
+  readonly adjustmentsFull: boolean;
   readonly canFinish: boolean;
   readonly saveState: SaveState;
   setPartyName: (name: string) => void;
@@ -109,6 +120,7 @@ export function useDraftReceipt(
   );
   const finalAdjustments = useMemo(() => receiptAdjustments(adjusted), [adjusted]);
   const adjustmentTotal = useMemo(() => totalAdjustments(finalAdjustments), [finalAdjustments]);
+  const autoCount = adjusted.applied.length;
   const canFinish = lines.some(isUsable);
 
   const save = (nextStatus: DraftStatus) =>
@@ -159,8 +171,12 @@ export function useDraftReceipt(
 
   const finish = useCallback(
     (amountPaid: number, dueDate?: string, party?: PartyChoice, method?: PaymentMethod): Transaction | null => {
+      // Đã chốt (hay đã xoá / cất): bấm "Trả hết" lần nữa lúc trang còn chờ chép nội dung chuyển khoản thì thôi,
+      // không ghi thêm một phiếu cho cùng lô hàng.
+      if (finished.current) return null;
       const usable = lines.filter(isUsable).map(toLine);
       if (usable.length === 0) return null;
+      if (finalAdjustments.length > RECEIPT_LIMITS.adjustments) throw new Error(L.adjustmentsFull);
 
       finished.current = true;
       if (timer.current) clearTimeout(timer.current);
@@ -233,6 +249,7 @@ export function useDraftReceipt(
     linesTotal,
     adjustmentTotal,
     finalTotal: linesTotal + adjustmentTotal,
+    adjustmentsFull: adjustments.length + autoCount >= RECEIPT_LIMITS.adjustments,
     canFinish,
     saveState,
     setPartyName: mark(setPartyName),
@@ -255,11 +272,11 @@ export function useDraftReceipt(
       setLines((cur) => (cur.length === 1 ? cur : cur.filter((l) => l.id !== lineId)));
     },
     setAdjustments: mark(setAdjustments),
-    // Máy chủ nhận tối đa `RECEIPT_LIMITS.adjustments` khoản một phiếu — như ô gõ tay ở `MoreInfoPanel`.
+    // Máy chủ nhận tối đa `RECEIPT_LIMITS.adjustments` khoản một phiếu, tính cả khoản tự áp — như `adjustmentsFull`.
     acceptOffer: ({ adjustment }) => {
       touched.current = true;
       setAdjustments((cur) =>
-        cur.length >= RECEIPT_LIMITS.adjustments ? cur : [...cur, { ...adjustment, id: newId() }],
+        cur.length + autoCount >= RECEIPT_LIMITS.adjustments ? cur : [...cur, { ...adjustment, id: newId() }],
       );
     },
     setNote: mark(setNote),

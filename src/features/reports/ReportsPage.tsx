@@ -56,14 +56,20 @@ export function ReportsPage() {
   const ledgerPaid = useEntitlement('tax:docs');
   const ack = useOnceFlag('tax-ledger-ack');
   const [asking, setAsking] = useState<'ledger' | 'pack' | null>(null);
-  const month = String(range.from.getMonth() + 1).padStart(2, '0');
+  // Tên file theo đúng kỳ đang xem: "2026-10", "2026-q4", "2026" — không ghi tháng đầu kỳ cho cả quý / năm.
+  const period =
+    kind === 'year'
+      ? String(year)
+      : kind === 'quarter'
+        ? `${year}-q${Math.floor(range.from.getMonth() / 3) + 1}`
+        : `${year}-${String(range.from.getMonth() + 1).padStart(2, '0')}`;
   const exportLedger = async () => {
     const { exportPurchaseLedgerXlsx } = await import('@/export/purchaseLedgerXlsx');
-    await exportPurchaseLedgerXlsx(data, range, `thumua365-bang-ke-thu-mua-${year}-${month}.xlsx`);
+    await exportPurchaseLedgerXlsx(data, range, `thumua365-bang-ke-thu-mua-${period}.xlsx`);
   };
   const exportPack = async () => {
     const { exportTaxPackXlsx } = await import('@/export/taxPackXlsx');
-    await exportTaxPackXlsx(data, range, `thumua365-ho-so-ke-khai-${year}-${month}.xlsx`);
+    await exportTaxPackXlsx(data, range, `thumua365-ho-so-ke-khai-${period}.xlsx`);
   };
   const run = (which: 'ledger' | 'pack') => void (which === 'ledger' ? exportLedger() : exportPack());
 

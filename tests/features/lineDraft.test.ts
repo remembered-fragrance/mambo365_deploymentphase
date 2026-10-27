@@ -82,6 +82,13 @@ describe('đọc nháp cũ ra ô nhập', () => {
   it('số 0 hiện thành ô trống, không hiện "0"', () => {
     expect(fromLine(toLine(emptyLine())).gross).toBe('');
   });
+
+  it('chỉ tiêu chất lượng đo được 0 vẫn là 0 khi mở lại nháp (bậc giá "từ 0" vẫn áp)', () => {
+    const line = toLine({ ...filled(), moisture: '0', impurity: '0,5', density: '' });
+    const back = fromLine(line);
+    expect([back.moisture, back.impurity, back.density]).toEqual(['0', '0,5', '']);
+    expect(toLine(back)).toMatchObject({ moisturePercent: 0, impurityPercent: 0.5, bulkDensity: undefined });
+  });
 });
 
 describe('dòng đủ thông tin để tính tiền', () => {

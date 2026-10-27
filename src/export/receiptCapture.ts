@@ -11,7 +11,7 @@ import { formatDateTime, formatQuantity, formatVnd } from '@mambo/core/format';
 import { cropMeta } from '@mambo/core/catalog';
 import type { CropType, Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
-import { METRIC_LABEL, METRIC_UNIT, qualityPercentLabel } from '@/features/pricing/quality';
+import { METRIC_LABEL, metricValueText, qualityPercentLabel } from '@/i18n/qualityLabels';
 
 export const INK = '#1A1714';
 export const INK_2 = '#554E44';
@@ -73,7 +73,7 @@ const lineBlock = (
   }
   for (const metric of ['bulkDensity', 'moisturePercent', 'impurityPercent', 'kor'] as const) {
     const value = line[metric];
-    if (value !== undefined) block.appendChild(row(METRIC_LABEL[metric], `${value} ${METRIC_UNIT[metric]}`));
+    if (value !== undefined) block.appendChild(row(METRIC_LABEL[metric], metricValueText(metric, value)));
   }
   if (line.qualityGrade) block.appendChild(row(L.qualityGrade, line.qualityGrade));
   block.appendChild(row(L.netWeight, formatQuantity(lt.netWeight, line.unit)));

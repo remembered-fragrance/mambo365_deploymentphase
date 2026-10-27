@@ -39,6 +39,15 @@ describe('nhật ký', () => {
     expect(lines).toEqual([`${L.auditNote}: ${L.auditNoteEmpty} → "Cân lại"`]);
   });
 
+  it('thay ảnh mà số ảnh giữ nguyên vẫn nói ra số ảnh cũ bị gỡ', () => {
+    const lines = auditDetail({
+      action: 'receipt.updated',
+      before: { note: null, photos: 1 },
+      after: { note: null, photos: 1, photosRemoved: 1 },
+    });
+    expect(lines).toEqual([`1 ${L.auditPhotosRemoved}`]);
+  });
+
   it('ảnh chụp tự do bị hỏng (không phải object) thì không ném lỗi', () => {
     expect(() => auditDetail({ action: 'receipt.deleted', before: 'rác', after: null })).not.toThrow();
   });

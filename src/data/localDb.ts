@@ -186,17 +186,26 @@ export const getDeviceId = (): string => {
   return id;
 };
 
+/**
+ * Khoá con trỏ kéo sổ của một tổ chức. Đổi tiền tố khi máy chủ có thêm loại bản ghi hay trường mà app bản cũ bỏ qua lúc
+ * kéo (0.24: hợp đồng mùa vụ, chỉ tiêu chất lượng, tỷ lệ tươi / nhân…): bản cũ vẫn đẩy con trỏ đi tiếp nên không bao
+ * giờ kéo lại những bản ghi đó. Con trỏ cũ bỏ đi thì máy kéo lại từ đầu một lần, gộp theo id — sổ và hàng đợi giữ nguyên.
+ */
+export const cursorKey = (orgId: string): string => `v2:${orgId}`;
+
 export const readCursor = async (orgId: string): Promise<string | null> => {
   const db = await openLocalDb();
-  return (await db.get('cursors', orgId)) ?? null;
+  return (await db.get('cursors', cursorKey(orgId))) ?? null;
 };
 
 export const writeCursor = async (orgId: string, cursor: string): Promise<void> => {
   const db = await openLocalDb();
-  await db.put('cursors', cursor, orgId);
+  await db.put('cursors', cursor, cursorKey(orgId));
 };
 
 export const clearCursor = async (orgId: string): Promise<void> => {
   const db = await openLocalDb();
+  await db.delete('cursors', cursorKey(orgId));
+  // Con trỏ bản cũ (khoá trần) — không còn đọc, dọn luôn.
   await db.delete('cursors', orgId);
 };

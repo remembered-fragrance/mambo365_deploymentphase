@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDate, formatDateTime, formatVnd } from '@mambo/core/format';
 import type { AuditEntryView } from '@mambo/contracts';
@@ -12,7 +12,7 @@ import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { useMembers } from '@/data/hooks/useOrg';
-import { listAudit, orgErrorMessage } from '@/data/org';
+import { listAudit, orgErrorMessage } from '@/data/hooks/useOrg';
 import { L } from '@/i18n/labels';
 import { PlanGate } from '../billing/PlanGate';
 import { ROUTES } from '../shared/navItems';
@@ -61,6 +61,10 @@ export const auditDetail = (e: Pick<AuditEntryView, 'action' | 'before' | 'after
       const lines: string[] = [];
       if (before.note !== after.note) lines.push(`${L.auditNote}: ${note(before.note)} → ${note(after.note)}`);
       if (before.photos !== after.photos) lines.push(`${String(before.photos)} → ${String(after.photos)} ${L.auditPhotos}`);
+      // Thay ảnh mà số ảnh giữ nguyên: máy chủ ghi số ảnh cũ bị gỡ (`photosRemoved`).
+      if (typeof after.photosRemoved === 'number' && after.photosRemoved > 0) {
+        lines.push(`${String(after.photosRemoved)} ${L.auditPhotosRemoved}`);
+      }
       return lines;
     }
     default:
@@ -85,9 +89,12 @@ export function AuditPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  // Lượt tải hiện tại: đổi người lọc (hay thử lại) thì trang "Xem thêm" của bộ lọc cũ về muộn bị bỏ.
+  const load = useRef(0);
 
   useEffect(() => {
     if (!paid) return;
+    load.current += 1;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -103,14 +110,16 @@ export function AuditPage() {
 
   const more = async () => {
     if (!page?.cursor) return;
+    const mine = load.current;
     setLoading(true);
     try {
       const next = await listAudit({ ...(actor ? { actor } : {}), cursor: page.cursor });
+      if (mine !== load.current) return;
       setPage({ entries: [...page.entries, ...next.entries], cursor: next.cursor });
     } catch (err) {
-      setError(orgErrorMessage(err));
+      if (mine === load.current) setError(orgErrorMessage(err));
     } finally {
-      setLoading(false);
+      if (mine === load.current) setLoading(false);
     }
   };
 

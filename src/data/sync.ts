@@ -26,7 +26,7 @@ import { ApiError, type Client } from '@mambo/sdk';
 import { flushAttachments, type PhotoAlert } from './attachments';
 import { readSyncMark, writeBook } from './cache';
 import { apiForOrg } from './client';
-import { getDeviceId, openLocalDb, readCursor } from './localDb';
+import { cursorKey, getDeviceId, openLocalDb, readCursor } from './localDb';
 import { mergeChanges } from './pullChanges';
 import { draftTotal, receiptRules } from './receiptRules';
 import {
@@ -579,7 +579,7 @@ export const saveSyncedBook = async (orgId: string, book: AppData, cursor: strin
   const db = await openLocalDb();
   const tx = db.transaction(['books', 'cursors'], 'readwrite');
   await tx.objectStore('books').put(book, orgId);
-  await tx.objectStore('cursors').put(cursor, orgId);
+  await tx.objectStore('cursors').put(cursor, cursorKey(orgId));
   await tx.done;
 };
 

@@ -56,6 +56,7 @@ export const PRO_LABELS = {
   auditSystem: 'Hệ thống',
   auditNoteEmpty: '(trống)',
   auditPhotos: 'ảnh',
+  auditPhotosRemoved: 'ảnh cũ bị gỡ',
   auditNote: 'Ghi chú',
   auditReceiptOf: 'Phiếu ngày',
   auditPaymentOf: 'Lần trả ngày',

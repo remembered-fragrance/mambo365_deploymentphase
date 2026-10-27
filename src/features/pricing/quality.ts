@@ -5,22 +5,9 @@
 
 import type { PricingRule, QualityMetric, TransactionLine } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { METRIC_LABEL, decimalText as num, metricValueText } from '@/i18n/qualityLabels';
 
-export const METRIC_LABEL: Record<QualityMetric, string> = {
-  bulkDensity: L.metricBulkDensity,
-  moisturePercent: L.metricMoisture,
-  impurityPercent: L.metricImpurity,
-  kor: L.metricKor,
-  qualityPercent: L.metricRubber,
-};
-
-export const METRIC_UNIT: Record<QualityMetric, string> = {
-  bulkDensity: 'g/l',
-  moisturePercent: '%',
-  impurityPercent: '%',
-  kor: 'lbs',
-  qualityPercent: '%',
-};
+export { METRIC_LABEL, METRIC_UNIT, metricValueText, qualityPercentLabel } from '@/i18n/qualityLabels';
 
 /** Quy tắc theo chỉ tiêu đang bật. */
 export const qualityRules = (rules: readonly PricingRule[]): PricingRule[] =>
@@ -39,12 +26,6 @@ export const metricsForProduct = (rules: readonly PricingRule[], productId: stri
   ),
 ];
 
-/** Nhãn ô độ mủ: mủ tạp đo DRC, còn lại giữ nhãn cũ. */
-export const qualityPercentLabel = (line: Pick<TransactionLine, 'rubberKind'>): string =>
-  line.rubberKind === 'cuplump' ? L.qualityPercentDrc : L.qualityPercent;
-
-const num = (n: number): string => String(n).replace('.', ',');
-
 /** "Dung trọng 520 g/l · Độ ẩm 14%" — để biên nhận nói vì sao giá đổi. Rỗng nếu dòng không đo gì. */
 export const qualityText = (line: TransactionLine): string => {
   const parts: string[] = [];
@@ -53,7 +34,7 @@ export const qualityText = (line: TransactionLine): string => {
   }
   for (const metric of ['bulkDensity', 'moisturePercent', 'impurityPercent', 'kor'] as const) {
     const value = line[metric];
-    if (value !== undefined) parts.push(`${METRIC_LABEL[metric]} ${num(value)}${METRIC_UNIT[metric] === '%' ? '%' : ` ${METRIC_UNIT[metric]}`}`);
+    if (value !== undefined) parts.push(`${METRIC_LABEL[metric]} ${metricValueText(metric, value)}`);
   }
   if (line.formulaType === 'lossPercent' && line.greenRatio !== undefined) parts.push(`${L.greenRatio} ${num(line.greenRatio)}`);
   return parts.join(' · ');

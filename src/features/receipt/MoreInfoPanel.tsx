@@ -13,6 +13,8 @@ import { hasMoreInfo, moreInfoSummary } from './moreInfo';
 
 interface MoreInfoPanelProps {
   readonly adjustments: readonly PriceAdjustment[];
+  /** Phiếu đã đủ số khoản máy chủ nhận — đếm cả khoản theo quy tắc, không chỉ khoản gõ ở đây. */
+  readonly full: boolean;
   readonly note: string;
   readonly attachmentIds: readonly string[];
   readonly onAdjustmentsChange: (next: readonly PriceAdjustment[]) => void;
@@ -30,6 +32,7 @@ interface MoreInfoPanelProps {
  */
 export function MoreInfoPanel({
   adjustments,
+  full,
   note,
   attachmentIds,
   onAdjustmentsChange,
@@ -40,9 +43,6 @@ export function MoreInfoPanel({
   const [open, setOpen] = useState(() => hasMoreInfo({ adjustments, note, attachmentIds }));
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
-
-  // Máy chủ nhận tối đa chừng này khoản một phiếu — quá thì op bị từ chối, kẹt cả hàng đợi.
-  const full = adjustments.length >= RECEIPT_LIMITS.adjustments;
 
   const add = (sign: 1 | -1) => {
     const value = parseMoney(amount);

@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { PricingRule } from '@mambo/core/types';
-import { metricsForProduct, qualityText } from '@/features/pricing/quality';
+import { metricsForProduct, metricValueText, qualityText } from '@/features/pricing/quality';
 import { draftFromRule, emptyRuleDraft, stepsOf, toRule, type StepDraft } from '@/features/pricing/ruleDraft';
 
 const step = (from: string, direction: StepDraft['direction'], amount: string): StepDraft => ({
@@ -102,6 +102,11 @@ describe('chữ trên biên nhận', () => {
 
   it('ghi chỉ tiêu đã đo, kiểu số Việt', () => {
     expect(qualityText({ ...base, bulkDensity: 520, moisturePercent: 13.5 })).toBe('Dung trọng 520 g/l · Độ ẩm 13,5%');
+  });
+
+  it('ảnh phiếu và biên nhận viết chỉ tiêu cùng một kiểu', () => {
+    expect(metricValueText('moisturePercent', 13.5)).toBe('13,5%');
+    expect(metricValueText('bulkDensity', 520)).toBe('520 g/l');
   });
 
   it('mủ tạp ghi DRC; mủ nước và dòng không đo gì không thêm chữ', () => {
