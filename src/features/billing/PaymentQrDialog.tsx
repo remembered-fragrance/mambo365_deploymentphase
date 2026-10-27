@@ -18,9 +18,8 @@ import { CheckIcon } from '@/components/ui/icons';
 import { BANK_ACCOUNT_NAME, BANK_ACCOUNT_NUMBER, BANK_NAME, SUPPORT_ZALO } from '@/config';
 import { formatVnd } from '@mambo/core/format';
 import type { PaymentIntent } from '@mambo/core/subscription';
-import { transferContent } from '@mambo/core/transferCode';
 import { L } from '@/i18n/labels';
-import { vietQrImageUrl } from './vietQr';
+import { paymentMemo, vietQrImageUrl } from './vietQr';
 
 const POLL_MS = 10_000;
 
@@ -59,7 +58,7 @@ export function PaymentQrDialog({ intent, paid, onPoll, onClose }: Props) {
 
   if (!intent) return null;
 
-  const content = transferContent(intent.code);
+  const content = paymentMemo(intent.code);
 
   return (
     <Dialog open title={L.payTitle} onClose={onClose}>
