@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { OrderSummary } from '@mambo/contracts';
+import { parseNumber } from '@mambo/core/parseNumber';
 import { canCancelFarmerOrder, hasPickupSchedule } from './farmerAccessModel';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -121,16 +122,16 @@ function CreateOrderDialog({
   const [note, setNote] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const partner = partners.find((item) => item.id === partnerId);
-  const qty = Number(quantity);
-  const offeredPrice = price.trim() ? Number(price) : null;
-  const invalid = !partner || !Number.isFinite(qty) || qty <= 0 || (price.trim() !== '' && (!Number.isFinite(offeredPrice) || Number(offeredPrice) <= 0));
+  const qty = parseNumber(quantity);
+  const offeredPrice = price.trim() ? parseNumber(price) : null;
+  const invalid = !partner || qty <= 0 || (offeredPrice !== null && offeredPrice <= 0);
   const reset = () => { setPartnerId(''); setCrop('rubber'); setQuantity(''); setPrice(''); setPickupAt(''); setAddress(''); setNote(''); setSubmitted(false); };
   return (
     <Dialog open={open} title={L.farmerCreateOrder} description={L.farmerCreateOrderHint} onClose={() => { reset(); onClose(); }}>
       <div className="flex max-h-[70dvh] flex-col gap-3 overflow-y-auto pr-1">
         {partners.length ? <Select label={L.farmerChooseTrader} value={partnerId} options={[{ value: '', label: L.chooseOption }, ...partners.map((item) => ({ value: item.id, label: item.name }))]} onValueChange={setPartnerId} /> : <p className="text-sm text-ink-2">{L.farmerConnectBeforeOrder} <Link className="font-bold text-brand underline" to={ROUTES.farmerNetwork} onClick={onClose}>{L.farmerOpenConnections}</Link></p>}
         <Select label={L.product} value={crop} options={[{ value: '', label: L.farmerAnyCrop }, ...CROP_OPTIONS]} onValueChange={(value) => setCrop(value as Crop | '')} />
-        <Input label={L.farmerEstimatedQuantity} type="number" min="0.01" step="any" inputMode="decimal" value={quantity} error={submitted && (!Number.isFinite(qty) || qty <= 0) ? L.farmerQuantityInvalid : undefined} onChange={(event) => setQuantity(event.target.value)} />
+        <Input label={L.farmerEstimatedQuantity} type="number" min="0.01" step="any" inputMode="decimal" value={quantity} error={submitted && qty <= 0 ? L.farmerQuantityInvalid : undefined} onChange={(event) => setQuantity(event.target.value)} />
         <Input label={L.unitOfMeasure} value="kg" readOnly />
         <Input label={L.farmerOfferedPrice} type="number" min="1" step="1" inputMode="numeric" value={price} onChange={(event) => setPrice(event.target.value)} />
         <Input label={L.farmerPickupAt} type="datetime-local" value={pickupAt} onChange={(event) => setPickupAt(event.target.value)} />
