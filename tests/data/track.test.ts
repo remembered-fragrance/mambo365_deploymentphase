@@ -14,7 +14,7 @@ vi.mock('@/data/client', () => ({
   api: { events: { track: client.send } },
 }));
 
-const { captureUtm, flushEvents, track, utmProps } = await import('@/data/track');
+const { captureUtm, flushEvents, platform, track, utmProps } = await import('@/data/track');
 const queued = () => JSON.parse(store.get('thumua365:events') ?? '[]') as unknown[];
 
 describe('đo lường — hàng đợi sự kiện', () => {
@@ -81,5 +81,22 @@ describe('UTM — nguồn khách tới (BE 0.26.0)', () => {
     captureUtm('?utm_source=C%C3%B4%20Mai%200912345678');
     captureUtm('?utm_medium=social');
     expect(utmProps()).toEqual({});
+  });
+});
+
+describe('nền tảng — tách web / app Android (TWA)', () => {
+  it('mở từ APK: twa, tải lại trang (mất referrer) vẫn là twa; phiên mới từ trình duyệt là web', () => {
+    const session = new Map<string, string>();
+    vi.stubGlobal('sessionStorage', {
+      getItem: (k: string) => session.get(k) ?? null,
+      setItem: (k: string, v: string) => void session.set(k, v),
+    });
+    vi.stubGlobal('document', { referrer: 'android-app://vn.id.thumua365.twa/' });
+    expect(platform()).toBe('twa');
+    vi.stubGlobal('document', { referrer: '' });
+    expect(platform()).toBe('twa');
+    session.clear();
+    expect(platform()).toBe('web');
+    vi.stubGlobal('document', undefined);
   });
 });

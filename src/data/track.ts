@@ -50,8 +50,23 @@ const anonId = (): string => {
   }
 };
 
-export const platform = (): 'web' | 'pwa' =>
-  typeof matchMedia !== 'undefined' && matchMedia('(display-mode: standalone)').matches ? 'pwa' : 'web';
+const TWA_KEY = 'thumua365:twa';
+
+/** App Android (TWA) mở trang đầu với referrer `android-app://<mã gói>`; tải lại trang là mất ⇒ nhớ trong phiên. */
+const inTwa = (): boolean => {
+  const launched = typeof document !== 'undefined' && document.referrer.startsWith('android-app://');
+  try {
+    if (launched) sessionStorage.setItem(TWA_KEY, '1');
+    return launched || sessionStorage.getItem(TWA_KEY) === '1';
+  } catch {
+    return launched;
+  }
+};
+
+export const platform = (): 'web' | 'pwa' | 'twa' => {
+  if (inTwa()) return 'twa';
+  return typeof matchMedia !== 'undefined' && matchMedia('(display-mode: standalone)').matches ? 'pwa' : 'web';
+};
 
 /**
  * Nguồn khách tới (BE 0.26.0): link mở app có `utm_source` thì giữ trong máy — link mới có UTM thì thay — để gửi kèm
