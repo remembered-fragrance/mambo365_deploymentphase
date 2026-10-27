@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { L } from '@/i18n/labels';
 import { PlanCard } from '../billing/PlanCard';
 import { ReferralCard } from '../billing/ReferralCard';
+import { useAccountProfile } from '@/data/hooks/useAccountProfile';
 import { HelpButton } from '../help/HelpButton';
 import { useAccess } from '../shared/useAccess';
 import { allows } from '../shared/access';
@@ -24,6 +25,7 @@ import { SupportCard } from './SupportCard';
  */
 export function ProfilePage() {
   const access = useAccess();
+  const account = useAccountProfile();
   // Gói và sổ trong máy chỉ có ở vỏ có sổ; gói chỉ người được trả tiền (chủ) mới thấy.
   const book = allows(access, { book: true });
   const billing = allows(access, { book: true, permission: 'billing:manage' });
@@ -38,7 +40,7 @@ export function ProfilePage() {
         <PreferencesCard />
         <PasswordCard />
         {book && <DataCard />}
-        {billing && <ReferralCard />}
+        {billing && <ReferralCard account={account} />}
         <LegalCard />
         <SupportCard />
         {access.can('account:delete') && <DeleteAccountCard />}

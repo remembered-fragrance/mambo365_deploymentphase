@@ -55,6 +55,9 @@ export const ROUTES = {
   plans: '/goi-dich-vu',
   importData: '/nhap-du-lieu',
   orders: '/don-hang',
+  farmerOrders: '/don-hang',
+  farmerNetwork: '/ket-noi',
+  farmerWeighDebt: '/can-no',
   orderCreate: '/don-hang/tao',
   orderDetail: (id: string) => `/don-hang/${id}`,
   notifications: '/thong-bao',
@@ -139,7 +142,10 @@ export const backTarget = (pathname: string, items: readonly NavItem[]): string 
   return items.some((item) => item.to === ROUTES.more) ? ROUTES.more : ROUTES.dashboard;
 };
 
-const visible = (access: Access) => (item: NavItem): boolean => allows(access, ROUTE_GATES[item.to]);
+const visible = (access: Access) => (item: NavItem): boolean =>
+  item.id === 'farmerWeighDebt'
+    ? isFarmer(access) && access.permissions.includes('linked:read')
+    : allows(access, ROUTE_GATES[item.to]);
 
 /** Hai con số duy nhất được vẽ thành huy hiệu trên điều hướng. */
 export interface NavCounts {
@@ -180,6 +186,7 @@ export const secondaryItems = (access: Access): NavItem[] => allSecondary().filt
 const allSecondary = (): NavItem[] => [
   { id: 'orders', label: L.navOrders, to: ROUTES.orders, Icon: PackageIcon },
   { id: 'map', label: L.navMap, to: ROUTES.map, Icon: MapIcon },
+  { id: 'connect', label: L.farmerNetworkShort, to: ROUTES.connect, Icon: PeopleIcon },
   { id: 'suppliers', label: L.navSuppliers, to: ROUTES.suppliers, Icon: PhoneIcon },
   { id: 'buyers', label: L.navBuyers, to: ROUTES.buyers, Icon: PeopleIcon },
   { id: 'contracts', label: L.navContracts, to: ROUTES.contracts, Icon: ContractIcon },
@@ -198,6 +205,7 @@ const allSecondary = (): NavItem[] => [
   { id: 'plans', label: L.planTitle, to: ROUTES.plans, Icon: CardIcon },
   { id: 'importData', label: L.importTitle, to: ROUTES.importData, Icon: UploadIcon },
   { id: 'feedback', label: L.navFeedback, to: ROUTES.feedback, Icon: StarIcon },
+  { id: 'farmerWeighDebt', label: L.farmerWeighDebtTitle, to: ROUTES.farmerWeighDebt, Icon: DebtIcon },
 ];
 
 const pick = (items: readonly NavItem[], ids: readonly string[]): NavItem[] =>
@@ -211,7 +219,7 @@ export const navGroups = (counts: NavCounts, access: Access): NavGroup[] => {
     {
       id: 'daily',
       label: L.groupDaily,
-      items: [...pick(bar, ['dashboard', 'receipts', 'debts']), ...pick(rest, ['orders', 'map'])],
+      items: [...pick(bar, ['dashboard', 'receipts', 'debts']), ...pick(rest, ['orders', 'map', 'connect'])],
     },
     { id: 'partners', label: L.groupPartners, items: pick(rest, ['suppliers', 'buyers', 'contracts']) },
     { id: 'goods', label: L.groupGoods, items: pick(rest, ['products', 'inventory', 'pricing']) },
@@ -219,7 +227,7 @@ export const navGroups = (counts: NavCounts, access: Access): NavGroup[] => {
     {
       id: 'account',
       label: L.groupAccount,
-      items: pick(rest, ['profile', 'members', 'audit', 'branches', 'myPlaces', 'plans', 'importData', 'feedback']),
+      items: pick(rest, ['profile', 'members', 'audit', 'branches', 'myPlaces', 'plans', 'importData', 'feedback', 'farmerWeighDebt']),
     },
   ];
   // Nhóm rỗng (người cân không có Đối tác/Hàng hoá đầy đủ, nông dân) thì bỏ hẳn tiêu đề.

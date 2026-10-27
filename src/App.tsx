@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -15,6 +15,7 @@ import { NotFoundPage } from '@/features/NotFoundPage';
 import { saveBookToFile } from '@/features/shared/bookFile';
 import { LeftOrgsDialog } from '@/features/shared/LeftOrgsDialog';
 import { ReloadRequiredOverlay } from '@/features/shared/ReloadRequiredOverlay';
+import { resolveDeveloperRolePreviewPath } from '@/features/dev/rolePreviewRoute';
 
 // Tách bundle theo route: mở app chỉ tải màn Tổng quan, không tải cả app.
 const DashboardPage = lazy(() =>
@@ -105,6 +106,12 @@ const LegalPage = lazy(() =>
 const ImportDataPage = lazy(() =>
   import('@/features/importData/ImportDataPage').then((m) => ({ default: m.ImportDataPage })),
 );
+const FarmerOrdersPage = lazy(() => import('@/features/farmer/FarmerOrdersPage').then((m) => ({ default: m.FarmerOrdersPage })));
+const FarmerNetworkPage = lazy(() => import('@/features/farmer/FarmerNetworkPage').then((m) => ({ default: m.FarmerNetworkPage })));
+const FarmerWeighDebtPage = lazy(() => import('@/features/farmer/FarmerWeighDebtPage').then((m) => ({ default: m.FarmerWeighDebtPage })));
+const DeveloperRolePreviewPage = import.meta.env.DEV
+  ? lazy(() => import('@/features/dev/DeveloperRolePreviewPage').then((m) => ({ default: m.DeveloperRolePreviewPage })))
+  : NotFoundPage;
 
 /** Trang chủ theo vỏ: nông dân không có sổ ⇒ trang riêng; vựa, doanh nghiệp ⇒ Tổng quan của sổ. */
 function HomePage() {
@@ -124,7 +131,23 @@ export function App() {
           <ReloadRequiredOverlay />
           <LeftOrgsDialog />
           <BrowserRouter>
-            <Routes>
+            <AppRoutes />
+          </BrowserRouter>
+        </ToastProvider>
+      </StoreProvider>
+    </ErrorBoundary>
+  );
+}
+
+function AppRoutes() {
+  const { pathname } = useLocation();
+  const destination = resolveDeveloperRolePreviewPath(pathname, import.meta.env.DEV);
+  if (destination === 'preview') {
+    return <Suspense fallback={<PageContainer><Skeleton rows={4} label={L.loading} /></PageContainer>}><DeveloperRolePreviewPage /></Suspense>;
+  }
+  if (destination === 'not-found') return <NotFoundPage />;
+
+  return <Routes>
               {/* Pháp lý & hướng dẫn: công khai, ngoài cổng đăng nhập và ngoài khung app. */}
               <Route path={ROUTES.terms} element={<Suspense fallback={null}><LegalPage kind="terms" /></Suspense>} />
               <Route path={ROUTES.privacy} element={<Suspense fallback={null}><LegalPage kind="privacy" /></Suspense>} />
@@ -163,7 +186,7 @@ export function App() {
                         <Route path={ROUTES.plans} element={<Gated route={ROUTES.plans}><PlansPage /></Gated>} />
                         <Route path={ROUTES.importData} element={<Gated route={ROUTES.importData}><ImportDataPage /></Gated>} />
                         <Route path="/vua/:orgId" element={<Gated route={ROUTES.linked}><LinkedTraderPage /></Gated>} />
-                        <Route path={ROUTES.orders} element={<Gated route={ROUTES.orders}><OrdersPage /></Gated>} />
+                        <Route path={ROUTES.orders} element={<Gated route={ROUTES.orders}><OrdersByOrg /></Gated>} />
                         <Route path={ROUTES.orderCreate} element={<Gated route={ROUTES.orderCreate}><OrderCreatePage /></Gated>} />
                         <Route path="/don-hang/:id" element={<Gated route={ROUTES.orders}><OrderDetailPage /></Gated>} />
                         <Route path={ROUTES.notifications} element={<Gated route={ROUTES.notifications}><NotificationsPage /></Gated>} />
@@ -171,7 +194,8 @@ export function App() {
                         <Route path={ROUTES.audit} element={<Gated route={ROUTES.audit}><AuditPage /></Gated>} />
                         <Route path={ROUTES.branches} element={<Gated route={ROUTES.branches}><BranchesPage /></Gated>} />
                         <Route path={ROUTES.orgReport} element={<Gated route={ROUTES.orgReport}><OrgReportPage /></Gated>} />
-                        <Route path={ROUTES.connect} element={<Gated route={ROUTES.connect}><ConnectPage /></Gated>} />
+                        <Route path={ROUTES.connect} element={<Gated route={ROUTES.connect}><ConnectByOrg /></Gated>} />
+                        <Route path={ROUTES.farmerWeighDebt} element={<Gated route={ROUTES.connect}><FarmerWeighDebtPage /></Gated>} />
                         <Route path={ROUTES.map} element={<Gated route={ROUTES.map}><MapPage /></Gated>} />
                         <Route path={ROUTES.myPlaces} element={<Gated route={ROUTES.myPlaces}><MyPlacesPage /></Gated>} />
                         <Route path={ROUTES.feedback} element={<Gated route={ROUTES.feedback}><FeedbackPage /></Gated>} />
@@ -186,10 +210,15 @@ export function App() {
                 </RequireAccount>
                 }
               />
-            </Routes>
-          </BrowserRouter>
-        </ToastProvider>
-      </StoreProvider>
-    </ErrorBoundary>
-  );
+            </Routes>;
+}
+
+function OrdersByOrg() {
+  const { orgType } = useStore();
+  return orgType === 'farmer' ? <FarmerOrdersPage /> : <OrdersPage />;
+}
+
+function ConnectByOrg() {
+  const { orgType } = useStore();
+  return orgType === 'farmer' ? <FarmerNetworkPage /> : <ConnectPage />;
 }
