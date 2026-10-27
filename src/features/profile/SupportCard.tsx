@@ -1,16 +1,21 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
-import { PhoneIcon } from '@/components/ui/icons';
+import { PhoneIcon, StarIcon } from '@/components/ui/icons';
 import { APP_VERSION, SUPPORT_ZALO } from '@/config';
 import { UnsentOpsError, useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { allows } from '../shared/access';
+import { ROUTE_GATES, ROUTES } from '../shared/navItems';
+import { useAccess } from '../shared/useAccess';
 
 /** Kênh liên lạc + số phiên bản (để hỗ trợ từ xa hỏi "bạn đang dùng bản nào"). */
 export function SupportCard() {
   const { signOut } = useStore();
+  const access = useAccess();
   const toast = useToast();
   const [confirmOut, setConfirmOut] = useState(false);
   /** Số thao tác chưa gửi — khác 0 thì hỏi lần hai trước khi bỏ chúng. */
@@ -27,6 +32,17 @@ export function SupportCard() {
           <PhoneIcon className="h-4 w-4" />
           {L.supportZalo}: {SUPPORT_ZALO}
         </a>
+
+        {/* Nông dân không có trang "Thêm" — đường vào màn góp ý của họ là đây. */}
+        {allows(access, ROUTE_GATES[ROUTES.feedback]) && (
+          <Link
+            to={ROUTES.feedback}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand px-4 font-bold text-brand"
+          >
+            <StarIcon className="h-4 w-4" />
+            {L.navFeedback}
+          </Link>
+        )}
 
         {/* Nói giờ trực THẬT. Hứa 24/7 khi chỉ có một người là mất uy tín ngay
             từ khách đầu tiên gọi lúc 10 giờ đêm. */}

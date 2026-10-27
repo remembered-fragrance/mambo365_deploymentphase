@@ -80,6 +80,8 @@ export const CameraIcon = (p: IconProps) => (
   <Icon {...p} d="M4 8h3l2-2h6l2 2h3v12H4z|M12 11a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" />
 );
 export const CheckIcon = (p: IconProps) => <Icon {...p} d="M5 13l4 4L19 7" />;
+/** Tô kín bằng `fill-current` trong className (CSS thắng thuộc tính `fill="none"` của SVG). */
+export const StarIcon = (p: IconProps) => <Icon {...p} d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />;
 export const LockIcon = (p: IconProps) => <Icon {...p} d="M6 11h12v9H6z|M8 11V8a4 4 0 0 1 8 0v3" />;
 export const ClockIcon = (p: IconProps) => (
   <Icon {...p} d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z|M12 7v5l3 2" />
