@@ -49,7 +49,7 @@ const anonId = (): string => {
   }
 };
 
-const platform = (): 'web' | 'pwa' =>
+export const platform = (): 'web' | 'pwa' =>
   typeof matchMedia !== 'undefined' && matchMedia('(display-mode: standalone)').matches ? 'pwa' : 'web';
 
 export const clearTrackQueue = (): void => {

@@ -27,6 +27,7 @@ import {
   PhoneIcon,
   PinIcon,
   ReceiptIcon,
+  StarIcon,
   TagIcon,
   ToolIcon,
   UploadIcon,
@@ -67,6 +68,7 @@ export const ROUTES = {
   myPlaces: '/dia-diem',
   linkedTrader: (orgId: string) => `/vua/${orgId}`,
   more: '/them',
+  feedback: '/gop-y',
   auth: '/dang-nhap',
   terms: LEGAL_LINKS.terms,
   privacy: LEGAL_LINKS.privacy,
@@ -108,6 +110,8 @@ export const ROUTE_GATES: Readonly<Record<string, Gate>> = {
   // Bản đồ: cần máy chủ; xem thì mọi vai trò, đặt địa điểm thì `place:manage`.
   [ROUTES.map]: { org: true },
   [ROUTES.myPlaces]: { org: true, permission: 'place:manage' },
+  // Góp ý gửi lên máy chủ ⇒ sổ của máy này (không có tổ chức) không có màn này.
+  [ROUTES.feedback]: { org: true },
 };
 
 /**
@@ -193,6 +197,7 @@ const allSecondary = (): NavItem[] => [
   { id: 'orgReport', label: L.navOrgReport, to: ROUTES.orgReport, Icon: ChartIcon },
   { id: 'plans', label: L.planTitle, to: ROUTES.plans, Icon: CardIcon },
   { id: 'importData', label: L.importTitle, to: ROUTES.importData, Icon: UploadIcon },
+  { id: 'feedback', label: L.navFeedback, to: ROUTES.feedback, Icon: StarIcon },
 ];
 
 const pick = (items: readonly NavItem[], ids: readonly string[]): NavItem[] =>
@@ -214,7 +219,7 @@ export const navGroups = (counts: NavCounts, access: Access): NavGroup[] => {
     {
       id: 'account',
       label: L.groupAccount,
-      items: pick(rest, ['profile', 'members', 'audit', 'branches', 'myPlaces', 'plans', 'importData']),
+      items: pick(rest, ['profile', 'members', 'audit', 'branches', 'myPlaces', 'plans', 'importData', 'feedback']),
     },
   ];
   // Nhóm rỗng (người cân không có Đối tác/Hàng hoá đầy đủ, nông dân) thì bỏ hẳn tiêu đề.
