@@ -10,7 +10,7 @@ import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
 import { useAppNotifications } from './NotificationsContext';
 
-/** Loại app biết vẽ. Loại khác (member.*, plan.* — BE6/BE7) bỏ qua cho tới khi có màn tương ứng. */
+/** Loại app biết vẽ. Loại khác (member.*, plan.* trừ plan.activated — BE6/BE7) bỏ qua cho tới khi có màn tương ứng. */
 const VERB: Partial<Record<NotificationKind, string>> = {
   'order.submitted': L.notifyOrderSubmitted,
   'order.accepted': L.notifyOrderAccepted,
@@ -22,6 +22,8 @@ const VERB: Partial<Record<NotificationKind, string>> = {
 };
 
 export const notificationText = (n: Pick<NotificationView, 'kind' | 'from'>): string | null => {
+  // Xác nhận thanh toán cho khách (G1.2): máy chủ ghi khi tiền vào và gói được gia hạn — không có bên gửi.
+  if (n.kind === 'plan.activated') return L.notifyPlanActivated;
   const verb = VERB[n.kind];
   return verb ? `${n.from?.name ?? L.notifySomeone} ${verb}` : null;
 };

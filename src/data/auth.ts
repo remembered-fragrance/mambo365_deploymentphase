@@ -28,7 +28,7 @@ import { L } from '@/i18n/labels';
 import { api, fetchMe, setCurrentOrg, type SupabaseAuth } from './client';
 import { profileFromMe, profileFromRow } from './authProfile';
 import { claimReferral } from './billing';
-import { track } from './track';
+import { track, utmProps } from './track';
 
 export { profileFromMe, profileFromRow };
 
@@ -223,7 +223,7 @@ export const signUp = async (
 
 export const bootstrap = async (input: MeBootstrapInput): Promise<Me> => {
   const me = await api.meBootstrap(input);
-  track('sign_up_completed', { orgType: input.orgType });
+  track('sign_up_completed', { orgType: input.orgType, ...utmProps() });
   return me;
 };
 
