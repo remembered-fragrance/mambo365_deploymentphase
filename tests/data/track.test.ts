@@ -63,8 +63,8 @@ describe('UTM — nguồn khách tới (BE 0.26.0)', () => {
   });
 
   it('link có utm_source: giữ lại (chữ thường) và gửi kèm app_opened đúng hợp đồng', () => {
-    captureUtm('?utm_source=Facebook&utm_medium=social&utm_campaign=mua-ca-phe-2026&fbclid=abc');
-    expect(utmProps()).toEqual({ utm: { source: 'facebook', medium: 'social', campaign: 'mua-ca-phe-2026' } });
+    captureUtm('?utm_source=Facebook&utm_medium=nhom&utm_campaign=oc2&utm_content=tin-a&fbclid=abc');
+    expect(utmProps()).toEqual({ utm: { source: 'facebook', medium: 'nhom', campaign: 'oc2', content: 'tin-a' } });
     track('app_opened', utmProps());
     expect(EventsTrackRequest.safeParse({ events: queued() }).success).toBe(true);
   });
@@ -73,8 +73,8 @@ describe('UTM — nguồn khách tới (BE 0.26.0)', () => {
     captureUtm('?utm_source=zalo');
     captureUtm('?ma=ABC123');
     expect(utmProps()).toEqual({ utm: { source: 'zalo' } });
-    captureUtm('?utm_source=tiktok&utm_campaign=thu-mua');
-    expect(utmProps()).toEqual({ utm: { source: 'tiktok', campaign: 'thu-mua' } });
+    captureUtm('?utm_source=truc-tiep&utm_medium=qr&utm_campaign=oc2');
+    expect(utmProps()).toEqual({ utm: { source: 'truc-tiep', medium: 'qr', campaign: 'oc2' } });
   });
 
   it('🔴 giá trị lạ (chữ tự do, thiếu source) không được lưu — không làm server bỏ sự kiện', () => {

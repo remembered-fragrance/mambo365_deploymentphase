@@ -60,7 +60,7 @@ export const platform = (): 'web' | 'pwa' =>
 export const captureUtm = (search: string): void => {
   const query = new URLSearchParams(search);
   const pick = (key: string) => query.get(`utm_${key}`)?.trim().toLowerCase() || undefined;
-  const parsed = Utm.safeParse({ source: pick('source'), medium: pick('medium'), campaign: pick('campaign') });
+  const parsed = Utm.safeParse({ source: pick('source'), medium: pick('medium'), campaign: pick('campaign'), content: pick('content') });
   if (!parsed.success) return;
   try {
     localStorage.setItem(UTM_KEY, JSON.stringify(parsed.data));
