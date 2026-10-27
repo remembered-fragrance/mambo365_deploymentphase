@@ -96,7 +96,7 @@ export const MAIL_LINKS = {
 } as const;
 
 /** Phiên bản và ngày áp dụng của Điều khoản + Chính sách — đổi nội dung thì đổi cả hai. */
-export const LEGAL_VERSION = '2.6';
+export const LEGAL_VERSION = '2.7';
 export const LEGAL_EFFECTIVE_DATE = '27/10/2026';
 
 /**
@@ -109,13 +109,13 @@ export const LEGAL_OPERATOR: {
   readonly address: string | null;
   readonly email: string | null;
 } = {
-  name: null,
+  name: 'thumua365startups',
   address: null,
-  email: null,
+  email: 'thumua365helpers@gmail.com',
 };
 
-/** Vùng máy chủ của project Supabase (Tài xác nhận). `null` ⇒ "đang cập nhật". */
-export const DATA_REGION: string | null = null;
+/** Vùng máy chủ của project Supabase (`ap-southeast-1`, xem 27/10). `null` ⇒ "đang cập nhật". */
+export const DATA_REGION: string | null = 'Singapore';
 
 /** Cách bao nhiêu ngày thì nhắc lại việc bổ sung email lấy lại mật khẩu. */
 export const EMAIL_REMINDER_DAYS = 7;
