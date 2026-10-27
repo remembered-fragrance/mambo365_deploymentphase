@@ -7,16 +7,18 @@
  * lo việc hiện lên màn hình, ghi xuống máy và xếp hàng đợi.
  */
 
-import * as drafts from '@/core/draftActions';
-import * as sheets from '@/core/importActions';
-import * as notes from '@/core/noteActions';
-import * as parties from '@/core/partyActions';
-import * as rules from '@/core/pricingRuleActions';
-import * as products from '@/core/productActions';
-import * as receipts from '@/core/receiptActions';
-import { emptyData, normalize } from '@/core/normalize';
-import type { AppData } from '@/core/types';
+import * as drafts from '@mambo/core/draftActions';
+import * as sheets from '@mambo/core/importActions';
+import * as notes from '@mambo/core/noteActions';
+import * as parties from '@mambo/core/partyActions';
+import * as rules from '@mambo/core/pricingRuleActions';
+import * as products from '@mambo/core/productActions';
+import * as receipts from '@mambo/core/receiptActions';
+import * as contracts from '@mambo/core/seasonContracts';
+import { emptyData, normalize } from '@mambo/core/normalize';
+import type { AppData } from '@mambo/core/types';
 import { derivedOps } from './derivedOps';
+import { track } from './track';
 import {
   draftToInsert,
   draftToPatch,
@@ -28,6 +30,8 @@ import {
   pricingRuleToPatch,
   productToInsert,
   productToPatch,
+  seasonContractToInsert,
+  seasonContractToPatch,
   transactionToInsert,
   transactionToPatch,
 } from './mappers';
@@ -60,6 +64,9 @@ export type BookActions = Pick<
   | 'addPricingRule'
   | 'updatePricingRule'
   | 'deletePricingRule'
+  | 'addSeasonContract'
+  | 'updateSeasonContract'
+  | 'deleteSeasonContract'
   | 'importData'
   | 'importSuppliers'
   | 'importReceipts'
@@ -73,21 +80,22 @@ interface Deps {
 }
 
 export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActions => ({
-  addTransaction: (input) => {
+  addTransaction: (input, match) => {
     const before = book();
-    const result = receipts.addTransaction(before, input);
+    const result = receipts.addTransaction(before, input, match);
     const tx = result.transaction;
     commit(result.data, [
       ...derivedOps(before, result.data, uid),
       opInsert('transaction', tx.id, transactionToInsert(tx)),
       ...tx.payments.map((p) => opInsert('payment', p.id, paymentToInsert(p, tx.id))),
     ]);
+    track('receipt_created', { kind: tx.kind, lines: tx.lines.length, offline: !navigator.onLine, fromOrder: Boolean(tx.orderId) });
     return tx;
   },
 
-  addSupplier: (input) => {
+  addSupplier: (input, match) => {
     const before = book();
-    const result = parties.addSupplier(before, input);
+    const result = parties.addSupplier(before, input, match);
     commit(result.data, derivedOps(before, result.data, uid));
     return result.supplier;
   },
@@ -101,9 +109,9 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
     commit(parties.deleteSupplier(book(), supplierId), [opSoftDelete('supplier', supplierId)]);
   },
 
-  addBuyer: (input) => {
+  addBuyer: (input, match) => {
     const before = book();
-    const result = parties.addBuyer(before, input);
+    const result = parties.addBuyer(before, input, match);
     commit(result.data, derivedOps(before, result.data, uid));
     return result.buyer;
   },
@@ -160,12 +168,13 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
     return tx;
   },
 
-  recordPayment: (txId, amount) => {
-    const result = receipts.recordPayment(book(), txId, amount);
+  recordPayment: (txId, amount, method) => {
+    const result = receipts.recordPayment(book(), txId, amount, method);
     if (!result.payment) return null;
     commit(result.data, [
       opInsert('payment', result.payment.id, paymentToInsert(result.payment, txId)),
     ]);
+    track('debt_payment_recorded', { offline: !navigator.onLine });
     return result.payment;
   },
 
@@ -216,6 +225,23 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
     commit(rules.deletePricingRule(book(), ruleId), [opSoftDelete('pricingRule', ruleId)]);
   },
 
+  addSeasonContract: (input) => {
+    const result = contracts.addSeasonContract(book(), input);
+    commit(result.data, [
+      opInsert('seasonContract', result.contract.id, seasonContractToInsert(result.contract)),
+    ]);
+    return result.contract;
+  },
+
+  updateSeasonContract: (id, patch) => {
+    const next = contracts.updateSeasonContract(book(), id, patch);
+    commit(next, [opUpdate('seasonContract', id, seasonContractToPatch(patch))]);
+  },
+
+  deleteSeasonContract: (id) => {
+    commit(contracts.deleteSeasonContract(book(), id), [opSoftDelete('seasonContract', id)]);
+  },
+
   // Chế độ xem là lựa chọn của từng máy, không đẩy lên máy chủ.
   updateSettings: (settings) => commit(notes.updateSettings(book(), settings), []),
 
@@ -223,16 +249,17 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
 
   importData: (payload) => commit(normalize(payload), []),
 
-  importSuppliers: (rows) => {
+  importSuppliers: (rows, match) => {
     const before = book();
-    const result = sheets.importSuppliers(before, rows);
+    const result = sheets.importSuppliers(before, rows, match);
     commit(result.data, derivedOps(before, result.data, uid));
+    track('import_completed', { kind: 'partners', rows: result.added.length });
     return result.added.length;
   },
 
-  importReceipts: (rows) => {
+  importReceipts: (rows, match) => {
     const before = book();
-    const result = sheets.importReceipts(before, rows);
+    const result = sheets.importReceipts(before, rows, match);
     commit(result.data, [
       ...derivedOps(before, result.data, uid),
       ...result.added.flatMap((tx) => [
@@ -240,6 +267,7 @@ export const createBookActions = ({ book, commit, userId: uid }: Deps): BookActi
         ...tx.payments.map((p) => opInsert('payment', p.id, paymentToInsert(p, tx.id))),
       ]),
     ]);
+    track('import_completed', { kind: 'receipts', rows: result.added.length });
     return result.added.length;
   },
 });

@@ -3,14 +3,14 @@
  * `jspdf` chỉ nạp động — không nằm trong JS khởi tạo.
  */
 
-import type { Transaction } from '@/core/types';
-import { captureReceipt } from './receiptCapture';
+import type { Transaction } from '@mambo/core/types';
+import { captureReceipt, PDF_JPEG_QUALITY } from './receiptCapture';
 import { shareOrDownload, type ShareResult } from './downloadFile';
 
 const MARGIN_MM = 8;
 const RECEIPT_TITLE = 'Phiếu THUMUA365';
 
-const canvasToPdfBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
+export const canvasToPdfBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
   const { jsPDF } = await import('jspdf');
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
   const pageW = pdf.internal.pageSize.getWidth();
@@ -21,11 +21,11 @@ const canvasToPdfBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
     h = pageH - MARGIN_MM * 2;
     w = (canvas.width * h) / canvas.height;
   }
-  pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (pageW - w) / 2, MARGIN_MM, w, h);
+  pdf.addImage(canvas.toDataURL('image/jpeg', PDF_JPEG_QUALITY), 'JPEG', (pageW - w) / 2, MARGIN_MM, w, h);
   return pdf.output('blob');
 };
 
-const canvasToPngBlob = (canvas: HTMLCanvasElement): Promise<Blob> =>
+export const canvasToPngBlob = (canvas: HTMLCanvasElement): Promise<Blob> =>
   new Promise((resolve, reject) => {
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(new Error('Không tạo được ảnh PNG'))),

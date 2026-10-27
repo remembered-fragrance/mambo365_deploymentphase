@@ -1,5 +1,5 @@
 import { Card } from '@/components/ui/Card';
-import type { ImportError, ImportErrorCode } from '@/core/sheetImport';
+import type { ImportError, ImportErrorCode } from '@mambo/core/sheetImport';
 import { L } from '@/i18n/labels';
 
 const MESSAGE: Record<ImportErrorCode, string> = {

@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ChevronRightIcon } from '@/components/ui/icons';
-import { transactionTotals } from '@/core/calc';
-import type { DebtGroup, DebtSide } from '@/core/debtSelectors';
-import { dueDateOf, isOverdue } from '@/core/debtSelectors';
-import { formatDate, formatVnd } from '@/core/format';
-import type { Transaction } from '@/core/types';
+import { transactionTotals } from '@mambo/core/calc';
+import type { DebtGroup, DebtSide } from '@mambo/core/debtSelectors';
+import { dueDateOf, isOverdue } from '@mambo/core/debtSelectors';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { StatementBar } from './StatementBar';
 
 interface DebtGroupCardProps {
   readonly group: DebtGroup;
@@ -18,7 +19,7 @@ interface DebtGroupCardProps {
 
 /**
  * Một đối tác, gập lại. Mở ra mới thấy từng phiếu — chủ vựa cần biết "Cô Mai
- * còn nợ bao nhiêu" trước, "nợ ở phiếu nào" sau.
+ * còn nợ bao nhiêu" trước, "nợ ở phiếu nào" sau. Cuối thẻ đã mở là sao kê gửi khách (gói Pro).
  */
 export function DebtGroupCard({ group, side, onPayFull, onPayPart }: DebtGroupCardProps) {
   const [open, setOpen] = useState(false);
@@ -32,9 +33,6 @@ export function DebtGroupCard({ group, side, onPayFull, onPayPart }: DebtGroupCa
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center gap-3 p-3 text-left"
       >
-        <ChevronRightIcon
-          className={`h-5 w-5 shrink-0 text-ink-3 transition ${open ? 'rotate-90' : ''}`}
-        />
         <span className="min-w-0 flex-1">
           <span className="block truncate font-bold text-ink">{group.partyName}</span>
           <span className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-ink-3">
@@ -56,20 +54,29 @@ export function DebtGroupCard({ group, side, onPayFull, onPayPart }: DebtGroupCa
         >
           {formatVnd(group.debt)}
         </span>
+        {/* Gập/mở: mũi tên xuống/lên ở cuối dòng. Mũi tên sang phải cả app dành cho "mở trang khác". */}
+        <ChevronRightIcon
+          className={`h-5 w-5 shrink-0 text-ink-3 transition ${open ? '-rotate-90' : 'rotate-90'}`}
+        />
       </button>
 
       {open && (
-        <ul className="border-t border-rule">
-          {unpaid.map((tx) => (
-            <DebtRow
-              key={tx.id}
-              tx={tx}
-              side={side}
-              onPayFull={onPayFull}
-              onPayPart={onPayPart}
-            />
-          ))}
-        </ul>
+        <>
+          <ul className="border-t border-rule">
+            {unpaid.map((tx) => (
+              <DebtRow
+                key={tx.id}
+                tx={tx}
+                side={side}
+                onPayFull={onPayFull}
+                onPayPart={onPayPart}
+              />
+            ))}
+          </ul>
+          <div className="border-t border-rule">
+            <StatementBar group={group} side={side} />
+          </div>
+        </>
       )}
     </li>
   );

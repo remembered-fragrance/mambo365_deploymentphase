@@ -5,15 +5,15 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ChevronRightIcon } from '@/components/ui/icons';
-import { formatVnd, formatVndShort, formatWeight } from '@/core/format';
-import { inventoryByProduct } from '@/core/inventory';
+import { formatVnd, formatVndShort, formatWeight } from '@mambo/core/format';
+import { inventoryByProduct } from '@mambo/core/inventory';
 import {
   dailySpend,
   debtsBySupplier,
   purchases,
   salesSummaryFor,
   summaryFor,
-} from '@/core/selectors';
+} from '@mambo/core/selectors';
 import { useDashboardData } from '@/data/hooks/useDashboardData';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';

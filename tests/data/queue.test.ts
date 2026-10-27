@@ -9,11 +9,10 @@ import {
   clearQueue,
   enqueue as enqueueScoped,
   type NewOp,
+  dropConflictedRecord,
   isDue,
-  isExhausted,
   markFailed,
   markConflict,
-  MAX_TRIES,
   opInsert,
   opSoftDelete,
   opUpdate,
@@ -21,10 +20,11 @@ import {
   pendingOps,
   pendingRecordIds,
   removeOp,
+  retryConflicts,
   RETRY_DELAYS_MS,
 } from '@/data/queue';
 
-const enqueue = (op: NewOp) => enqueueScoped({ ...op, orgId: 'org-a' });
+const enqueue = (op: NewOp) => enqueueScoped({ ...op, orgId: 'org-a', userId: 'u-1' });
 
 beforeEach(async () => {
   await clearQueue();
@@ -110,6 +110,12 @@ describe('thử lại có giãn cách', () => {
     expect(isDue(failed, Date.now() + (RETRY_DELAYS_MS[0] ?? 0) + 10)).toBe(true);
   });
 
+  it('mốc hẹn hỏng hay thiếu thì coi như tới hạn — không được chặn im cả hàng đợi', async () => {
+    const op = await enqueue(opInsert('transactions', 'tx-1', { id: 'tx-1' }));
+    expect(isDue({ ...op, nextAttemptAt: 'không phải ngày' })).toBe(true);
+    expect(isDue({ ...op, nextAttemptAt: undefined as unknown as string })).toBe(true);
+  });
+
   it('giãn cách tăng dần qua từng lần thất bại', async () => {
     let op = await enqueue(opInsert('transactions', 'tx-1', { id: 'tx-1' }));
     const waits: number[] = [];
@@ -123,15 +129,41 @@ describe('thử lại có giãn cách', () => {
     );
   });
 
-  it('hết lần thử thì đánh dấu kẹt — phải báo cho người dùng, không im lặng', async () => {
+  it('lỗi mạng bao nhiêu lần cũng không bỏ cuộc — cứ 5 phút thử lại một lần', async () => {
     let op = await enqueue(opInsert('transactions', 'tx-1', { id: 'tx-1' }));
-    expect(isExhausted(op)).toBe(false);
+    for (let i = 0; i < 20; i++) op = await markFailed(op, 'mất mạng', 'org-a');
 
-    for (let i = 0; i < MAX_TRIES; i++) op = await markFailed(op, 'máy chủ từ chối', 'org-a');
-
-    expect(isExhausted(op)).toBe(true);
-    // Vẫn còn trong hàng đợi: không được lặng lẽ vứt thao tác của người dùng.
+    const wait = new Date(op.nextAttemptAt).getTime() - Date.now();
+    expect(Math.round(wait / 1000)).toBe(300);
     expect(await pendingCount('org-a')).toBe(1);
+  });
+
+  it('thao tác bị từ chối: "Gửi lại" bỏ cờ, "Bỏ" gỡ thao tác đang chặn cùng các thao tác sau của bản ghi đó', async () => {
+    const a = await enqueue(opInsert('note', 'a', {}));
+    const b = await enqueue(opInsert('note', 'b', {}));
+    await enqueue(opUpdate('note', 'a', { body: 'sửa tiếp' }));
+    await markConflict(a.id, 'org-a', { code: 'VALIDATION_FAILED', message: 'Sai' });
+
+    await retryConflicts('org-a');
+    const [retried] = await pendingOps('org-a');
+    expect(retried?.conflict).toBeUndefined();
+    expect(retried && isDue(retried)).toBe(true);
+
+    await markConflict(a.id, 'org-a', { code: 'VALIDATION_FAILED', message: 'Sai' });
+    const dropped = await dropConflictedRecord('org-a');
+    expect(dropped?.id).toBe(a.id);
+    expect((await pendingOps('org-a')).map((op) => op.id)).toEqual([b.id]);
+    expect(await dropConflictedRecord('org-a')).toBeNull();
+  });
+
+  it('bỏ phiếu thêm mới bị từ chối thì bỏ cả các lần trả của phiếu đó', async () => {
+    const receipt = await enqueue(opInsert('transaction', 'tx-1', { id: 'tx-1' }));
+    await enqueue(opInsert('payment', 'pay-1', { transactionId: 'tx-1', amount: 1 }));
+    const other = await enqueue(opInsert('payment', 'pay-2', { transactionId: 'tx-2', amount: 1 }));
+
+    await markConflict(receipt.id, 'org-a', { code: 'VALIDATION_FAILED', message: 'Sai' });
+    expect((await dropConflictedRecord('org-a'))?.id).toBe(receipt.id);
+    expect((await pendingOps('org-a')).map((op) => op.id)).toEqual([other.id]);
   });
 });
 
@@ -156,9 +188,9 @@ describe('đổi tài khoản', () => {
 
 describe('organization isolation', () => {
   it('counts and flags only the requested organization, even for matching record IDs', async () => {
-    const a = await enqueueScoped({ ...opUpdate('note', 'same', { body: 'A' }), orgId: 'org-a' });
-    const b = await enqueueScoped({ ...opUpdate('note', 'same', { body: 'B' }), orgId: 'org-b' });
-    await enqueueScoped({ ...opInsert('note', 'only-b', { body: 'B' }), orgId: 'org-b' });
+    const a = await enqueueScoped({ ...opUpdate('note', 'same', { body: 'A' }), orgId: 'org-a', userId: 'u-1' });
+    const b = await enqueueScoped({ ...opUpdate('note', 'same', { body: 'B' }), orgId: 'org-b', userId: 'u-1' });
+    await enqueueScoped({ ...opInsert('note', 'only-b', { body: 'B' }), orgId: 'org-b', userId: 'u-1' });
     expect(await pendingCount('org-a')).toBe(1);
     expect(await pendingCount('org-b')).toBe(2);
     expect(await pendingRecordIds('org-a')).toEqual(new Set(['same']));
@@ -171,6 +203,6 @@ describe('organization isolation', () => {
     expect((await pendingOps('org-a'))[0]?.tries).toBe(0);
   });
   it('refuses unscoped operations', async () => {
-    await expect(enqueueScoped({ ...opInsert('note', 'n', {}), orgId: '' })).rejects.toThrow();
+    await expect(enqueueScoped({ ...opInsert('note', 'n', {}), orgId: '', userId: 'u-1' })).rejects.toThrow();
   });
 });

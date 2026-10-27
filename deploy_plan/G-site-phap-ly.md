@@ -1,5 +1,7 @@
 # GIAI ĐOẠN G — SITE GIỚI THIỆU & PHÁP LÝ
 
+> 📌 **23/10/2026 — ✅ đã làm (11/08/2026).** Kế hoạch 08/2026, thời app gọi Supabase trực tiếp — giữ làm lịch sử. Trạng thái và kiến trúc hiện tại: đầu trang [README.md](README.md) của thư mục này. Domain của nhóm là `thumua365.id.vn` (app ở `www.`) — `thumua365.vn` / `app.thumua365.vn` dưới đây không phải của nhóm. Trang pháp lý nay là route công khai của app; `site/` chưa xuất bản.
+
 **Buổi:** 2 · **Phụ thuộc:** F xong · **Người làm:** Tài (nội dung: Nguyên & Linh) · **Cần từ nhóm:** nội dung landing, số Zalo hỗ trợ, tên chủ thể chịu trách nhiệm
 
 ---

@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
-import { formatVnd, formatWeight } from '@/core/format';
+import { formatVnd, formatWeight } from '@mambo/core/format';
 import { useFarmerConnections } from '@/data/hooks/useFarmerConnections';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';

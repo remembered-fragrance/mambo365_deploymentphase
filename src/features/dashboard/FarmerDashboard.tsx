@@ -3,7 +3,7 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { formatVnd } from '@/core/format';
+import { formatVnd } from '@mambo/core/format';
 import { useDashboardData } from '@/data/hooks/useDashboardData';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';

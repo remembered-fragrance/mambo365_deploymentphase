@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { formatVnd, formatWeight } from '@/core/format';
+import { formatVnd, formatWeight } from '@mambo/core/format';
 import { useDashboardData } from '@/data/hooks/useDashboardData';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';

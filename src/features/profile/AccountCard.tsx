@@ -1,56 +1,113 @@
 import { useEffect, useState } from 'react';
+import type { OrgType } from '@mambo/contracts';
+import { formatPhoneVn } from '@mambo/core/identifier';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { WarningIcon } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toast';
 import { useEmailReminder } from '@/data/hooks/useEmailReminder';
-import type { AccountProfileController } from '@/data/hooks/useAccountProfile';
+import { sendVerificationMail, useRecoveryEmailStatus } from '@/data/hooks/useRecovery';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
-import { profileBusinessLabel, profileOwnerLabel, profileTitle } from '@/i18n/profileLabels';
+import { changedProfileFields } from './profilePatch';
 
-/** Hồ sơ tài khoản. Tên tổ chức lấy từ membership đang chọn; SĐT là khoá đăng nhập. */
-export function AccountCard({ account }: { readonly account: AccountProfileController }) {
-  const { user, currentOrg, orgType } = useStore();
+/** Nhãn tên tổ chức theo vai — chưa biết vai thì không hiện ô, không đoán. */
+const BUSINESS_LABEL: Readonly<Record<OrgType, string>> = {
+  farmer: L.profileBusinessFarmer,
+  trader: L.profileBusiness,
+  enterprise: L.profileBusinessEnterprise,
+};
+
+type Field = 'name' | 'username' | 'recoveryEmail';
+type FieldErrors = Partial<Record<Field, string>>;
+
+/** `VALIDATION_FAILED` của API mang `details.fields` = { tên trường: câu lỗi }. */
+const fieldErrorsOf = (e: unknown): FieldErrors => {
+  const fields = (e as { details?: { fields?: unknown } } | null)?.details?.fields;
+  if (!fields || typeof fields !== 'object') return {};
+  const out: FieldErrors = {};
+  for (const key of ['name', 'username', 'recoveryEmail'] as const) {
+    const msg = (fields as Record<string, unknown>)[key];
+    if (typeof msg === 'string') out[key] = msg;
+  }
+  return out;
+};
+
+/**
+ * Hồ sơ người dùng: tên, tên đăng nhập, email khôi phục (`PATCH /v1/me/profile`).
+ * Số điện thoại là khoá đăng nhập; tên hộ / vựa / doanh nghiệp là của tổ chức — cả hai chỉ để xem.
+ */
+export function AccountCard() {
+  const { user, currentOrg, updateProfile } = useStore();
   const toast = useToast();
-  const [name, setName] = useState(user?.name ?? '');
-  const [username, setUsername] = useState(user?.username ?? '');
-  const [email, setEmail] = useState(user?.email ?? '');
-  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
-  const businessName = currentOrg?.organization.name ?? '';
-  const reminder = useEmailReminder(Boolean(email));
+  const savedName = user?.name ?? '';
+  const savedUsername = user?.username ?? '';
+  const savedEmail = user?.email ?? '';
+  const [name, setName] = useState(savedName);
+  const [username, setUsername] = useState(savedUsername);
+  const [email, setEmail] = useState(savedEmail);
+  const [edited, setEdited] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState<string | undefined>();
+  const [busy, setBusy] = useState(false);
+  const reminder = useEmailReminder(Boolean(user?.email));
+  const emailStatus = useRecoveryEmailStatus(savedEmail);
+  const [sending, setSending] = useState(false);
+  const org = currentOrg?.organization;
 
-  useEffect(() => {
-    if (!account.profile) return;
-    setName(account.profile.name);
-    setUsername(account.profile.username ?? '');
-    setEmail(account.profile.recoveryEmail ?? '');
-  }, [account.profile]);
-
-  const save = async () => {
-    setVerificationMessage(null);
+  const resendVerification = async () => {
+    setSending(true);
     try {
-      await account.save({ name, username, email });
-      toast({ message: L.save });
-    } catch { /* account.error is rendered below */ }
+      const status = await sendVerificationMail();
+      toast({
+        message: status === 'sent' ? L.emailVerifySent : status === 'too_soon' ? L.emailVerifyTooSoon : status === 'already_verified' ? L.emailVerifyAlready : L.emailMissingTitle,
+      });
+      if (status === 'already_verified') emailStatus.reload();
+    } catch (e) {
+      toast({ message: e instanceof Error ? e.message : L.errorTitle, tone: 'alert' });
+    } finally {
+      setSending(false);
+    }
   };
 
-  const sendVerification = async () => {
-    setVerificationMessage(null);
+  // Tên đăng nhập / email khôi phục về SAU khi màn đã mở (GET /v1/me/profile chạy nền):
+  // chưa gõ gì thì nhận giá trị mới, không thì giữ chữ người dùng đang sửa.
+  useEffect(() => {
+    if (edited) return;
+    setName(savedName);
+    setUsername(savedUsername);
+    setEmail(savedEmail);
+  }, [edited, savedName, savedUsername, savedEmail]);
+
+  const save = async () => {
+    const patch = changedProfileFields(
+      { name: savedName, username: savedUsername, email: savedEmail },
+      { name, username, email },
+    );
+    setErrors({});
+    setFormError(undefined);
+    if (Object.keys(patch).length === 0) {
+      setEdited(false);
+      toast({ message: L.profileSaved });
+      return;
+    }
+    setBusy(true);
     try {
-      const status = await account.sendVerification();
-      setVerificationMessage({
-        sent: L.profileVerificationSent,
-        already_verified: L.profileEmailVerified,
-        no_email: L.profileVerificationNoEmail,
-        too_soon: L.profileVerificationTooSoon,
-      }[status]);
-    } catch { /* account.error is rendered below */ }
+      await updateProfile(patch);
+      setEdited(false);
+      toast({ message: L.profileSaved });
+    } catch (e) {
+      const fields = fieldErrorsOf(e);
+      setErrors(fields);
+      if (Object.keys(fields).length === 0) setFormError(e instanceof Error ? e.message : L.errorTitle);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
-    <Card title={profileTitle(orgType)}>
+    <Card title={L.navProfile}>
       <div className="flex flex-col gap-3">
         {reminder.show && (
           <div className="rounded-xl border border-alert bg-paper p-3">
@@ -65,35 +122,79 @@ export function AccountCard({ account }: { readonly account: AccountProfileContr
           </div>
         )}
 
-        {account.error && <div role="alert" className="rounded-xl border border-alert/30 bg-alert/5 p-3 text-sm text-alert">{account.error}{!account.loading && <Button className="ml-2" onClick={() => void account.refresh()}>{L.dashboardRetry}</Button>}</div>}
-        {account.loading && <p className="text-sm text-ink-3" aria-live="polite">{L.loading}</p>}
-        <Input label={profileOwnerLabel(orgType)} value={name} onChange={(e) => setName(e.target.value)} />
         <Input
-          label={profileBusinessLabel(orgType)}
-          value={businessName}
-          readOnly
+          label={L.profileOwner}
+          value={name}
+          error={errors.name}
+          maxLength={80}
+          autoComplete="name"
+          onChange={(e) => {
+            setName(e.target.value);
+            setEdited(true);
+          }}
         />
-        <Input label={L.profileUsername} value={username} onChange={(e) => setUsername(e.target.value)} />
+        <Input
+          label={L.profileUsername}
+          value={username}
+          hint={L.setupUsernameHint}
+          error={errors.username}
+          maxLength={32}
+          autoCapitalize="none"
+          autoComplete="username"
+          onChange={(e) => {
+            setUsername(e.target.value);
+            setEdited(true);
+          }}
+        />
         <Input
           label={L.profileEmail}
+          type="email"
           value={email}
+          hint={L.profileEmailHint}
+          error={errors.recoveryEmail}
           inputMode="email"
-          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setEdited(true);
+          }}
         />
-        {account.profile?.recoveryEmail && (
-          <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-            <span className={account.profile.recoveryEmailVerified ? 'text-ink-2' : 'text-alert'}>
-              {account.profile.recoveryEmailVerified ? L.profileEmailVerified : L.profileEmailUnverified}
-            </span>
-            {!account.profile.recoveryEmailVerified && <Button disabled={account.loading || account.saving} onClick={() => void sendVerification()}>{L.profileSendVerification}</Button>}
-          </div>
+        {/* Trạng thái của email ĐÃ LƯU — đang gõ email khác thì chưa nói gì. */}
+        {savedEmail && email.trim().toLowerCase() === savedEmail.toLowerCase() && emailStatus.verified !== null && (
+          emailStatus.verified ? (
+            <p className="-mt-1 text-sm font-medium text-brand">{L.emailVerified}</p>
+          ) : (
+            <div className="-mt-1 rounded-xl border border-alert bg-paper p-3">
+              <p className="text-sm text-ink-2">{L.emailUnverified}</p>
+              <Button className="mt-2" disabled={sending} onClick={resendVerification}>
+                {sending ? L.authWorking : L.emailSendVerify}
+              </Button>
+            </div>
+          )
         )}
-        {verificationMessage && <p role="status" className="text-sm text-ink-2">{verificationMessage}</p>}
-        {account.profile?.referralCode && <Input label={L.profileReferralCode} value={account.profile.referralCode} readOnly />}
-        <Input label={L.profilePhone} value={user?.phone ?? '—'} readOnly />
+        <Input
+          label={L.profilePhone}
+          value={user?.phone ? formatPhoneVn(user.phone) : '—'}
+          hint={L.profilePhoneHint}
+          readOnly
+        />
+        {org?.name && (
+          <Input
+            label={BUSINESS_LABEL[org.type]}
+            value={org.name}
+            hint={L.profileBusinessHint}
+            readOnly
+          />
+        )}
 
-        <Button tone="primary" block disabled={!account.profile || account.loading || account.saving} onClick={() => void save()}>
-          {account.saving ? L.loading : L.save}
+        {formError && (
+          <p role="alert" className="text-sm font-medium text-alert">
+            {formError}
+          </p>
+        )}
+
+        <Button tone="primary" block disabled={busy} onClick={save}>
+          {busy ? L.setupWorking : L.save}
         </Button>
       </div>
     </Card>

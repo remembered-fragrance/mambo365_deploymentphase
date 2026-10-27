@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AccountProfile, ProfilePatch } from '../auth';
-import { getAccountProfile } from '../auth';
+import type { ProfilePatch } from '../auth';
+import { claimReferral } from '../billing';
 import { api, hasBackend } from '../client';
 import { useStore } from '../useStore';
 
+type AccountProfile = Awaited<ReturnType<typeof api.account.profile>>;
+
 export function useAccountProfile() {
-  const { user, updateProfile, claimReferral, pendingReferralCode } = useStore();
+  const { user } = useStore();
   const userId = user?.id ?? null;
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export function useAccountProfile() {
     setLoading(true);
     setError(null);
     try {
-      const result = await getAccountProfile();
+      const result = await api.account.profile();
       if (requestId !== requestSequence.current) return null;
       setProfile(result);
       return result;
@@ -53,7 +55,11 @@ export function useAccountProfile() {
     setSaving(true);
     setError(null);
     try {
-      const result = await updateProfile(patch);
+      const result = await api.account.updateProfile({
+        ...(patch.name !== undefined ? { name: patch.name } : {}),
+        ...(patch.username !== undefined ? { username: patch.username || null } : {}),
+        ...(patch.email !== undefined ? { recoveryEmail: patch.email || null } : {}),
+      });
       setProfile(result);
       return result;
     } catch (cause) {
@@ -62,7 +68,7 @@ export function useAccountProfile() {
     } finally {
       setSaving(false);
     }
-  }, [updateProfile]);
+  }, []);
 
   const sendVerification = useCallback(async () => {
     setError(null);
@@ -88,9 +94,9 @@ export function useAccountProfile() {
       setError(cause instanceof Error ? cause.message : 'Không ghi nhận được mã giới thiệu.');
       throw cause;
     }
-  }, [claimReferral]);
+  }, []);
 
-  return { profile, loading, saving, error, refresh, save, sendVerification, submitReferral, pendingReferralCode };
+  return { profile, loading, saving, error, refresh, save, sendVerification, submitReferral, pendingReferralCode: '' };
 }
 
 export type AccountProfileController = ReturnType<typeof useAccountProfile>;

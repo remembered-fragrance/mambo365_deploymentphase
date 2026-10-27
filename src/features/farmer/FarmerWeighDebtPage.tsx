@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Select } from '@/components/ui/Select';
-import { formatVnd, formatWeight } from '@/core/format';
+import { formatVnd, formatWeight } from '@mambo/core/format';
 import { useFarmerConnections } from '@/data/hooks/useFarmerConnections';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';

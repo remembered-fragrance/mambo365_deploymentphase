@@ -1,7 +1,7 @@
 import { DataView } from '@/components/data/DataView';
 import type { Column } from '@/components/data/dataViewModel';
-import { formatVnd } from '@/core/format';
-import type { TaxReport } from '@/core/taxReport';
+import { formatVnd } from '@mambo/core/format';
+import type { TaxReport } from '@mambo/core/taxReport';
 import { L } from '@/i18n/labels';
 
 const columns: Column<TaxReport>[] = [
@@ -25,7 +25,7 @@ const columns: Column<TaxReport>[] = [
   {
     id: 'profit',
     header: L.taxGrossProfit,
-    cell: (r) => formatVnd(r.grossProfit),
+    cell: (r) => (r.saleCount > 0 ? formatVnd(r.grossProfit) : r.purchaseCount > 0 ? L.taxNoSaleYet : formatVnd(0)),
     align: 'right',
     numeric: true,
     mobile: 'value',

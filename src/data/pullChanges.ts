@@ -9,7 +9,7 @@
  *   5. Hợp nhất qua nhiều trang, không bỏ payment chưa thấy phiếu cha
  */
 
-import type { AppData, Payment, Transaction } from '@/core/types';
+import type { AppData, Payment, Transaction } from '@mambo/core/types';
 import type {
   DraftRecord,
   NoteRecord,
@@ -17,6 +17,7 @@ import type {
   PaymentRecord,
   PricingRuleRecord,
   ProductRecord,
+  SeasonContractRecord,
   SyncChanges,
   SyncPullResult,
   TransactionRecord,
@@ -34,6 +35,7 @@ import {
   pricingRuleFromRecord,
   pricingRuleFromRow,
   productFromRecord,
+  seasonContractFromRecord,
   productFromRow,
   supplierFromRow,
   transactionFromRecord,
@@ -58,6 +60,8 @@ export interface RemoteChanges {
   readonly drafts: (DraftRow | DraftRecord)[];
   readonly pricingRules: (PricingRuleRow | PricingRuleRecord)[];
   readonly notes: (NoteRow | NoteRecord)[];
+  /** Chỉ có từ máy chủ 0.24 (V15) — sổ Supabase cũ không có bảng này. */
+  readonly seasonContracts?: SeasonContractRecord[];
 }
 
 /**
@@ -249,5 +253,11 @@ export const mergeChanges = (
       pendingIds,
     ),
     notes: mergeList(local.notes, changes.notes, mapNote, pendingIds),
+    seasonContracts: mergeList(
+      local.seasonContracts ?? [],
+      changes.seasonContracts ?? [],
+      seasonContractFromRecord,
+      pendingIds,
+    ),
   };
 };

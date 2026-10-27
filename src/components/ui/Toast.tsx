@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { UNDO_MS } from '@/config';
+import { toastDuration } from './toastDuration';
 
 export interface ToastRequest {
   readonly message: string;
@@ -38,7 +38,7 @@ export function ToastProvider({ children }: { readonly children: ReactNode }) {
     (request: ToastRequest) => {
       if (timer.current) clearTimeout(timer.current);
       setToast({ ...request, id: Date.now() });
-      timer.current = setTimeout(() => setToast(null), UNDO_MS);
+      timer.current = setTimeout(() => setToast(null), toastDuration(request));
     },
     [],
   );

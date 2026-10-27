@@ -1,0 +1,359 @@
+import { PLACE_PRICES_LIMIT, type Place, PlaceInput, type PlacePrice } from '@mambo/contracts';
+import { useId, useState } from 'react';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Input } from '@/components/ui/Input';
+import { PlusIcon, TrashIcon } from '@/components/ui/icons';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
+import { createPlace, placeErrorMessage, placeFieldErrors, removePlace, updatePlace } from '@/data/hooks/usePlaces';
+import { useStore } from '@/data/useStore';
+import { L } from '@/i18n/labels';
+import { PlanGate } from '../billing/PlanGate';
+import { parseMoney } from '../shared/money';
+import { NumberField } from '../shared/NumberField';
+import { formatLatLng, type LatLng, roundLatLng } from './geo';
+
+/** (V9) Một dòng giá thu mua đang gõ — giá giữ chuỗi như mọi ô số. */
+export interface PriceRow {
+  readonly product: string;
+  readonly price: string;
+  readonly unit: string;
+}
+
+export interface PlaceFormValues {
+  readonly name: string;
+  readonly address: string;
+  readonly phone: string;
+  readonly description: string;
+  readonly prices?: readonly PriceRow[];
+}
+
+export const EMPTY_FORM: PlaceFormValues = { name: '', address: '', phone: '', description: '', prices: [] };
+
+export const formFromPlace = (p: Place): PlaceFormValues => ({
+  name: p.name,
+  address: p.address ?? '',
+  phone: p.phone ?? '',
+  description: p.description ?? '',
+  prices: p.prices.map((x) => ({ product: x.product, price: String(x.price), unit: x.unit })),
+});
+
+/** Dòng bỏ trống tên hoặc giá thì bỏ qua — không bắt người dùng xoá dòng thừa mới lưu được. */
+export const pricesOf = (rows: readonly PriceRow[] = []): PlacePrice[] =>
+  rows
+    .filter((r) => r.product.trim() !== '' && r.price.trim() !== '')
+    .map((r) => ({ product: r.product.trim(), price: parseMoney(r.price), unit: r.unit || 'kg' }));
+
+/**
+ * Gửi `prices` chỉ khi có gói và bảng giá đổi so với lúc mở form: sửa mỗi tên thì giờ khai giá giữ nguyên (máy chủ
+ * ghi lại giờ mỗi lần nhận `prices`). Hết gói thì không gửi — giá cũ nằm yên, gia hạn là hiện lại.
+ */
+export const placeInput = (values: PlaceFormValues, position: LatLng, sendPrices: boolean): PlaceInput => {
+  const { prices: rows, ...rest } = values;
+  const prices = pricesOf(rows);
+  return { ...rest, ...roundLatLng(position), ...(sendPrices ? { prices: prices.length > 0 ? prices : null } : {}) };
+};
+
+export const pricesChanged = (values: PlaceFormValues, target: Place | null): boolean =>
+  JSON.stringify(pricesOf(values.prices)) !== JSON.stringify(target?.prices ?? []);
+
+type TextField = Exclude<keyof PlaceFormValues, 'prices'>;
+type FieldName = keyof PlaceFormValues | 'lat';
+type Errors = Partial<Record<FieldName, string>>;
+
+const FIELD_NAMES: readonly FieldName[] = ['name', 'address', 'phone', 'description', 'prices', 'lat'];
+const isFieldName = (key: PropertyKey): key is FieldName => FIELD_NAMES.some((f) => f === key);
+
+/** Lỗi kiểm ở máy (cùng schema với máy chủ) → lỗi từng ô; `lng` gộp vào dòng "Vị trí". */
+export const validatePlace = (values: PlaceFormValues, position: LatLng): Errors => {
+  const parsed = PlaceInput.safeParse(placeInput(values, position, true));
+  if (parsed.success) return {};
+  const errors: Errors = {};
+  for (const issue of parsed.error.issues) {
+    const head = issue.path[0] === 'lng' ? 'lat' : issue.path[0];
+    if (head !== undefined && isFieldName(head)) errors[head] ??= issue.message;
+  }
+  return errors;
+};
+
+function TextArea({
+  label,
+  hint,
+  error,
+  value,
+  maxLength,
+  onChange,
+}: {
+  readonly label: string;
+  readonly hint?: string;
+  readonly error?: string;
+  readonly value: string;
+  readonly maxLength: number;
+  readonly onChange: (value: string) => void;
+}) {
+  const id = useId();
+  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium text-ink-2">
+        {label}
+      </label>
+      <textarea
+        id={id}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy}
+        className={`input-base min-h-24 resize-y ${error ? 'border-alert' : ''}`}
+        value={value}
+        maxLength={maxLength}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {error ? (
+        <p id={`${id}-error`} className="text-sm font-medium text-alert">
+          {error}
+        </p>
+      ) : (
+        hint && (
+          <p id={`${id}-hint`} className="text-sm text-ink-3">
+            {hint}
+          </p>
+        )
+      )}
+    </div>
+  );
+}
+
+/**
+ * Thêm / sửa địa điểm. Giá trị form do trang bản đồ giữ (`values`) để khi người dùng quay lại bản
+ * đồ dời ghim rồi mở lại form, chữ đã gõ không mất.
+ */
+export function PlaceFormSheet({
+  target,
+  position,
+  values,
+  onChange,
+  onRepick,
+  onSaved,
+  onRemoved,
+  onClose,
+}: {
+  /** null = thêm mới. */
+  readonly target: Place | null;
+  readonly position: LatLng;
+  readonly values: PlaceFormValues;
+  readonly onChange: (values: PlaceFormValues) => void;
+  readonly onRepick: () => void;
+  readonly onSaved: (place: Place) => void;
+  readonly onRemoved: (id: string) => void;
+  readonly onClose: () => void;
+}) {
+  const [errors, setErrors] = useState<Errors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const paidPrices = useEntitlement('map:prices');
+  const { data } = useStore();
+  const productList = useId();
+  const rows = values.prices ?? [];
+
+  const setRows = (next: readonly PriceRow[]) => {
+    onChange({ ...values, prices: next });
+    if (errors.prices) setErrors(({ prices: _gone, ...rest }) => rest);
+  };
+  const setRow = (index: number, patch: Partial<PriceRow>) =>
+    setRows(rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+
+  const set = (key: TextField) => (value: string) => {
+    onChange({ ...values, [key]: value });
+    // Đang sửa ô nào thì thôi báo lỗi ô đó — bấm lưu sẽ kiểm lại.
+    if (errors[key]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+
+  const fail = (err: unknown) => {
+    const fields = placeFieldErrors(err);
+    setErrors(Object.fromEntries(Object.entries(fields).filter(([k]) => isFieldName(k))));
+    setFormError(Object.keys(fields).length > 0 ? null : placeErrorMessage(err));
+  };
+
+  const submit = async () => {
+    if (busy) return;
+    const local = validatePlace(values, position);
+    setErrors(local);
+    setFormError(null);
+    if (Object.keys(local).length > 0) return;
+
+    setBusy(true);
+    try {
+      const input = placeInput(values, position, paidPrices && pricesChanged(values, target));
+      onSaved(target ? await updatePlace(target.id, input) : await createPlace(input));
+    } catch (err) {
+      fail(err);
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!target) return;
+    setConfirmRemove(false);
+    setBusy(true);
+    try {
+      await removePlace(target.id);
+      onRemoved(target.id);
+    } catch (err) {
+      fail(err);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <BottomSheet open={!confirmRemove} title={target ? L.placeEditTitle : L.placeAddTitle} onClose={busy ? () => undefined : onClose}>
+        <form className="mx-auto flex max-w-lg flex-col gap-4" onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+          noValidate
+        >
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-rule bg-paper px-3 py-2">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-ink-2">{L.placePosition}</p>
+              <p className="num truncate font-mono text-sm text-ink">{formatLatLng(position)}</p>
+            </div>
+            <Button className="min-h-10 shrink-0 px-3 text-sm" onClick={onRepick} disabled={busy}>
+              {L.placeRepick}
+            </Button>
+          </div>
+          {errors.lat ? <p className="-mt-2 text-sm font-medium text-alert">{errors.lat}</p> : null}
+
+          <Input
+            label={`${L.placeName} *`}
+            value={values.name}
+            onChange={(e) => set('name')(e.target.value)}
+            placeholder={L.placeNamePlaceholder}
+            maxLength={120}
+            error={errors.name}
+            required
+          />
+          <Input
+            label={L.placeAddress}
+            value={values.address}
+            onChange={(e) => set('address')(e.target.value)}
+            autoComplete="street-address"
+            maxLength={255}
+            error={errors.address}
+          />
+          <Input
+            label={L.placePhone}
+            type="tel"
+            inputMode="tel"
+            value={values.phone}
+            onChange={(e) => set('phone')(e.target.value)}
+            maxLength={20}
+            hint={L.placePhoneHint}
+            error={errors.phone}
+          />
+          <TextArea
+            label={L.placeDescription}
+            hint={L.placeDescriptionHint}
+            value={values.description}
+            maxLength={1000}
+            onChange={set('description')}
+            error={errors.description}
+          />
+
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 text-sm font-semibold text-ink-2">{L.placePrices}</legend>
+            {paidPrices ? (
+              <>
+                <p className="text-sm text-ink-3">{L.placePricesHint}</p>
+                {rows.map((row, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+                    <Input
+                      label={L.placePriceProduct}
+                      value={row.product}
+                      list={productList}
+                      maxLength={60}
+                      onChange={(e) => setRow(i, { product: e.target.value })}
+                    />
+                    <NumberField
+                      label={L.placePriceValue}
+                      value={row.price}
+                      unit={`₫/${row.unit}`}
+                      money
+                      max={1e9}
+                      onValueChange={(price) => setRow(i, { price })}
+                    />
+                    <Button
+                      className="min-h-11 px-3"
+                      aria-label={`${L.del} ${row.product}`}
+                      onClick={() => setRows(rows.filter((_, j) => j !== i))}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {rows.length < PLACE_PRICES_LIMIT && (
+                  <Button className="self-start" onClick={() => setRows([...rows, { product: '', price: '', unit: 'kg' }])}>
+                    <PlusIcon className="h-4 w-4" />
+                    {L.placePriceAdd}
+                  </Button>
+                )}
+                <datalist id={productList}>
+                  {data.products
+                    .filter((p) => p.isActive)
+                    .map((p) => (
+                      <option key={p.id} value={p.name} />
+                    ))}
+                </datalist>
+                {errors.prices ? <p className="text-sm font-medium text-alert">{errors.prices}</p> : null}
+              </>
+            ) : (
+              <PlanGate reason={L.gatePlacePrices} feature="map_prices" />
+            )}
+          </fieldset>
+
+          {formError ? (
+            <p role="alert" className="text-sm font-medium text-alert">
+              {formError}
+            </p>
+          ) : null}
+
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {target ? (
+              <Button tone="danger" onClick={() => setConfirmRemove(true)} disabled={busy}>
+                {L.placeRemove}
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-3">
+              <Button block className="whitespace-nowrap" onClick={onClose} disabled={busy}>
+                {L.cancel}
+              </Button>
+              <Button type="submit" tone="primary" block className="whitespace-nowrap" disabled={busy}>
+                {busy ? L.placeSaving : target ? L.save : L.placeSubmitNew}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </BottomSheet>
+
+      {target ? (
+        <ConfirmDialog
+          open={confirmRemove}
+          title={L.placeRemoveTitle}
+          consequence={`"${target.name}" ${L.placeRemoveConsequence}`}
+          confirmLabel={L.placeRemove}
+          onConfirm={() => void remove()}
+          onCancel={() => setConfirmRemove(false)}
+        />
+      ) : null}
+    </>
+  );
+}

@@ -3,6 +3,11 @@
 Bốn trang HTML tĩnh. **Không build, không framework, không công cụ theo dõi.**
 Mở thẳng file bằng trình duyệt là xem được.
 
+> **Trạng thái 23/10/2026: chưa xuất bản** — còn 10 chỗ `ĐIỀN:` (bảng dưới). App không phụ thuộc site này: trang
+> pháp lý và hướng dẫn là route công khai của chính app (`/dieu-khoan`, `/quyen-rieng-tu`, `/huong-dan`, nội dung ở
+> `src/i18n/legal/`, phiên bản `LEGAL_VERSION` trong `src/config.ts`). Sửa chính sách thì sửa ở app trước; site
+> chép theo khi xuất bản.
+
 | File | Là gì |
 |---|---|
 | `index.html` | Trang giới thiệu + bảng giá công khai |
@@ -47,9 +52,10 @@ Project Vercel **thứ hai**, cùng repo:
 | Framework Preset | Other (không build) |
 | Build Command | *(để trống)* |
 | Output Directory | *(để trống)* |
-| Domain | `thumua365.vn` |
+| Domain | chưa chốt — `thumua365.id.vn` (apex) đang chuyển sang app |
 
-App vẫn là project thứ nhất, domain `app.thumua365.vn`. Hai project tách nhau để
+App vẫn là project thứ nhất, domain `www.thumua365.id.vn` (domain chính của nhóm;
+`thumua365.vn` / `app.thumua365.vn` là của người khác, đừng dùng). Hai project tách nhau để
 một lần deploy hỏng bên này không kéo bên kia xuống theo.
 
 ## Sửa nội dung

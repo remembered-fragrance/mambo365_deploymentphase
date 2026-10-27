@@ -7,17 +7,25 @@ import { SidebarNav } from '@/components/layout/SidebarNav';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
 import { OfflineBanner, SyncBadge, type SyncTone } from '@/components/feedback/SyncBadge';
-import { MoonIcon, SearchIcon, SunIcon } from '@/components/ui/icons';
-import { overdueCount } from '@/core/debtSelectors';
+import { ChevronLeftIcon, MoonIcon, SearchIcon, SunIcon } from '@/components/ui/icons';
+import { overdueCount } from '@mambo/core/debtSelectors';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { PlanBanner } from '../billing/PlanBanner';
+import { NotificationBell } from '../notifications/NotificationBell';
+import { NotificationsProvider } from '../notifications/NotificationsContext';
 import { DemoBanner } from '../onboarding/DemoBanner';
+import { draftHref } from '../receipt/draftSessions';
 import { CommandPalette } from '../search/CommandPalette';
 import { useBookRescue } from './bookFile';
-import { navGroups, navItems, ROUTES } from './navItems';
+import { SyncNotices } from './SyncNotices';
+import { backTarget, isTabRoot, navGroups, navItems, ROUTES } from './navItems';
+import { StuckBanner } from './StuckBanner';
+import { BranchDropCard } from './BranchDropCard';
+import { InstallBanner } from './InstallBanner';
+import { UnownedOpsCard } from './UnownedOpsCard';
+import { useAccess } from './useAccess';
 import { useTheme } from './useTheme';
-import { profileTitle } from '@/i18n/profileLabels';
 
 const SYNC_LABEL: Record<SyncTone, string> = {
   synced: L.syncSynced,
@@ -32,26 +40,17 @@ const syncTone = (pendingCount: number, error?: string): SyncTone => {
   return 'synced';
 };
 
-const PAGE_TITLE: Record<string, string> = {
-  [ROUTES.dashboard]: L.navDashboard,
-  [ROUTES.receipts]: L.navReceipts,
-  [ROUTES.create]: L.createReceipt,
-  [ROUTES.debts]: L.navDebts,
-  [ROUTES.inventory]: L.navInventory,
-  [ROUTES.suppliers]: L.navSuppliers,
-  [ROUTES.buyers]: L.navBuyers,
-  [ROUTES.products]: L.navProducts,
-  [ROUTES.pricing]: L.navPricing,
-  [ROUTES.reports]: L.taxReport,
-  [ROUTES.utilities]: L.navUtilities,
-  [ROUTES.more]: L.navMore,
-  [ROUTES.farmerOrders]: L.farmerOrders,
-  [ROUTES.farmerNetwork]: L.farmerNetworkTitle,
-  [ROUTES.farmerWeighDebt]: L.farmerWeighDebtTitle,
+/**
+ * Tên trang trên header điện thoại — CHỈ cho trang không tự có `PageHeader`. Mọi trang khác đã có
+ * tiêu đề ngay dưới header (cụ thể hơn: "Tạo phiếu bán" chứ không phải "Tạo phiếu"); ghi thêm ở
+ * header là hai dòng tiêu đề chồng nhau. Trang mới không có `PageHeader` thì thêm vào đây.
+ */
+const MOBILE_TITLE: Record<string, string> = {
+  [ROUTES.map]: L.navMap,
 };
 
 export function AppLayout({ children }: { readonly children: ReactNode }) {
-  const { data, status, permissions, orgType, features } = useStore();
+  const { data, status, stuck } = useStore();
   const { theme, cycleTheme } = useTheme();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -60,8 +59,10 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
 
   const drafts = data.drafts.filter((d) => d.status === 'draft');
   const counts = { drafts: drafts.length, overdue: overdueCount(data) };
-  const items = navItems(counts, permissions, orgType, features);
-  const canCreateReceipt = permissions.includes('receipt:create');
+  const access = useAccess();
+  const items = navItems(counts, access);
+  // Nút tạo phiếu chỉ cho vỏ có sổ và người được lập phiếu (nông dân không có).
+  const canCreate = items.some((item) => item.to === ROUTES.receipts);
   const tone = syncTone(status.pendingCount, status.error);
 
   useBookRescue(data);
@@ -109,24 +110,48 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
     </button>
   );
 
+  // App cài lên màn hình chính (standalone) không có nút back của trình duyệt — màn con phải tự có.
+  // `idx` là vị trí trong lịch sử do react-router ghi; `replace` giữ nguyên nó. idx 0 = trang đầu của
+  // app trong tab này (mở thẳng từ link): lùi -1 là rời app, nên về màn cha.
+  const atTab = isTabRoot(pathname, items);
+  const goBack = () => {
+    const idx = (window.history.state as { idx?: unknown } | null)?.idx;
+    if (typeof idx === 'number' && idx > 0) navigate(-1);
+    else navigate(backTarget(pathname, items), { replace: true });
+  };
+  const backButton = !atTab && (
+    <button
+      type="button"
+      onClick={goBack}
+      aria-label={L.goBack}
+      className="-ml-1 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-ink-2"
+    >
+      <ChevronLeftIcon />
+    </button>
+  );
+
   const badge = <SyncBadge tone={tone} label={SYNC_LABEL[tone]} />;
+  // Thông báo là của tổ chức trên máy chủ — sổ của máy này không có.
+  const bell = access.orgType && <NotificationBell />;
 
   return (
-    <>
+    <NotificationsProvider>
       <AppShell
         sidebar={
           <SidebarNav
             appName={L.appName}
-            groups={navGroups(counts, permissions, orgType, features)}
+            groups={navGroups(counts, access)}
             primaryActions={
-              canCreateReceipt ? <>
-                <Button tone="primary" block onClick={() => startReceipt('purchase')}>
-                  {L.createPurchase}
-                </Button>
-                <Button block onClick={() => startReceipt('sale')}>
-                  {L.createSale}
-                </Button>
-              </> : null
+              canCreate && (
+                <>
+                  <Button tone="primary" block onClick={() => startReceipt('purchase')}>
+                    {L.createPurchase}
+                  </Button>
+                  <Button block onClick={() => startReceipt('sale')}>
+                    {L.createSale}
+                  </Button>
+                </>
+              )
             }
             footer={badge}
           />
@@ -135,6 +160,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
           <AppTopbar
             actions={
               <>
+                {bell}
                 {searchButton}
                 {themeToggle}
               </>
@@ -144,21 +170,37 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
         }
         mobileHeader={
           <MobileHeader
-            title={pathname === ROUTES.profile ? profileTitle(orgType) : PAGE_TITLE[pathname] ?? L.appName}
+            appName={L.appName}
+            title={MOBILE_TITLE[pathname]}
+            back={backButton}
             themeToggle={themeToggle}
-            actions={searchButton}
+            actions={
+              <>
+                {bell}
+                {searchButton}
+              </>
+            }
             syncBadge={badge}
           />
         }
         banner={
           <>
             <DemoBanner />
+            {pathname === ROUTES.dashboard && <InstallBanner />}
             <PlanBanner />
-            {status.error &&
+            <StuckBanner />
+            <BranchDropCard />
+            <UnownedOpsCard />
+            <SyncNotices />
+            {/* Banner kẹt đã nói lỗi của thao tác; hết gói thì vẫn phải nói, vì "Gửi lại" không gỡ được nó. */}
+            {status.error && (status.blocked || !stuck) &&
               (status.blocked ? (
                 // Hết gói không phải mất mạng. Nói nhầm thì người dùng đi tìm
                 // sóng trong khi thứ cần làm là mở lại gói.
                 <OfflineBanner message={L.syncBlocked} detail={L.syncBlockedDetail} />
+              ) : status.refused ? (
+                // Máy chủ từ chối cả lượt (không phải mạng): nói đúng lý do, hàng đợi vẫn còn nguyên.
+                <OfflineBanner message={L.syncRefused} detail={`${status.error}. ${L.syncRefusedDetail}`} />
               ) : (
                 <OfflineBanner message={L.syncOfflineBanner} detail={L.syncOfflineDetail} />
               ))}
@@ -168,16 +210,14 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
           <BottomNav
             items={items}
             createLabel={L.createReceipt}
-            onCreate={() => setCreateOpen(true)}
-            canCreate={canCreateReceipt}
-            centerItem={orgType === 'farmer' ? items.find((item) => item.id === 'profile') : undefined}
+            onCreate={canCreate ? () => setCreateOpen(true) : undefined}
           />
         }
       >
         {children}
       </AppShell>
 
-      <BottomSheet open={createOpen && canCreateReceipt} title={L.createReceipt} onClose={() => setCreateOpen(false)}>
+      <BottomSheet open={createOpen} title={L.createReceipt} onClose={() => setCreateOpen(false)}>
         <div className="flex flex-col gap-2">
           {drafts.map((draft) => (
             <Button
@@ -185,7 +225,7 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
               block
               onClick={() => {
                 setCreateOpen(false);
-                navigate(`${ROUTES.create}?draft=${draft.id}`);
+                navigate(draftHref(draft));
               }}
             >
               {draft.supplierName || L.walkIn}
@@ -201,6 +241,6 @@ export function AppLayout({ children }: { readonly children: ReactNode }) {
       </BottomSheet>
 
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
-    </>
+    </NotificationsProvider>
   );
 }

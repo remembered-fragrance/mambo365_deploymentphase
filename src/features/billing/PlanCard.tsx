@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { formatDate, formatVnd } from '@/core/format';
-import type { PaymentIntentStatus } from '@/core/subscription';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import type { PaymentIntentStatus } from '@mambo/core/subscription';
 import { useSubscription } from '@/data/hooks/useSubscription';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
@@ -24,7 +24,7 @@ const INTENT_LABEL: Record<PaymentIntentStatus, string> = {
  * họ sẽ phát hiện ra vào đúng lúc cần nó nhất.
  */
 export function PlanCard() {
-  const { plan, quota, intents, billingAvailable } = useSubscription();
+  const { plan, quota, intents } = useSubscription();
 
   return (
     <Card
@@ -50,9 +50,7 @@ export function PlanCard() {
 
         <div>
           <p className="mb-1 text-sm font-bold text-ink">{L.payHistory}</p>
-          {!billingAvailable ? (
-            <p className="text-sm text-ink-3">{L.billingHistoryUnavailable}</p>
-          ) : intents.length === 0 ? (
+          {intents.length === 0 ? (
             <p className="text-sm text-ink-3">{L.payNoHistory}</p>
           ) : (
             <ul className="flex flex-col divide-y divide-rule">

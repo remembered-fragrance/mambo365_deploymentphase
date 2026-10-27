@@ -8,13 +8,18 @@
  *
  * Luật: không viết chuỗi tiếng Việt thẳng vào JSX. Mọi chữ đi qua đây.
  *
- * `L` gộp từ năm mảnh. Nơi dùng vẫn chỉ có một:
+ * `L` gộp từ chín mảnh. Nơi dùng vẫn chỉ có một:
  * `import { L } from '@/i18n/labels'`.
  */
 
 import { BILLING_LABELS } from './billingLabels';
 import { LEGAL_LABELS } from './legalLabels';
+import { MAP_LABELS } from './mapLabels';
 import { ONBOARDING_LABELS } from './onboardingLabels';
+import { ORDER_LABELS } from './orderLabels';
+import { ORG_LABELS } from './orgLabels';
+import { PRO_LABELS } from './proLabels';
+import { ROLE_LABELS } from './roleLabels';
 import { SCREEN_LABELS } from './screenLabels';
 
 const BASE = {
@@ -27,15 +32,19 @@ const BASE = {
 
   // ─── Đăng nhập / đăng ký ───────────────────────────────────────────────────
   // Đăng nhập vẫn dùng MỘT ô chung. Frontend tự nhận biết người dùng nhập
-  // số điện thoại, email hay tên tài khoản.
-  authLoginIdentifier: 'Số điện thoại, email hoặc tên tài khoản',
-  authLoginIdentifierHint: 'Nhập thông tin bác đã dùng để đăng nhập.',
+  // số điện thoại, email hay tên đăng nhập.
+  authLoginIdentifier: 'Số điện thoại, email hoặc tên đăng nhập',
+  authLoginIdentifierHint: 'Nhập thông tin bạn đã dùng để đăng nhập.',
 
   // Đăng ký tách riêng số điện thoại và email để không nhầm hai loại dữ liệu.
-  authPhone: 'Số điện thoại',
-  authPhoneHint: 'Dùng số này để đăng nhập.',
+  authPhone: 'Số điện thoại (bắt buộc)',
+  authPhoneHint: 'Số này là tài khoản của bạn — dùng để đăng nhập.',
+  authPhoneRequired: 'Cần số điện thoại để đăng ký. Email chỉ là thêm, không thay được số điện thoại.',
+  authPhoneInvalid: 'Số điện thoại chưa đúng — ví dụ 0912 345 678.',
+  authPhoneTaken: 'Số điện thoại này đã có tài khoản — bạn đăng nhập bằng số này nhé',
   authEmailOptional: 'Email (không bắt buộc)',
-  authEmailOptionalHint: 'Thêm email nếu bác muốn đăng nhập bằng email.',
+  authEmailOptionalHint: 'Thêm email để có thêm một cách đăng nhập — vẫn vào cùng tài khoản.',
+  authEmailInvalid: 'Email chưa đúng — ví dụ ten@gmail.com. Không dùng email thì để trống.',
 
   // ─── Đối tác ───────────────────────────────────────────────────────────────
   supplier: 'Người bán',
@@ -110,6 +119,7 @@ const BASE = {
   taxTotalPurchase: 'Tổng chi mua',
   taxTotalSale: 'Tổng doanh thu bán',
   taxGrossProfit: 'Tạm tính lời',
+  taxNoSaleYet: 'Chưa có phiếu bán',
   taxPurchaseCount: 'Số phiếu mua',
   taxSaleCount: 'Số phiếu bán',
 
@@ -117,6 +127,7 @@ const BASE = {
   save: 'Lưu',
   cancel: 'Bỏ qua',
   close: 'Đóng',
+  showPassword: 'Hiện mật khẩu',
   confirm: 'Đồng ý',
   undo: 'Hoàn tác',
   del: 'Xoá',
@@ -128,8 +139,16 @@ const BASE = {
   dueDate: 'Hẹn ngày trả',
   addPhoto: 'Thêm ảnh',
   photoFull: 'Đủ số ảnh cho một phiếu rồi',
+  photoSaveFailed: 'Chưa lưu được ảnh này vào máy. Thử chụp lại, hoặc chọn ảnh khác.',
   removePhoto: 'Bỏ ảnh này',
-  sendZalo: 'Gửi Zalo',
+  sendZalo: 'Chia sẻ',
+  sendImage: 'Gửi ảnh phiếu',
+  savePdf: 'Lưu PDF',
+  receiptCopied: 'Đã chép nội dung phiếu. Mở Zalo, dán vào tin nhắn là gửi được.',
+  shareFailed: 'Chưa gửi được phiếu. Thử lại, hoặc bấm In.',
+  installHint: 'Cài lên màn hình chính để mở nhanh như app, mất sóng vẫn dùng được.',
+  installAction: 'Cài app',
+  installLater: 'Để sau',
   print: 'In',
   callPhone: 'Gọi điện',
   clearAll: 'Xoá hết',
@@ -151,7 +170,7 @@ const BASE = {
   navBuyers: 'Người mua',
   navProducts: 'Mặt hàng',
   navInventory: 'Tồn kho',
-  navProfile: 'Hồ sơ vựa',
+  navProfile: 'Tài khoản',
   createPurchase: 'Tạo phiếu mua',
   createSale: 'Tạo phiếu bán',
   createReceipt: 'Tạo phiếu',
@@ -162,6 +181,7 @@ const BASE = {
   themeSun: 'Ngoài nắng',
   themeNight: 'Ban đêm',
   themeSwitch: 'Đổi chế độ xem',
+  goBack: 'Quay lại',
 
   // ─── Đồng bộ ──────────────────────────────────────────────────────────────
   syncSynced: 'Đã lưu lên mạng',
@@ -170,7 +190,63 @@ const BASE = {
   syncError: 'Chưa gửi được',
   syncOfflineBanner: 'Đang làm việc không có mạng',
   syncOfflineDetail: 'Phiếu vẫn ghi bình thường, có mạng lại sẽ tự gửi đi.',
+  syncRefused: 'Máy chủ chưa nhận lượt gửi này',
+  syncRefusedDetail: 'Phiếu vẫn nằm trên máy, app sẽ tự gửi lại. Báo kỹ thuật viên nếu cứ hiện mãi.',
   syncStuck: 'Có phiếu chưa gửi được',
+  syncStuckRetry: 'Gửi lại',
+  syncStuckDrop: 'Bỏ thao tác này',
+  syncStuckDropTitle: 'Bỏ thao tác máy chủ đã từ chối?',
+  syncStuckDropConsequence: 'Máy chủ và các máy khác sẽ không có thay đổi này. Trên máy này, bản ghi đó trở về đúng như trên máy chủ; các thao tác khác được gửi tiếp.',
+  signOutUnsent: 'Còn thao tác chưa gửi lên máy chủ',
+  signOutUnsentTitle: 'Còn thao tác chưa gửi lên máy chủ',
+  signOutUnsentConsequence: 'thao tác này sẽ mất hẳn nếu đăng xuất bây giờ: máy chủ và các máy khác không có chúng. Muốn giữ thì bấm Bỏ qua, lưu sổ ra file ở thẻ Dữ liệu, hoặc đợi có mạng / gia hạn gói cho gửi xong.',
+  signOutDiscard: 'Vẫn đăng xuất',
+  branchOpsDropped: 'thay đổi trên phiếu của chi nhánh cũ đã bị bỏ — chủ vừa chuyển bạn sang chi nhánh khác. Danh sách ở đầu trang.',
+  syncOrderNotOpen: 'đã lưu nhưng bị gỡ khỏi đơn — đơn đã huỷ, không còn, hoặc không đúng bên. Xem lại danh sách đơn.',
+  syncRecordDeleted: 'đã bị xoá ở máy khác — thay đổi vừa gửi không được lưu.',
+  syncPaymentOnDeleted: 'đã lưu, nhưng phiếu đã bị xoá ở máy khác nên lần trả này không hiện trong sổ. Hỏi lại người xoá phiếu.',
+  syncNoticeReceipt: 'Phiếu',
+  syncNoticeDraft: 'Phiếu nháp',
+  syncNoticePayment: 'Lần trả',
+  syncNoticeForReceipt: 'cho phiếu',
+  syncNoticeSupplier: 'Người bán',
+  syncNoticeBuyer: 'Người mua',
+  syncNoticeProduct: 'Mặt hàng',
+  syncNoticeOther: 'Một bản ghi',
+  droppedDelete: 'Xoá',
+  droppedOthers: 'thay đổi khác (danh bạ, mặt hàng, ghi chú)',
+  branchDropTitle: 'Các thay đổi này đã bị bỏ vì bạn được chuyển chi nhánh',
+  branchDropBody: 'Máy chủ không nhận các thay đổi này nữa và sổ đã tải lại theo chi nhánh mới. Ghi lại để nhập lại nếu cần:',
+  branchDropDone: 'Đã ghi lại, ẩn đi',
+  photoRejected: 'ảnh chứng từ bị máy chủ từ chối (quá lớn hoặc sai loại) — chỉ xem được trên máy này',
+  photoStalled: 'ảnh chứng từ chưa gửi lên được máy chủ sau nhiều lần thử — ảnh vẫn còn trên máy, app sẽ thử tiếp',
+  syncNoticesMore: 'thông báo đồng bộ khác — xem lại danh sách phiếu và đơn.',
+  bookNotReady: 'Sổ đang mở, chưa lưu được. Đợi một chút rồi bấm lại.',
+  localSaveFailed: 'Chưa lưu được xuống máy. Thử lại.',
+  emailTaken: 'Email này đã được tài khoản khác xác nhận. Đổi sang email khác ở trang Tài khoản rồi gửi lại thư xác nhận.',
+  reloadTitle: 'Vừa có bản app mới mở ở tab khác',
+  reloadSavedBody: 'Tab này không ghi xuống máy được nữa. Thay đổi vừa rồi đã được giữ tạm — tải lại app là vào sổ.',
+  reloadUnsavedBody: 'Tab này không ghi xuống máy được nữa, và thay đổi vừa rồi CHƯA lưu được. Lưu sổ ra file (hoặc ghi ra giấy) trước khi tải lại.',
+  reloadNow: 'Tải lại app để lưu',
+  reloadIdleBody: 'Tab này không đọc ghi sổ trên máy được nữa. Tải lại app để dùng tiếp — không có gì bị mất.',
+  reloadIdleNow: 'Tải lại app',
+  reloadSaveFile: 'Lưu sổ ra file',
+  leftOrgTitle: 'Bạn không còn ở',
+  leftOrgWiped: 'Chủ đã gỡ bạn khỏi tổ chức này. Sổ của tổ chức đã được dọn khỏi máy.',
+  leftOrgUnsent: 'thay đổi trên máy này chưa gửi lên máy chủ, và máy chủ sẽ không nhận nữa. Xuất file để đưa chủ nhập lại, rồi dọn sổ khỏi máy.',
+  leftOrgExport: 'Xuất file',
+  leftOrgWipe: 'Dọn khỏi máy',
+  leftOrgWipeTitle: 'Dọn sổ khi chưa xuất file?',
+  leftOrgWipeConsequence: 'Các thay đổi chưa gửi sẽ mất hẳn khỏi máy này.',
+  leftOrgOk: 'Đã hiểu',
+  unownedTitle: 'thay đổi ghi bằng bản app trước, chưa rõ ai ghi — đang tạm giữ, chưa gửi',
+  unownedBody: 'Chỉ nhận nếu chính bạn ghi các thay đổi này trên máy này: máy chủ sẽ ghi bạn là người lập.',
+  unownedClaim: 'Của tôi — gửi đi',
+  cannotSaveInvalid: 'Chưa lưu được — có số máy chủ không nhận, xem lại các ô vừa nhập',
+  adjustmentsFull: 'Một phiếu tối đa 20 khoản cộng/trừ',
+  draftNotSaved: 'Chưa lưu được — xem lại các ô vừa nhập',
+  importNotBook: 'File này không phải file sổ THUMUA365 (thumua365-so.json). Sổ đang có vẫn giữ nguyên.',
+  importWhileSyncing: 'Sổ của tổ chức nằm trên máy chủ nên không thay bằng file được. Đăng nhập trên máy mới là sổ tự về, kể cả khi gói đã hết hạn.',
   rowPending: 'Chưa gửi',
   rowConflict: 'Cần xem lại',
 
@@ -184,6 +260,7 @@ const BASE = {
   spentWeek: 'Chi mua 7 ngày',
   spentMonth: 'Chi mua 30 ngày',
   last7Days: 'Bảy ngày gần đây',
+  last7DaysEmpty: 'Chưa có phiếu mua nào trong 7 ngày qua.',
   salesBlock: 'Bán ra 30 ngày',
   salesEmpty: 'Chưa có phiếu bán nào',
   salesEmptyHint: 'Bán hàng cho nhà máy thì tạo phiếu bán để theo dõi lời lỗ.',
@@ -215,17 +292,41 @@ const BASE = {
   weighingNow: 'Đang cân',
   newCustomer: 'Khách mới',
   addLine: 'Thêm mặt hàng',
+  linesFull: 'Một phiếu tối đa 100 dòng hàng — lập phiếu mới cho phần còn lại',
   removeLine: 'Bỏ dòng này',
   moreInfo: 'Thêm thông tin khác',
+  collapse: 'Thu gọn',
+  adjustmentLabel: 'Khoản gì (vd: tiền xe)',
+  adjustmentAmount: 'Số tiền',
+  moreInfoAdjustments: 'khoản cộng/trừ',
+  moreInfoHasNote: 'có ghi chú',
+  moreInfoPhotos: 'ảnh',
+  saveForLater: 'Để dành, chốt sau',
+  savedForLater: 'Đã để dành',
+  waitingNotice: 'Phiếu để dành — sửa tiếp được, chốt khi đủ.',
+  backToWeighing: 'Đưa về Đang cân',
   lastTime: 'Lần trước',
+  namesakeTitle: 'Tên này đã có trong sổ',
+  namesakeHas: 'Đã có',
+  namesakeAsk: 'Chọn đúng người này, hay tạo người mới trùng tên?',
+  namesakeNoPhone: 'Chưa có SĐT',
+  namesakeNoReceipt: 'Chưa có phiếu nào',
+  namesakeNew: 'Tạo người mới cùng tên',
+  namesakeNewHint: 'Hai người riêng — công nợ không gộp chung.',
+  partyNamesakeHint: 'Đã có người tên này. Lưu sẽ thêm một người riêng — muốn ghi cho người cũ thì chọn người cũ trong danh sách.',
   reuse: 'Dùng lại',
   payFullAndFinish: 'Trả đủ & xong',
   payPartAndFinish: 'Ghi nợ & xong',
   amountPaidNow: 'Trả bao nhiêu',
+  moneyRoundedTo: 'Tiền không có số lẻ, sẽ lưu',
   reviewBeforeFinish: 'Xem lại trước khi chốt',
   savingDraft: 'Đang lưu',
   savedDraft: 'Đã lưu',
   nothingToFinish: 'Chưa đủ thông tin để chốt phiếu',
+  discardDraft: 'Xoá phiếu đang cân',
+  discardDraftTitle: 'Xoá phiếu đang cân này?',
+  discardDraftConsequence: 'Số đã cân mất hẳn, không lấy lại được. Sổ không ghi gì.',
+  draftDiscarded: 'Đã xoá phiếu đang cân',
 
   // ─── Chi tiết phiếu ───────────────────────────────────────────────────────
   receiptNumber: 'Số phiếu',
@@ -249,6 +350,11 @@ export const L = {
   ...ONBOARDING_LABELS,
   ...BILLING_LABELS,
   ...LEGAL_LABELS,
+  ...ROLE_LABELS,
+  ...ORDER_LABELS,
+  ...ORG_LABELS,
+  ...MAP_LABELS,
+  ...PRO_LABELS,
 } as const;
 
 /** Phụ đề giải thích cho các thuật ngữ buộc phải giữ. */

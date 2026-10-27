@@ -13,7 +13,7 @@ describe('farmer role labels', () => {
   });
 
   it('cho trader và enterprise nhãn hồ sơ đúng loại tổ chức', () => {
-    expect(profileTitle('trader')).toBe('Hồ sơ vựa');
+    expect(profileTitle('trader')).toBe('Tài khoản');
     expect(profileTitle('enterprise')).toBe('Hồ sơ doanh nghiệp');
   });
 });

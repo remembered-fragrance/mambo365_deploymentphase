@@ -6,27 +6,67 @@
  *
  * Ở điện thoại là hai cột hẹp chứ không phải bảng cuộn ngang — cùng nguyên tắc
  * với `DataView`: điện thoại không bao giờ cuộn ngang.
+ *
+ * 🔴 Chỉ hứa đúng cái code chặn (KE_HOACH_GOI_PRO §7): dòng khác nhau giữa hai bên phải gắn `entitlement` có
+ * trong bảng quyền lợi của contracts; dòng không gắn là dòng hai bên như nhau. Test giữ hai luật đó.
  */
 
+import { STAFF_LIMIT, type Entitlement } from '@mambo/contracts';
 import { FREE_RECEIPTS_PER_MONTH } from '@/config';
 import { L } from '@/i18n/labels';
 
-interface Row {
+export interface Row {
   readonly what: string;
   readonly free: string;
   readonly paid: string;
+  readonly entitlement?: Entitlement;
 }
 
-const ROWS: readonly Row[] = [
+export const ROWS: readonly Row[] = [
   {
     what: L.featureReceipts,
     free: `${FREE_RECEIPTS_PER_MONTH} ${L.featureReceiptsPerMonth}`,
     paid: L.featureReceiptsPaid,
+    entitlement: 'receipts:unlimited',
   },
-  { what: L.featureParties, free: L.featurePartiesFree, paid: L.featurePartiesPaid },
-  { what: L.featureDebts, free: L.featureDebtsFree, paid: L.featureDebtsPaid },
-  { what: L.featureExport, free: L.featureNo, paid: L.featureYes },
-  { what: L.featureSync, free: L.featureSyncFree, paid: L.featureSyncPaid },
+  { what: L.featureSync, free: L.featureSyncFree, paid: L.featureSyncPaid, entitlement: 'sync' },
+  {
+    what: L.featureStaff,
+    free: L.featureStaffFree,
+    paid: `${L.featureStaffPaidPrefix} ${STAFF_LIMIT.trader} ${L.featureStaffPaidSuffix}`,
+    entitlement: 'members:add',
+  },
+  { what: L.featurePhotos, free: L.featurePhotosFree, paid: L.featurePhotosPaid, entitlement: 'attachments' },
+  { what: L.featureQuality, free: L.featureQualityFree, paid: L.featureQualityPaid, entitlement: 'quality:pricing' },
+  { what: L.featureGreenRatio, free: L.featureGreenRatioFree, paid: L.featureYes, entitlement: 'quality:pricing' },
+  {
+    what: L.featureRubberKind,
+    free: L.featureRubberKindFree,
+    paid: L.featureRubberKindPaid,
+    entitlement: 'rubber:grades',
+  },
+  {
+    what: L.featureRubberReconcile,
+    free: L.featureRubberReconcileFree,
+    paid: L.featureRubberReconcilePaid,
+    entitlement: 'rubber:reconcile',
+  },
+  { what: L.featureAnalytics, free: L.featureAnalyticsFree, paid: L.featureAnalyticsPaid, entitlement: 'analytics' },
+  { what: L.featureSeason, free: L.featureSeasonFree, paid: L.featureSeasonPaid, entitlement: 'sync' },
+  { what: L.featureMapPrices, free: L.featureMapPricesFree, paid: L.featureMapPricesPaid, entitlement: 'map:prices' },
+  { what: L.featureAudit, free: L.featureAuditFree, paid: L.featureAuditPaid, entitlement: 'audit:view' },
+  { what: L.featureOrgReport, free: L.featureOrgReportFree, paid: L.featureYes, entitlement: 'reports:org' },
+  {
+    what: L.featureStatement,
+    free: L.featureStatementFree,
+    paid: L.featureStatementPaid,
+    entitlement: 'debt:statement',
+  },
+  { what: L.featureTaxLedger, free: L.featureTaxLedgerFree, paid: L.featureTaxLedgerPaid, entitlement: 'tax:docs' },
+  { what: L.featurePayTransfer, free: L.featurePayTransferFree, paid: L.featurePayTransferPaid, entitlement: 'pay:qr' },
+  { what: L.featureParties, free: L.featurePartiesDetail, paid: L.featurePartiesDetail },
+  { what: L.featureDebts, free: L.featureDebtsDetail, paid: L.featureDebtsDetail },
+  { what: L.featureExport, free: L.featureYes, paid: L.featureYes },
 ];
 
 export function PlanComparison() {

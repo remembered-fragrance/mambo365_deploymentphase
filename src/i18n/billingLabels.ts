@@ -8,9 +8,7 @@
  */
 
 export const BILLING_LABELS = {
-  billingUnavailable: 'Thanh toán chưa khả dụng trên backend hiện tại.',
-  billingHistoryUnavailable: 'Lịch sử thanh toán chưa khả dụng trên backend hiện tại.',
-  attachmentsUnavailable: 'Ảnh chứng từ chưa khả dụng trên backend hiện tại.',
+  billingContact: 'Gói doanh nghiệp tính theo số chi nhánh và kích hoạt tay — nhắn Zalo hỗ trợ để được báo giá.',
   // ─── Bậc gói ──────────────────────────────────────────────────────────────
   planTitle: 'Gói dịch vụ',
   planFree: 'Gói miễn phí',
@@ -30,27 +28,51 @@ export const BILLING_LABELS = {
   featureReceiptsPerMonth: 'phiếu mỗi tháng',
   featureReceiptsPaid: 'Không giới hạn',
   featureParties: 'Nông hộ và người mua',
-  featurePartiesFree: 'Lưu tên và số điện thoại',
-  featurePartiesPaid: 'Kèm lịch sử mua bán và dư nợ từng người',
+  featurePartiesDetail: 'Tên, số điện thoại, lịch sử mua bán và dư nợ từng người',
   featureDebts: 'Công nợ',
-  featureDebtsFree: 'Không có',
-  featureDebtsPaid: 'Ai nợ mình, mình nợ ai, hẹn ngày trả',
+  featureDebtsDetail: 'Ai nợ mình, mình nợ ai, hẹn ngày trả',
   featureExport: 'Xuất Excel và PDF',
   featureSync: 'Giữ sổ trên mạng',
   featureSyncFree: 'Sổ nằm trong một máy',
   featureSyncPaid: 'Nhiều máy dùng chung một sổ, mất máy vẫn còn sổ',
+  featureStaff: 'Người cân',
+  featureStaffFree: 'Không thêm được',
+  /** Ghép sau con số: "Tối đa 3 người". Số lấy từ `STAFF_LIMIT` của contracts. */
+  featureStaffPaidPrefix: 'Tối đa',
+  featureStaffPaidSuffix: 'người',
+  featurePhotos: 'Ảnh phiếu cân, hoá đơn',
+  featurePhotosFree: 'Xem ảnh cũ, không gửi ảnh mới',
+  featurePhotosPaid: 'Chụp ảnh gắn vào phiếu, lưu trên mạng',
+  featureQuality: 'Giá theo chất lượng',
+  featureQualityFree: 'Ghi giá tay',
+  featureQualityPaid: 'Tự cộng / trừ theo dung trọng, độ ẩm, KOR, bậc độ mủ',
+  featureRubberKind: 'Mủ nước + mủ tạp (DRC) trên một phiếu',
+  featureRubberKindFree: 'Hàm lượng mủ như hiện nay',
+  featureRubberKindPaid: 'Có',
   featureYes: 'Có',
-  featureNo: 'Không',
 
   // ─── Hạn mức ──────────────────────────────────────────────────────────────
-  quotaWallTitle: 'Tháng này bác đã ghi hết số phiếu miễn phí',
+  quotaWallTitle: 'Tháng này bạn đã ghi hết số phiếu miễn phí',
   quotaWallBody:
-    'Nâng cấp để ghi không giới hạn, xem công nợ và giữ sổ trên mạng phòng khi mất máy.',
+    'Nâng cấp để ghi không giới hạn, thêm người cân và giữ sổ trên mạng phòng khi mất máy.',
   quotaUsed: 'Đã ghi tháng này',
   quotaOfLimit: 'trên',
   quotaLeftWarning: 'Còn ghi được',
   quotaResetHint: 'Sang tháng mới số phiếu tự đếm lại từ đầu.',
   quotaDraftsKept: 'Phiếu đang cân dở vẫn còn nguyên, không mất đi đâu.',
+
+  // ─── Việc cần gói (PlanGate) ────────────────────────────────────────────────
+  gateMembers: 'Gói đã hết hạn — người đang có vẫn làm bình thường, gia hạn để thêm người mới.',
+  gatePhotos: 'Gói đã hết hạn — ảnh cũ vẫn xem được, gia hạn để chụp ảnh mới.',
+  gateQuality: 'Giá tự tính theo chất lượng (dung trọng, độ ẩm, KOR, bậc độ mủ) là tính năng của gói Pro — quy tắc đã khai vẫn giữ nguyên.',
+  gateRubberKind: 'Mủ tạp tính theo DRC là tính năng của gói Pro — mặt hàng đang có vẫn cân được.',
+  gateBranches: 'Gói đã hết hạn — chi nhánh đang có vẫn giữ nguyên, gia hạn để thêm hoặc dùng lại chi nhánh.',
+  gateSeePlans: 'Xem gói',
+  gateAskOwner: 'Báo chủ gia hạn gói để dùng tiếp.',
+  planRequired: 'Gói đã hết hạn — gia hạn để làm việc này.',
+  staffUsed: 'người cân',
+  staffFull: 'Đã đủ số người cân của gói. Cần thêm thì nhắn Zalo hỗ trợ.',
+  memberLimit: 'Gói hiện tại cho tối đa số người cân:',
 
   // ─── Giá ──────────────────────────────────────────────────────────────────
   priceMonthly: 'Trả từng tháng',
@@ -83,22 +105,24 @@ export const BILLING_LABELS = {
   payStatusFailed: 'Không thành',
   payStatusExpired: 'Đã huỷ',
   payRefundNote: 'Đổi ý trong 7 ngày đầu thì nhắn Zalo, hoàn lại tiền.',
-  payNoAutoRenew: 'Không tự động trừ tiền. Hết hạn thì bác chủ động chuyển tiếp.',
+  payNoAutoRenew: 'Không tự động trừ tiền. Hết hạn thì bạn chủ động chuyển tiếp.',
 
   // ─── Banner ───────────────────────────────────────────────────────────────
   bannerTrialLeft: 'Dùng thử còn',
   bannerGrace: 'Gói đã hết hạn, còn gửi lên mạng thêm',
   bannerExpired: 'Gói đã hết hạn — sổ vẫn dùng được trên máy này, chỉ ngừng gửi lên mạng',
   bannerExpiredCta: 'Mở lại',
+  /** Người không trả tiền được (người cân, quản lý): không có nút Mở lại, chỉ báo chủ. */
+  bannerExpiredStaff: 'Gói đã hết hạn — sổ vẫn ghi bình thường, chỉ tạm ngừng gửi lên mạng. Báo chủ gia hạn.',
   syncBlocked: 'Chưa gửi lên mạng vì gói đã hết hạn',
   syncBlockedDetail: 'Phiếu vẫn ghi bình thường và sẽ tự gửi đi khi mở lại gói.',
 
   // ─── Mã mời ───────────────────────────────────────────────────────────────
-  referralTitle: 'Mã mời của bác',
-  referralHint: 'Người quen đăng ký bằng mã này thì hệ thống ghi nhận là bác giới thiệu.',
+  referralTitle: 'Mã mời của bạn',
+  referralHint: 'Người quen đăng ký bằng mã này thì hệ thống ghi nhận là bạn giới thiệu.',
   referralNone: 'Chưa có mã',
   referralAtSignUp: 'Mã mời (nếu có)',
-  referralAtSignUpHint: 'Ai chỉ bác dùng app thì gõ mã của họ vào đây.',
+  referralAtSignUpHint: 'Ai chỉ bạn dùng app thì gõ mã của họ vào đây.',
 
   // ─── Nhập từ file Excel ───────────────────────────────────────────────────
   importTitle: 'Nhập từ file Excel',

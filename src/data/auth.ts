@@ -1,11 +1,18 @@
 /**
  * Đăng ký / đăng nhập / bootstrap tổ chức.
  *
+ * Khoá đăng nhập Supabase LUÔN là email nội bộ sinh từ SĐT (`849…@id.thumua365.vn`),
+ * kể cả khi người dùng khai thêm email thật. Email thật chỉ là email khôi phục:
+ * backend ghi vào hồ sơ ở bước "Bạn là ai?" để đăng nhập bằng email tra ra đúng
+ * tài khoản đó. Trước đây có email thì dùng email làm khoá ⇒ một người thành hai
+ * tài khoản (issue #9).
+ *
  * Quy tắc đăng nhập:
- * - Email: đăng nhập thẳng qua Supabase Auth.
- * - Số điện thoại: thử đúng email nội bộ đã dùng khi đăng ký; nếu tài khoản
- *   dùng email thật thì mới fallback qua API resolveIdentifier.
- * - Tên tài khoản: resolve qua API rồi mới đăng nhập Supabase.
+ * - Số điện thoại: thử email nội bộ; không được thì hỏi resolveIdentifier
+ *   (tài khoản cũ đăng ký bằng email thật).
+ * - Email: thử thẳng (tài khoản cũ); không được thì hỏi resolveIdentifier
+ *   (email khôi phục → email nội bộ).
+ * - Tên đăng nhập: resolve qua API rồi mới đăng nhập Supabase.
  *
  * 🔴 Lỗi đăng nhập luôn dùng cùng một câu:
  * "Tài khoản hoặc mật khẩu không đúng".
@@ -13,17 +20,27 @@
  * Không gọi trực tiếp bảng `profiles` qua PostgREST.
  */
 
-import type { SupabaseClient, User } from '@supabase/supabase-js';
-import type { Me, MeBootstrapInput, MeMembership } from '@mambo/contracts';
-import { detectIdentifierKind, normalizePhone } from '@/core/identifier';
-import type { UserProfile } from '@/core/types';
-import { api, setCurrentOrg } from './client';
-import type { ProfileRow } from './rows';
+import type { User } from '@supabase/auth-js';
+import type { Me, MeBootstrapInput, MeProfile, MeProfilePatch } from '@mambo/contracts';
+import { detectIdentifierKind, normalizePhone } from '@mambo/core/identifier';
+import type { UserProfile } from '@mambo/core/types';
+import { L } from '@/i18n/labels';
+import { api, fetchMe, setCurrentOrg, type SupabaseAuth } from './client';
+import { profileFromMe, profileFromRow } from './authProfile';
+import { claimReferral } from './billing';
+import { track, utmProps } from './track';
+
+export { profileFromMe, profileFromRow };
 
 /** Tên miền nội bộ dùng cho tài khoản chỉ có số điện thoại. */
 const INTERNAL_EMAIL_DOMAIN = 'id.thumua365.vn';
 
 export const SIGN_IN_ERROR = 'Tài khoản hoặc mật khẩu không đúng';
+
+const PHONE_TAKEN = L.authPhoneTaken;
+
+const signUpErrorMessage = (message: string | undefined): string =>
+  message && /already|registered|exists/i.test(message) ? PHONE_TAKEN : message ?? 'Không tạo được tài khoản';
 
 export interface SignUpInput {
   readonly name: string;
@@ -38,44 +55,8 @@ export interface SignUpInput {
 const internalEmail = (phoneE164: string): string =>
   `${phoneE164.replace('+', '')}@${INTERNAL_EMAIL_DOMAIN}`;
 
-export const profileFromRow = (row: ProfileRow, loginEmail: string): UserProfile => ({
-  id: row.id,
-  identifier: row.phone ?? row.username ?? loginEmail,
-  name: row.name,
-  username: row.username ?? undefined,
-  email: row.recovery_email ?? undefined,
-  phone: row.phone ?? undefined,
-  businessName: row.business_name ?? undefined,
-  referralCode: row.referral_code ?? undefined,
-});
-
-export const profileFromMe = (me: Me, defaultEmail?: string): UserProfile => ({
-  id: me.user.id,
-  identifier: me.user.phone ?? me.user.email ?? defaultEmail ?? '',
-  name: me.user.name ?? '',
-  email: me.user.email ?? undefined,
-  phone: me.user.phone ?? undefined,
-});
-
-export const profileForSelectedMembership = (
-  profile: UserProfile,
-  membership: Pick<MeMembership, 'organization'> | null,
-): UserProfile => ({
-  ...profile,
-  businessName: membership?.organization.name,
-});
-
-export const profileFromAuthUser = (user: User): UserProfile => ({
-  id: user.id,
-  identifier:
-    (user.user_metadata?.phone as string | undefined) ?? user.phone ?? user.email ?? '',
-  name: (user.user_metadata?.name as string | undefined) ?? '',
-  email: user.email ?? undefined,
-  phone: (user.user_metadata?.phone as string | undefined) ?? user.phone ?? undefined,
-});
-
 const signInWithEmail = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseAuth,
   email: string,
   password: string,
 ): Promise<User | null> => {
@@ -88,8 +69,41 @@ const signInWithEmail = async (
   return data.user;
 };
 
-export const signIn = async (
-  supabase: SupabaseClient,
+/**
+ * Hỏi backend email đăng nhập của định danh rồi thử. `alreadyTried` = email vừa thử
+ * thất bại: backend trả đúng email đó (hoặc email mồi cùng hình dạng) thì thôi, khỏi
+ * gọi Supabase lần nữa. Lỗi gì cũng trả null — người gọi báo MỘT câu chung.
+ */
+const signInViaBackend = async (
+  supabase: SupabaseAuth,
+  identifier: string,
+  password: string,
+  alreadyTried: string,
+): Promise<User | null> => {
+  try {
+    const resolved = await api.resolveIdentifier({ identifier });
+    const email = resolved?.email?.trim().toLowerCase();
+    if (!email || email === alreadyTried.toLowerCase()) return null;
+    return await signInWithEmail(supabase, email, password);
+  } catch {
+    return null;
+  }
+};
+
+export const signIn = async (supabase: SupabaseAuth, identifier: string, password: string): Promise<User> => {
+  try {
+    const user = await signInOnce(supabase, identifier, password);
+    track('login_succeeded', { method: detectIdentifierKind(identifier.trim()) });
+    return user;
+  } catch (err) {
+    const reason = err instanceof TypeError ? 'network' : err instanceof Error && err.message === SIGN_IN_ERROR ? 'wrong_credentials' : 'other';
+    track('login_failed', { reason });
+    throw err;
+  }
+};
+
+const signInOnce = async (
+  supabase: SupabaseAuth,
   identifier: string,
   password: string,
 ): Promise<User> => {
@@ -101,8 +115,20 @@ export const signIn = async (
 
   const kind = detectIdentifierKind(rawIdentifier);
 
-  // 1. Số điện thoại:
-  //    thử trực tiếp email nội bộ được tạo bởi signUp().
+  // 1. Email: tài khoản cũ dùng chính email này làm khoá; tài khoản mới dùng
+  //    email nội bộ và email này là email khôi phục — backend tra hộ.
+  if (kind === 'email') {
+    const email = rawIdentifier.toLowerCase();
+    const directUser = await signInWithEmail(supabase, email, password);
+    if (directUser) return directUser;
+
+    const resolvedUser = await signInViaBackend(supabase, rawIdentifier, password, email);
+    if (resolvedUser) return resolvedUser;
+    throw new Error(SIGN_IN_ERROR);
+  }
+
+  // 2. Số điện thoại:
+  //    thử đúng email nội bộ được tạo bởi signUp() trước.
   if (kind === 'phone') {
     const phone = normalizePhone(rawIdentifier);
     if (!phone) throw new Error(SIGN_IN_ERROR);
@@ -117,69 +143,13 @@ export const signIn = async (
 
     if (directUser) return directUser;
 
-    /*
-     * Fallback cho tài khoản cũ (nếu lúc đăng ký từng dùng email thật thay vì email nội bộ):
-     * Nhờ backend tra cứu định danh.
-     */
-    try {
-      const resolved = await api.resolveIdentifier({
-        identifier: rawIdentifier,
-      });
-
-      const resolvedEmail = resolved?.email?.trim().toLowerCase();
-
-      if (resolvedEmail && resolvedEmail !== generatedEmail.toLowerCase()) {
-        const resolvedUser = await signInWithEmail(
-          supabase,
-          resolvedEmail,
-          password,
-        );
-
-        if (resolvedUser) return resolvedUser;
-      }
-    } catch {
-      // Giữ lỗi chung phía dưới.
-    }
-
+    // Tài khoản cũ đăng ký bằng email thật: khoá là email đó, backend tra từ SĐT.
+    const resolvedUser = await signInViaBackend(supabase, rawIdentifier, password, generatedEmail);
+    if (resolvedUser) return resolvedUser;
     throw new Error(SIGN_IN_ERROR);
   }
 
-  // 2. Email:
-  //    Email thật đóng vai trò recovery_email, khoá Supabase Auth là email nội bộ SĐT.
-  //    Resolve qua backend trước để lấy login email; nếu backend chưa kết nối thì fallback thử đăng nhập trực tiếp.
-  if (kind === 'email') {
-    try {
-      const resolved = await api.resolveIdentifier({
-        identifier: rawIdentifier,
-      });
-
-      const loginEmail = resolved?.email?.trim().toLowerCase();
-      if (loginEmail) {
-        const resolvedUser = await signInWithEmail(
-          supabase,
-          loginEmail,
-          password,
-        );
-
-        if (resolvedUser) return resolvedUser;
-      }
-    } catch {
-      // Tiếp tục fallback đăng nhập trực tiếp
-    }
-
-    // Fallback: hỗ trợ trường hợp tài khoản tạo trực tiếp bằng email thật trên Supabase Auth
-    const directUser = await signInWithEmail(
-      supabase,
-      rawIdentifier.toLowerCase(),
-      password,
-    );
-
-    if (directUser) return directUser;
-
-    throw new Error(SIGN_IN_ERROR);
-  }
-
-  // 3. Tên tài khoản: backend là nơi duy nhất biết username thuộc email nào.
+  // 3. Tên đăng nhập: backend là nơi duy nhất biết username thuộc email nào.
   try {
     const resolved = await api.resolveIdentifier({
       identifier: rawIdentifier,
@@ -202,11 +172,11 @@ export const signIn = async (
 };
 
 export const signUp = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseAuth,
   input: SignUpInput,
 ): Promise<User> => {
   const phone = normalizePhone(input.phone);
-  if (!phone) throw new Error('Số điện thoại chưa đúng');
+  if (!phone) throw new Error(L.authPhoneInvalid);
 
   const recoveryEmail =
     input.email && detectIdentifierKind(input.email.trim()) === 'email'
@@ -214,10 +184,9 @@ export const signUp = async (
       : undefined;
 
   /*
-   * Theo thiết kế hệ thống và Backend:
-   * SĐT là định danh số 1. Tài khoản Supabase Auth LUÔN LUÔN dùng email nội bộ
-   * sinh từ SĐT: 849xxx@id.thumua365.vn làm khoá xác thực duy nhất.
-   * Email thật (nếu người dùng nhập) sẽ lưu vào recoveryEmail để dùng khôi phục và resolve khi cần.
+   * SĐT là khoá đăng nhập duy nhất ⇒ mỗi số đúng một tài khoản; số đã đăng ký
+   * thì Supabase báo trùng. Email thật chỉ đi vào user_metadata.recoveryEmail,
+   * backend ghi thành email khôi phục ở bước "Bạn là ai?".
    */
   const loginEmail = internalEmail(phone);
 
@@ -237,56 +206,77 @@ export const signUp = async (
   });
 
   if (error || !data.user) {
-    throw new Error(error?.message ?? 'Không tạo được tài khoản');
+    throw new Error(signUpErrorMessage(error?.message));
   }
+  // Supabase (khi tắt "Confirm email") trả user GIẢ, không có identities, nếu email
+  // đã có tài khoản — để không lộ ai đã đăng ký. Với ta email = SĐT ⇒ số đã dùng.
+  if (data.user.identities?.length === 0) {
+    throw new Error(PHONE_TAKEN);
+  }
+
+  // Mã giới thiệu ghi nhận SAU khi có tài khoản; mã không dùng được thì thôi, không chặn đăng ký.
+  const referral = input.referralCode?.trim();
+  if (referral) await claimReferral(referral).catch(() => false);
 
   return data.user;
 };
 
 export const bootstrap = async (input: MeBootstrapInput): Promise<Me> => {
-  return api.meBootstrap(input);
+  const me = await api.meBootstrap(input);
+  track('sign_up_completed', { orgType: input.orgType, ...utmProps() });
+  return me;
 };
 
-export const getMe = async (): Promise<Me> => {
-  return api.me();
-};
+export const getMe = (): Promise<Me> => fetchMe();
 
-export const signOut = async (supabase: SupabaseClient): Promise<void> => {
+export const signOut = async (supabase: SupabaseAuth): Promise<void> => {
   await supabase.auth.signOut();
   setCurrentOrg(null);
 };
 
 export interface ProfilePatch {
   readonly name?: string;
+  /** Rỗng = bỏ tên đăng nhập. */
   readonly username?: string;
+  /** Email khôi phục; rỗng = bỏ. */
   readonly email?: string;
 }
 
-export type AccountProfile = Awaited<ReturnType<typeof api.account.profile>>;
-
-export const getAccountProfile = async (): Promise<AccountProfile> => api.account.profile();
-
-export const claimReferral = async (code: string): Promise<boolean> => {
-  const result = await api.account.claimReferral({ code: code.trim() });
-  return result.claimed;
-};
-
+/**
+ * Sửa hồ sơ: `PATCH /v1/me/profile` trước (server kiểm trùng tên đăng nhập / email
+ * khôi phục, ghi bảng `profiles` mà đăng nhập bằng email / tên tra vào), rồi chép tên +
+ * email sang `user_metadata` — `/v1/me` đọc hai thứ đó từ Supabase, không đồng bộ thì
+ * tải lại trang sẽ hiện giá trị cũ.
+ */
 export const updateProfile = async (
-  _supabase: SupabaseClient,
+  supabase: SupabaseAuth,
   _userId: string,
   patch: ProfilePatch,
-): Promise<AccountProfile> => {
-  const update = {
+): Promise<MeProfile> => {
+  const body: MeProfilePatch = {
     ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
-    ...(patch.username !== undefined ? { username: patch.username.trim() || null } : {}),
-    ...(patch.email !== undefined ? { recoveryEmail: patch.email.trim() || null } : {}),
+    ...(patch.username !== undefined ? { username: patch.username.trim().toLowerCase() || null } : {}),
+    ...(patch.email !== undefined ? { recoveryEmail: patch.email.trim().toLowerCase() || null } : {}),
   };
-  if (Object.keys(update).length === 0) return api.account.profile();
-  return api.account.updateProfile(update);
+  const saved = await api.account.updateProfile(body);
+  await supabase.auth.updateUser({
+    data: {
+      name: saved.name,
+      ...(body.recoveryEmail !== undefined ? { recoveryEmail: saved.recoveryEmail } : {}),
+    },
+  });
+  return saved;
+};
+
+/** Link đặt lại mật khẩu (BE 0.16.0): `token_hash` → phiên của chủ tài khoản. */
+export const openRecoverySession = async (supabase: SupabaseAuth, tokenHash: string): Promise<User> => {
+  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+  if (error || !data.user) throw new Error(L.resetLinkInvalid, { cause: error ?? undefined });
+  return data.user;
 };
 
 export const changePassword = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseAuth,
   password: string,
 ): Promise<void> => {
   const { error } = await supabase.auth.updateUser({ password });
@@ -295,3 +285,24 @@ export const changePassword = async (
     throw new Error(`Không đổi được mật khẩu: ${error.message}`);
   }
 };
+
+/**
+ * Hồ sơ tạm khi `/v1/me` không trả lời — chỉ từ phiên Supabase, không gọi mạng. Gọi lại
+ * `/v1/me` ở đây (như trước) là bắt người dùng chờ thêm đúng một lần hỏng nữa.
+ */
+export const profileFromAccount = (user: User): UserProfile => ({
+  id: user.id,
+  identifier:
+    (user.user_metadata?.phone as string | undefined) ??
+    user.phone ??
+    user.email ??
+    '',
+  name:
+    (user.user_metadata?.name as string | undefined) ??
+    '',
+  email: user.email ?? undefined,
+  phone:
+    (user.user_metadata?.phone as string | undefined) ??
+    user.phone ??
+    undefined,
+});
