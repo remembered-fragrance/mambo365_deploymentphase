@@ -38,14 +38,14 @@ export const REFUND_DAYS = 7;
 /**
  * Tài khoản nhận chuyển khoản.
  *
- * Chưa có pháp nhân nên pilot dùng tài khoản cá nhân + đối soát tay/Casso.
- * `BANK_BIN` là mã ngân hàng theo chuẩn VietQR (danh sách ở vietqr.io).
- * 🔴 Ba giá trị dưới đây là chỗ điền — thay bằng số thật trước khi mở bán.
+ * Chưa có pháp nhân nên pilot dùng tài khoản cá nhân + đối soát qua webhook Casso / SePay (hoặc tay).
+ * `BANK_BIN` là mã ngân hàng theo chuẩn VietQR (danh sách ở vietqr.io) — 970415 là VietinBank.
+ * Đổi tài khoản thì đổi cả bốn giá trị, rồi tự quét thử mã QR bằng app ngân hàng trước khi deploy.
  */
-export const BANK_BIN = '970422';
-export const BANK_ACCOUNT_NUMBER = '0000000000';
+export const BANK_BIN = '970415';
+export const BANK_ACCOUNT_NUMBER = '102879806462';
 export const BANK_ACCOUNT_NAME = 'NGUYEN THE TAI';
-export const BANK_NAME = 'MB Bank';
+export const BANK_NAME = 'VietinBank';
 
 /** Chờ bao lâu sau lần gõ cuối thì tự lưu nháp (ms). */
 export const AUTOSAVE_MS = 700;
