@@ -90,7 +90,7 @@ export const MAIL_LINKS = {
 } as const;
 
 /** Phiên bản và ngày áp dụng của Điều khoản + Chính sách — đổi nội dung thì đổi cả hai. */
-export const LEGAL_VERSION = '2.5';
+export const LEGAL_VERSION = '2.6';
 export const LEGAL_EFFECTIVE_DATE = '27/10/2026';
 
 /**

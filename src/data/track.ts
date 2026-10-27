@@ -9,7 +9,7 @@
  * IndexedDB. Có giới hạn để máy không bao giờ đầy vì sự kiện.
  */
 
-import { EVENTS_MAX_BATCH, type TrackedEvent } from '@mambo/contracts';
+import { EVENTS_MAX_BATCH, type TrackedEvent, Utm } from '@mambo/contracts';
 import { APP_VERSION } from '@/config';
 import { newId } from '@mambo/core/id';
 import { api, hasBackend } from './client';
@@ -17,6 +17,7 @@ import { api, hasBackend } from './client';
 const QUEUE_KEY = 'thumua365:events';
 const ANON_KEY = 'thumua365:anonId';
 const MAX_QUEUED = 500;
+const UTM_KEY = 'thumua365:utm';
 
 type Props<N extends TrackedEvent['name']> = Extract<TrackedEvent, { name: N }>['props'];
 
@@ -51,6 +52,31 @@ const anonId = (): string => {
 
 export const platform = (): 'web' | 'pwa' =>
   typeof matchMedia !== 'undefined' && matchMedia('(display-mode: standalone)').matches ? 'pwa' : 'web';
+
+/**
+ * Nguồn khách tới (BE 0.26.0): link mở app có `utm_source` thì giữ trong máy — link mới có UTM thì thay — để gửi kèm
+ * `app_opened` / `sign_up_completed`. Chuyển về chữ thường; sai hình dạng `Utm` của contracts thì bỏ, không gửi.
+ */
+export const captureUtm = (search: string): void => {
+  const query = new URLSearchParams(search);
+  const pick = (key: string) => query.get(`utm_${key}`)?.trim().toLowerCase() || undefined;
+  const parsed = Utm.safeParse({ source: pick('source'), medium: pick('medium'), campaign: pick('campaign'), content: pick('content') });
+  if (!parsed.success) return;
+  try {
+    localStorage.setItem(UTM_KEY, JSON.stringify(parsed.data));
+  } catch {
+    // Trình duyệt chặn lưu — mất nguồn thì thôi
+  }
+};
+
+export const utmProps = (): { utm?: Utm } => {
+  try {
+    const parsed = Utm.safeParse(JSON.parse(localStorage.getItem(UTM_KEY) ?? 'null'));
+    return parsed.success ? { utm: parsed.data } : {};
+  } catch {
+    return {};
+  }
+};
 
 export const clearTrackQueue = (): void => {
   try {
@@ -93,7 +119,8 @@ const FLUSH_MS = 60_000;
 /** Gọi một lần khi app khởi động: ghi `app_opened`, gửi ngay, rồi gửi lại mỗi 60 giây và khi có mạng trở lại. */
 export const startEventFlushing = (): void => {
   if (!hasBackend()) return;
-  track('app_opened', {});
+  captureUtm(location.search);
+  track('app_opened', utmProps());
   void flushEvents();
   setInterval(() => void flushEvents(), FLUSH_MS);
   window.addEventListener('online', () => void flushEvents());

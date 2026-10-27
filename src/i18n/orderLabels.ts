@@ -58,5 +58,6 @@ export const ORDER_LABELS = {
   notifyOrderFulfilled: 'đã cân xong đơn',
   notifyLinkAccepted: 'đã kết nối',
   notifyLinkRevoked: 'đã huỷ kết nối',
+  notifyPlanActivated: 'Đã nhận tiền chuyển khoản — gói đã được gia hạn. Cảm ơn bạn!',
   notifySomeone: 'Bên kia',
 } as const;

@@ -41,7 +41,7 @@ export const PRIVACY: LegalDoc = {
           ['Thanh toán gói', 'Số tiền, thời điểm, mã đối soát, mã giao dịch ngân hàng. Không lưu số thẻ, mật khẩu hay thông tin đăng nhập ngân hàng.', 'Ngân hàng / dịch vụ đối soát'],
           ['Góp ý', 'Số sao bạn chấm, lời góp ý nếu bạn viết, phiên bản app; gắn với tài khoản và tổ chức đang dùng. Chỉ nhóm vận hành đọc; xoá tài khoản là xoá luôn.', 'Bạn gửi ở màn "Góp ý & chấm sao"'],
           ['Kỹ thuật', 'Nhật ký truy cập máy chủ: địa chỉ IP, thời điểm, đường dẫn gọi, mã lỗi.', 'Tự sinh khi dùng app'],
-          ['Sự kiện dùng app', 'Tên việc vừa làm (mở app, đăng nhập được / không được, lập phiếu, tạo đơn, xem gói…), thời điểm, loại tổ chức, phiên bản app, một mã máy ngẫu nhiên và vài con số không định danh (số dòng của phiếu, có mạng hay không). Không có tên, số điện thoại, email hay số tiền.', 'Tự sinh khi dùng app'],
+          ['Sự kiện dùng app', 'Tên việc vừa làm (mở app, đăng nhập được / không được, lập phiếu, tạo đơn, xem gói…), thời điểm, loại tổ chức, phiên bản app, một mã máy ngẫu nhiên, vài con số không định danh (số dòng của phiếu, có mạng hay không) và — nếu bạn mở app từ link quảng bá — tên kênh, chiến dịch và mẫu thông điệp ghi trên link đó (ví dụ facebook, zalo). Không có tên, số điện thoại, email hay số tiền.', 'Tự sinh khi dùng app'],
         ),
         note(
           'Không thu thập: vị trí GPS, danh bạ, ảnh trong máy (ngoài ảnh bạn tự chọn), sinh trắc học, căn cước. App tự đếm các sự kiện ở trên trên máy chủ của mình, không dùng công cụ thống kê của bên thứ ba, không có mã quảng cáo, không có cookie theo dõi. THUMUA365 không chủ động thu thập dữ liệu cá nhân nhạy cảm; bạn đừng ghi loại dữ liệu đó vào ô ghi chú.',
