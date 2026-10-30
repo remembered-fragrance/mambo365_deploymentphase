@@ -16,7 +16,7 @@ const PREVIEWS: Record<OrgType, RolePreview> = {
   trader: {
     title: L.bootstrapTraderTitle,
     metrics: [
-      { label: L.rolePreviewSpent, value: '42,8 triệu' },
+      { label: L.rolePreviewSpent, value: '42.800.000₫' },
       { label: L.rolePreviewReceipts, value: '18 phiếu' },
       { label: L.rolePreviewWeight, value: '1.250 kg' },
     ],
@@ -25,7 +25,7 @@ const PREVIEWS: Record<OrgType, RolePreview> = {
   farmer: {
     title: L.bootstrapFarmerTitle,
     metrics: [
-      { label: L.rolePreviewReceivable, value: '18,45 triệu' },
+      { label: L.rolePreviewReceivable, value: '18.450.000₫' },
       { label: L.rolePreviewReceipts, value: '12 phiếu' },
       { label: L.rolePreviewOpenOrders, value: '2 đơn' },
     ],

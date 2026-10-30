@@ -1,4 +1,4 @@
-import { formatVndShort } from '@mambo/core/format';
+import { formatVnd } from '@mambo/core/format';
 import type { DraftReceipt } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { PlusIcon } from '@/components/ui/icons';
@@ -38,7 +38,7 @@ export function SessionRail({ drafts, activeId, onSelect, onNewCustomer }: Sessi
             <span className="max-w-40 truncate text-sm font-semibold lg:max-w-none">
               {draft.supplierName || L.walkIn}
             </span>
-            <span className="num text-xs opacity-90">{formatVndShort(total)}</span>
+            <span className="num text-xs opacity-90">{formatVnd(total)}</span>
           </button>
         );
       })}

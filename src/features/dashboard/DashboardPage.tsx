@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { BarChart } from '@/components/data/BarChart';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { formatDate, formatVnd, formatVndShort, formatWeight } from '@mambo/core/format';
+import { formatDate, formatVnd, formatWeight } from '@mambo/core/format';
 import { inventoryByProduct } from '@mambo/core/inventory';
 import { dailySpend, debtsBySupplier, salesSummaryFor, summaryFor } from '@mambo/core/selectors';
 import { useStore } from '@/data/useStore';
@@ -39,7 +39,8 @@ export function DashboardPage() {
         // Bỏ năm khỏi formatDate: chỉ ngày + tháng thì Chrome ghi '17-10', lệch với 17/10/2026 cả app đang dùng.
         sublabel: formatDate(p.date).slice(0, 5),
         value: p.spent,
-        display: formatVndShort(p.spent),
+        // Số đủ, không '9,8tr': khối trên ghi 13.154.000₫ mà ô dưới ghi 13,2tr thì người xem tưởng hai số khác nhau.
+        display: formatVnd(p.spent),
       })),
     [data],
   );
@@ -91,7 +92,8 @@ export function DashboardPage() {
           <TodayTasks tasks={tasks} />
         </div>
 
-        <div className="grid grid-cols-3 gap-2 lg:col-span-12">
+        {/* Số đủ (36.433.000₫) không vừa ô ~85px khi chia 3 cột trên điện thoại: dưới `sm` mỗi ô một hàng. */}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:col-span-12">
           <KpiTile label={L.periodDay} amount={today.spent} count={today.count} to={`${ROUTES.receipts}?period=day`} />
           <KpiTile label={L.spentWeek} amount={week.spent} count={week.count} to={`${ROUTES.receipts}?period=week`} />
           <KpiTile label={L.spentMonth} amount={month.spent} count={month.count} to={`${ROUTES.receipts}?period=month`} />
@@ -158,7 +160,7 @@ function KpiTile({ label, amount, count, to }: KpiTileProps) {
   return (
     <Link to={to} className="card flex flex-col justify-between p-3">
       <span className="text-xs font-semibold text-ink-3">{label}</span>
-      <span className="num mt-1 text-lg font-extrabold text-ink">{formatVndShort(amount)}</span>
+      <span className="num mt-1 text-lg font-extrabold text-ink">{formatVnd(amount)}</span>
       <span className="num text-xs text-ink-3">
         {count} {L.receiptsCount}
       </span>
