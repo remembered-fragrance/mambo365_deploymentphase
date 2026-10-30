@@ -30,7 +30,7 @@ export const ONBOARDING_LABELS = {
 
   // ─── Nút "?" ──────────────────────────────────────────────────────────────
   helpButton: 'Trang này để làm gì',
-  helpDashboard: 'Đây là trang đầu: hôm nay chi bao nhiêu tiền mua hàng, ai còn nợ, việc gì chưa xong. Bấm nút tròn màu xanh ở giữa thanh dưới để cân chuyến mới.',
+  helpDashboard: 'Đây là trang đầu: hôm nay chi bao nhiêu tiền mua hàng, mình còn nợ người bán bao nhiêu, việc gì chưa xong. Bấm nút tròn màu xanh ở giữa thanh dưới để cân chuyến mới.',
   helpReceipts: 'Tất cả phiếu đã lập nằm ở đây. Tab "Đang cân" là phiếu đang cân dở, "Để dành" là phiếu chờ chốt sau. Bấm một dòng để xem lại hoặc in.',
   helpCreate: 'Chọn người bán, chọn mặt hàng, nhập số cân và giá — app tự tính tiền. Cân nhiều khách cùng lúc thì mỗi khách một ô ở thanh "Đang cân" phía trên.',
   helpDebts: 'Ai nợ mình, mình nợ ai. Phiếu quá hẹn trả nằm trên cùng. Bấm "Trả đủ" hoặc "Trả một phần" là ghi ngay, có 8 giây để hoàn tác nếu bấm nhầm.',

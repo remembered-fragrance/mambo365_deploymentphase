@@ -7,6 +7,8 @@ export interface TaskLine {
   readonly id: string;
   readonly count: number;
   readonly label: string;
+  /** Tổng tiền đã định dạng — "3 người" mà không biết nợ bao nhiêu thì chưa biết có gấp không. */
+  readonly amount?: string;
   readonly to: string;
 }
 
@@ -34,7 +36,14 @@ export function TodayTasks({ tasks }: { readonly tasks: readonly TaskLine[] }) {
                 className="flex min-h-12 items-center gap-3 border-b border-rule py-2 last:border-b-0"
               >
                 <span className="num min-w-8 text-xl font-extrabold text-brand">{task.count}</span>
-                <span className="flex-1 text-sm text-ink-2">{task.label}</span>
+                <span className="flex-1 text-sm text-ink-2">
+                  {task.label}
+                  {task.amount && (
+                    <span className="num block font-bold text-ink">
+                      {L.todoTotal} {task.amount}
+                    </span>
+                  )}
+                </span>
                 <ChevronRightIcon className="h-5 w-5 text-ink-3" />
               </Link>
             </li>
