@@ -1,16 +1,26 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { PhoneIcon } from '@/components/ui/icons';
+import { useToast } from '@/components/ui/Toast';
+import { PhoneIcon, StarIcon } from '@/components/ui/icons';
 import { APP_VERSION, SUPPORT_ZALO } from '@/config';
-import { useStore } from '@/data/useStore';
+import { UnsentOpsError, useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
+import { allows } from '../shared/access';
+import { ROUTE_GATES, ROUTES } from '../shared/navItems';
+import { useAccess } from '../shared/useAccess';
 
-/** Kênh liên lạc + số phiên bản (để hỗ trợ từ xa hỏi "bác đang dùng bản nào"). */
+/** Kênh liên lạc + số phiên bản (để hỗ trợ từ xa hỏi "bạn đang dùng bản nào"). */
 export function SupportCard() {
   const { signOut } = useStore();
+  const access = useAccess();
+  const toast = useToast();
   const [confirmOut, setConfirmOut] = useState(false);
+  /** Số thao tác chưa gửi — khác 0 thì hỏi lần hai trước khi bỏ chúng. */
+  const [unsent, setUnsent] = useState(0);
+  const failed = (err: unknown) => toast({ message: err instanceof Error ? err.message : L.signOutUnsent });
 
   return (
     <Card title={L.supportTitle}>
@@ -22,6 +32,21 @@ export function SupportCard() {
           <PhoneIcon className="h-4 w-4" />
           {L.supportZalo}: {SUPPORT_ZALO}
         </a>
+
+        {/* Nông dân không có trang "Thêm" — đường vào màn góp ý của họ là đây. */}
+        {allows(access, ROUTE_GATES[ROUTES.feedback]) && (
+          <Link
+            to={ROUTES.feedback}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand px-4 font-bold text-brand"
+          >
+            <StarIcon className="h-4 w-4" />
+            {L.navFeedback}
+          </Link>
+        )}
+
+        {/* Nói giờ trực THẬT. Hứa 24/7 khi chỉ có một người là mất uy tín ngay
+            từ khách đầu tiên gọi lúc 10 giờ đêm. */}
+        <p className="text-sm text-ink-2">{L.supportHours}</p>
 
         <p className="num text-sm text-ink-3">
           {L.appVersion} {APP_VERSION}
@@ -39,9 +64,24 @@ export function SupportCard() {
         confirmLabel={L.signOut}
         onConfirm={() => {
           setConfirmOut(false);
-          void signOut();
+          signOut().catch((err: unknown) => {
+            if (err instanceof UnsentOpsError) setUnsent(err.count);
+            else failed(err);
+          });
         }}
         onCancel={() => setConfirmOut(false)}
+      />
+
+      <ConfirmDialog
+        open={unsent > 0}
+        title={L.signOutUnsentTitle}
+        consequence={`${unsent} ${L.signOutUnsentConsequence}`}
+        confirmLabel={L.signOutDiscard}
+        onConfirm={() => {
+          setUnsent(0);
+          signOut({ discardUnsent: true }).catch(failed);
+        }}
+        onCancel={() => setUnsent(0)}
       />
     </Card>
   );

@@ -1,10 +1,11 @@
 import { Badge } from '@/components/ui/Badge';
 import type { Column } from '@/components/data/dataViewModel';
 import { PencilIcon } from '@/components/ui/icons';
-import { formatVnd, formatWeight } from '@/core/format';
-import { previewRule } from '@/core/pricingPreview';
-import type { PricingRule, Product } from '@/core/types';
+import { formatVnd, formatWeight } from '@mambo/core/format';
+import { previewRule } from '@mambo/core/pricingPreview';
+import type { PricingRule, Product } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { METRIC_LABEL } from './quality';
 
 const KIND_LABEL: Record<PricingRule['kind'], string> = {
   logistics: L.ruleKindLogistics,
@@ -14,6 +15,7 @@ const KIND_LABEL: Record<PricingRule['kind'], string> = {
 
 /** Số tiền của quy tắc nói bằng dấu và chữ, không bắt đọc số âm. */
 const amountText = (rule: PricingRule): string => {
+  if (rule.qualityMetric) return `${rule.qualitySteps?.length ?? 0} ${L.qualityRuleSummary}`;
   const parts: string[] = [];
   if (rule.fixedAmount !== undefined) {
     parts.push(`${rule.fixedAmount > 0 ? '+' : '−'} ${formatVnd(Math.abs(rule.fixedAmount))}`);
@@ -47,7 +49,8 @@ export const pricingColumns = (
   {
     id: 'kind',
     header: L.ruleKind,
-    cell: (rule) => KIND_LABEL[rule.kind],
+    cell: (rule) =>
+      rule.qualityMetric ? `${L.ruleModeQuality}: ${METRIC_LABEL[rule.qualityMetric]}` : KIND_LABEL[rule.kind],
     mobile: 'secondary',
     hideBelow: 'lg',
   },
@@ -83,6 +86,8 @@ export const pricingColumns = (
     id: 'preview',
     header: L.rulePreviewTitle,
     cell: (rule) => {
+      // Quy tắc chất lượng phụ thuộc chỉ tiêu từng phiếu, đơn mẫu không nói được gì.
+      if (rule.qualityMetric) return '—';
       const { applies, amount } = previewRule(rule);
       return applies && amount !== 0 ? formatVnd(amount) : L.ruleNoEffect;
     },
@@ -97,7 +102,8 @@ export const pricingColumns = (
     // Bật/tắt là một cái nút thật, KHÔNG phải lớp phủ mờ trên cả thẻ: bản demo
     // làm kiểu phủ và quên `pointer-events-none`, tắt xong không bật lại được.
     cell: (rule) => (
-      <button type="button" onClick={() => onToggle(rule)} className="min-h-11">
+      // Vùng chạm rộng hơn huy hiệu: chạm hụt sang bên là trúng lớp phủ của thẻ, mở form sửa.
+      <button type="button" onClick={() => onToggle(rule)} className="min-h-11 min-w-11 px-2">
         <Badge
           tone={rule.active ? 'in' : 'neutral'}
           mark={rule.active ? '✓' : '○'}

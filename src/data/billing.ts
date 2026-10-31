@@ -1,125 +1,71 @@
 /**
  * Đọc gói dịch vụ và tạo ý định thanh toán.
  *
- * Tầng này CHỈ ĐỌC phần trạng thái gói. Không có hàm nào ở đây kích hoạt gói
- * hay gia hạn được: việc đó do Edge Function `payment-webhook` làm bằng
- * `service_role`, và policy của migration 0008 không cho client ghi vào
- * `subscriptions`. Nếu một ngày có ai thêm hàm "activate" vào file này thì toàn
- * bộ phần thu tiền thành thứ ai cũng tự làm được cho mình.
+ * Thông tin gói lấy từ `api.me()` (`membership.plan`).
+ * Không gọi PostgREST trực tiếp.
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { newId } from '@/core/id';
 import type {
   PaymentIntent,
-  PaymentIntentStatus,
   Subscription,
   SubscriptionStatus,
-} from '@/core/subscription';
-import { newTransferCode } from '@/core/transferCode';
-import type { PaymentIntentRow, SubscriptionRow } from './rows';
+} from '@mambo/core/subscription';
+import type { PaymentIntentCreateInput, PlanPrice, PlanSummary, StaffPrice, StaffTopUp } from '@mambo/contracts';
+import { api, fetchMe } from './client';
+import { track } from './track';
 
-const STATUSES: readonly SubscriptionStatus[] = ['trialing', 'active', 'past_due', 'canceled'];
-const INTENT_STATUSES: readonly PaymentIntentStatus[] = ['pending', 'paid', 'failed', 'expired'];
-
-const subscriptionFromRow = (row: SubscriptionRow): Subscription => ({
-  id: row.id,
-  // Trạng thái lạ đọc thành 'canceled': thà mất quyền đồng bộ (đọc và xuất file
-  // vẫn chạy) còn hơn mở quyền vì một chuỗi không hiểu được.
-  status: STATUSES.includes(row.status as SubscriptionStatus)
-    ? (row.status as SubscriptionStatus)
-    : 'canceled',
-  trialEndsAt: row.trial_ends_at ?? undefined,
-  currentPeriodEnd: row.current_period_end ?? undefined,
-});
-
-const intentFromRow = (row: PaymentIntentRow): PaymentIntent => ({
-  id: row.id,
-  amount: row.amount,
-  status: INTENT_STATUSES.includes(row.status as PaymentIntentStatus)
-    ? (row.status as PaymentIntentStatus)
-    : 'failed',
-  code: row.provider_ref ?? '',
-  createdAt: row.created_at,
-});
+export const subscriptionFromPlan = (plan: PlanSummary | null): Subscription | null => {
+  if (!plan) return null;
+  return {
+    id: 'current-plan',
+    status: plan.status as SubscriptionStatus,
+    trialEndsAt: plan.tier === 'trial' && plan.periodEnd ? plan.periodEnd : undefined,
+    currentPeriodEnd: plan.periodEnd ?? undefined,
+  };
+};
 
 export const fetchSubscription = async (
-  supabase: SupabaseClient,
-  userId: string,
+  _supabaseClient: unknown,
+  orgId: string,
 ): Promise<Subscription | null> => {
-  const { data, error } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', userId)
-    .is('deleted_at', null)
-    .maybeSingle();
+  if (!orgId) throw new Error('Organization is required');
+  const me = await fetchMe();
+  const membership = me.memberships.find((m) => m.organization.id === orgId);
+  if (!membership) throw new Error('Not a member of this organization');
+  return subscriptionFromPlan(membership.plan);
 
-  if (error) throw new Error(error.message);
-  return data ? subscriptionFromRow(data as unknown as SubscriptionRow) : null;
 };
 
-/** Lịch sử thanh toán hiện trong màn Tài khoản. Mới nhất trước. */
-export const fetchPaymentIntents = async (
-  supabase: SupabaseClient,
-  userId: string,
-  limit = 12,
-): Promise<PaymentIntent[]> => {
-  const { data, error } = await supabase
-    .from('payment_intents')
-    .select('*')
-    .eq('user_id', userId)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+/** Vựa tự mua qua chuyển khoản (`selfServe`) hay doanh nghiệp liên hệ kích hoạt; bảng giá do máy chủ giữ. */
+export interface BillingOffer {
+  readonly selfServe: boolean;
+  /** Giá theo gói + số tháng — tìm bằng cả hai, không chỉ `months` (0.28.0 có hai gói cùng số tháng). */
+  readonly prices: readonly PlanPrice[];
+  /** Một người cân thêm cho trọn một kỳ — gói Vựa cộng `số người × amount`. */
+  readonly staffPrices: readonly StaffPrice[];
+  /** Mua thêm 1…n người cân ngay lúc này (theo ngày còn lại). Rỗng = không có nút mua thêm. */
+  readonly staffTopUps: readonly StaffTopUp[];
+}
 
-  if (error) throw new Error(error.message);
-  return (data as unknown as PaymentIntentRow[]).map(intentFromRow);
+/** Cần `billing:manage`. */
+export const fetchBillingOffer = async (): Promise<BillingOffer> => {
+  const { selfServe, prices, staffPrices, staffTopUps } = await api.billing.subscription();
+  return { selfServe, prices, staffPrices, staffTopUps };
 };
 
-/** Postgres báo trùng khoá — ở đây nghĩa là mã 6 ký tự đụng một mã đang chờ. */
-const isDuplicate = (code: string | undefined): boolean => code === '23505';
+/** Lịch sử chuyển khoản, mới nhất trước (tối đa 12). Cần `billing:manage`. */
+export const fetchPaymentIntents = async (): Promise<PaymentIntent[]> => (await api.billing.intents()).intents;
 
 /**
- * Tạo ý định thanh toán và sinh mã đối soát.
- *
- * Thử lại khi trùng mã thay vì báo lỗi: 31⁶ ≈ 887 triệu tổ hợp nên trùng là
- * chuyện hiếm, nhưng "hiếm" gặp lúc người dùng đang muốn trả tiền thì vẫn là
- * mất một khách. Chỉ số duy nhất trong database mới là thứ bảo đảm không trùng
- * — vòng lặp này chỉ là cách xử lý khi nó lên tiếng.
+ * Tạo ý định thanh toán — mã đối soát và số tiền do MÁY CHỦ sinh. Bấm lại trong 24 giờ với cùng gói, số tháng,
+ * số người cân trả đúng ý định cũ, không sinh thêm mã.
  */
-export const createPaymentIntent = async (
-  supabase: SupabaseClient,
-  userId: string,
-  subscriptionId: string | null,
-  amount: number,
-): Promise<PaymentIntent> => {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const row = {
-      id: newId(),
-      user_id: userId,
-      subscription_id: subscriptionId,
-      amount,
-      status: 'pending',
-      provider: 'vietqr',
-      provider_ref: newTransferCode(),
-    };
-
-    const { data, error } = await supabase.from('payment_intents').insert(row).select().single();
-    if (!error) return intentFromRow(data as unknown as PaymentIntentRow);
-    if (!isDuplicate(error.code)) throw new Error(error.message);
-  }
-  throw new Error('Không sinh được mã chuyển khoản, thử lại sau ít phút');
+export const createPaymentIntent = async (input: PaymentIntentCreateInput): Promise<PaymentIntent> => {
+  // Mua người cân không có số tháng (hết hạn cùng gói) — sự kiện chỉ nhận 1 | 12 nên ghi 1.
+  track('checkout_started', { months: input.kind === 'staff' ? 1 : input.months });
+  return api.billing.createIntent(input);
 };
 
-/**
- * Ghi nhận người mời. Trả `false` khi mã không dùng được — hàm RPC cố ý không
- * nói vì sao, để màn đăng ký không thành công cụ dò xem mã nào có thật.
- */
-export const claimReferral = async (
-  supabase: SupabaseClient,
-  code: string,
-): Promise<boolean> => {
-  const { data, error } = await supabase.rpc('claim_referral', { code });
-  if (error) return false;
-  return data === true;
-};
+/** Nhập mã người mời (một lần). `false` = không dùng được — máy chủ không nói vì sao. */
+export const claimReferral = async (code: string): Promise<boolean> =>
+  (await api.account.claimReferral({ code })).claimed;

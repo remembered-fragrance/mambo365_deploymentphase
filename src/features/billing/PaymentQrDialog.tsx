@@ -8,7 +8,7 @@
  *
  * Hỏi lại máy chủ theo nhịp thay vì mở kênh realtime: người dùng đang nhìn màn
  * này chờ, mà mở realtime chỉ cho một màn thì phải nuôi thêm một đường kết nối
- * cho cả app. Kéo 5 giây một lần trong lúc mở màn là đủ và bỏ đi thì không sót gì.
+ * cho cả app. Hỏi 10 giây một lần trong lúc mở màn (FRONTEND §5.10: 10–15 giây) là đủ.
  */
 
 import { useEffect, useState } from 'react';
@@ -16,16 +16,17 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { CheckIcon } from '@/components/ui/icons';
 import { BANK_ACCOUNT_NAME, BANK_ACCOUNT_NUMBER, BANK_NAME, SUPPORT_ZALO } from '@/config';
-import { formatVnd } from '@/core/format';
-import type { PaymentIntent } from '@/core/subscription';
-import { transferContent } from '@/core/transferCode';
+import { formatVnd } from '@mambo/core/format';
+import type { PaymentIntent } from '@mambo/core/subscription';
 import { L } from '@/i18n/labels';
-import { vietQrImageUrl } from './vietQr';
+import { paymentMemo, vietQrImageUrl } from './vietQr';
 
-const POLL_MS = 5_000;
+const POLL_MS = 10_000;
 
 interface Props {
   readonly intent: PaymentIntent | null;
+  /** Đang trả cho gì — "Gói Vựa · 1 năm · thêm 2 người cân". */
+  readonly purchase?: string;
   readonly paid: boolean;
   readonly onPoll: () => void;
   readonly onClose: () => void;
@@ -50,7 +51,7 @@ function CopyRow({ label, value }: { readonly label: string; readonly value: str
   );
 }
 
-export function PaymentQrDialog({ intent, paid, onPoll, onClose }: Props) {
+export function PaymentQrDialog({ intent, purchase, paid, onPoll, onClose }: Props) {
   useEffect(() => {
     if (!intent || paid) return;
     const timer = setInterval(onPoll, POLL_MS);
@@ -59,7 +60,7 @@ export function PaymentQrDialog({ intent, paid, onPoll, onClose }: Props) {
 
   if (!intent) return null;
 
-  const content = transferContent(intent.code);
+  const content = paymentMemo(intent.code);
 
   return (
     <Dialog open title={L.payTitle} onClose={onClose}>
@@ -73,6 +74,12 @@ export function PaymentQrDialog({ intent, paid, onPoll, onClose }: Props) {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
+          {purchase && (
+            <p className="text-center">
+              <span className="block text-base font-bold text-ink">{purchase}</span>
+              <span className="num block text-2xl font-extrabold text-ink">{formatVnd(intent.amount)}</span>
+            </p>
+          )}
           <img
             src={vietQrImageUrl(intent.amount, content)}
             alt={L.payQrAlt}

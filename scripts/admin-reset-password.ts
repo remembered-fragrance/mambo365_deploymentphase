@@ -23,12 +23,18 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '@mambo/contracts';
+
+const COMMON_PASSWORDS = new Set([
+  '123456', '12345678', '123456789', '1234567890', 'password', 'qwerty', 'abc123',
+  'abcdef', 'abcdefgh', '000000', '00000000', '111111', '11111111', '123123',
+  'iloveyou', 'admin', 'welcome', 'letmein', 'monkey', 'dragon', 'master',
+  'matkhau', 'matkhau1', 'matkhau123', 'anhyeuem', 'yeuem', 'mothaiba',
+]);
 
 const url = process.env.SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const [identifier, newPassword] = process.argv.slice(2);
-
-const MIN_PASSWORD_LENGTH = 6;
+const [identifier, newPassword, operator] = process.argv.slice(2);
 
 // Khai báo dạng function (không phải arrow const) để TypeScript hiểu đây là
 // điểm dừng và thu hẹp kiểu ở các dòng sau mỗi lần gọi.
@@ -40,11 +46,17 @@ function fail(message: string): never {
 if (!url || !serviceRoleKey) {
   fail('Thiếu SUPABASE_URL hoặc SUPABASE_SERVICE_ROLE_KEY trong biến môi trường.');
 }
-if (!identifier || !newPassword) {
-  fail('Dùng: admin-reset-password.ts <sđt|tên tài khoản|email> <mật khẩu mới>');
+if (!identifier || !newPassword || !operator) {
+  fail('Dùng: admin-reset-password.ts <sđt|tên tài khoản|email> <mật khẩu mới> <tên người duyệt>');
 }
-if (newPassword.length < MIN_PASSWORD_LENGTH) {
-  fail(`Mật khẩu mới phải từ ${MIN_PASSWORD_LENGTH} ký tự.`);
+if (newPassword.length < PASSWORD_MIN_LENGTH) {
+  fail(`Mật khẩu mới phải từ ${PASSWORD_MIN_LENGTH} ký tự.`);
+}
+if (newPassword.length > PASSWORD_MAX_LENGTH) {
+  fail(`Mật khẩu mới không quá ${PASSWORD_MAX_LENGTH} ký tự.`);
+}
+if (COMMON_PASSWORDS.has(newPassword.toLowerCase())) {
+  fail('Mật khẩu quá phổ biến — chọn mật khẩu khác.');
 }
 
 const admin = createClient(url, serviceRoleKey, {
@@ -69,8 +81,17 @@ const main = async (): Promise<void> => {
   });
   if (updateError) fail(`Không đặt lại được mật khẩu: ${updateError.message}`);
 
-  console.error(`✓ Đã đặt lại mật khẩu cho ${email} (id ${user.id}).`);
-  console.error('  Nhớ ghi vào sổ hỗ trợ: ngày giờ, số điện thoại, ai xác minh.');
+  // Trang Quyền riêng tư hứa "quản trị viên chỉ truy cập khi người dùng yêu cầu
+  // hỗ trợ, có ghi nhận". Dòng dưới đây là chỗ duy nhất biến câu đó thành thật.
+  const { error: logError } = await admin.from('admin_access_log').insert({
+    user_id: user.id,
+    action: 'reset-password',
+    operator,
+    reason: `yêu cầu qua ${identifier}`,
+  });
+  if (logError) console.error(`⚠ Không ghi được nhật ký: ${logError.message}`);
+
+  console.error(`✓ Đã đặt lại mật khẩu cho ${email} (id ${user.id}), người duyệt: ${operator}.`);
 };
 
 main().catch((err: unknown) => {

@@ -1,5 +1,7 @@
 # GIAI ĐOẠN F — KINH DOANH & THU TIỀN
 
+> 📌 **23/10/2026 — ✅ phần app đã làm (10/08/2026); thu tiền nay đi qua BE (`/v1/billing/intents`, webhook `/v1/webhooks/bank`), chưa có số tài khoản thật.** Kế hoạch 08/2026, thời app gọi Supabase trực tiếp — giữ làm lịch sử. Trạng thái và kiến trúc hiện tại: đầu trang [README.md](README.md) của thư mục này.
+
 **Buổi:** 4 · **Phụ thuộc:** E xong **và cổng chặn 2 đã vượt** · **Người làm:** Tài · **Cần từ nhóm:** kết quả kiểm chứng giá (Nguyên), xác nhận hạn mức (Linh)
 
 ---

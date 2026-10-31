@@ -9,12 +9,15 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PencilIcon, PlusIcon } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toast';
-import { formatVnd } from '@/core/format';
-import type { Product } from '@/core/types';
+import { formatVnd } from '@mambo/core/format';
+import type { Product } from '@mambo/core/types';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { HelpButton } from '../help/HelpButton';
+import { greenRatioOf } from '../receipt/lineDraft';
 import { ROUTES } from '../shared/navItems';
+import { useAccess } from '../shared/useAccess';
+import { useAttempt } from '../shared/useAttempt';
 import {
   draftFromProduct,
   emptyProduct,
@@ -23,93 +26,102 @@ import {
   type ProductDraft,
 } from './ProductFormDialog';
 
+/** `onEdit` vắng = người dùng không có `pricing:manage` (người cân): không có nút sửa. */
 const productColumns = (
   ruleCount: (productId: string) => number,
-  onEdit: (product: Product) => void,
-): Column<Product>[] => [
-  {
-    id: 'name',
-    header: L.productNameLabel,
-    cell: (p) => (
-      <button
-        type="button"
-        onClick={() => onEdit(p)}
-        className="text-left font-bold text-ink underline decoration-rule underline-offset-4"
-      >
-        {p.name}
-      </button>
-    ),
-    mobile: 'title',
-    sortValue: (p) => p.name,
-  },
-  {
-    id: 'formula',
-    header: L.formulaEdit,
-    cell: (p) => FORMULA_LABEL[p.formulaType],
-    mobile: 'secondary',
-  },
-  {
-    id: 'unit',
-    header: L.unitOfMeasure,
-    cell: (p) => p.unit,
-    mobile: 'secondary',
-    hideBelow: 'lg',
-  },
-  {
-    id: 'rules',
-    // Lối tắt sang trang Quy tắc giá, lọc sẵn đúng mặt hàng này.
-    header: L.ruleCountShort,
-    cell: (p) => (
-      <Link to={`${ROUTES.pricing}?product=${p.id}`} className="font-semibold text-brand underline">
-        {L.ruleCountShort} ({ruleCount(p.id)})
-      </Link>
-    ),
-    mobile: 'badge',
-    sortValue: (p) => ruleCount(p.id),
-  },
-  {
-    id: 'lastPrice',
-    header: L.lastPrice,
-    cell: (p) => (p.lastPricePerUnit ? formatVnd(p.lastPricePerUnit) : '—'),
-    align: 'right',
-    numeric: true,
-    mobile: 'value',
-    sortValue: (p) => p.lastPricePerUnit ?? 0,
-  },
-  {
-    id: 'state',
-    header: L.productInUse,
-    cell: (p) =>
-      p.isActive ? (
-        <Badge tone="in" mark="✓" label={L.productInUse} />
-      ) : (
-        <Badge tone="neutral" mark="○" label={L.productHidden} />
+  onEdit?: (product: Product) => void,
+): Column<Product>[] => {
+  const columns: Column<Product>[] = [
+    {
+      id: 'name',
+      header: L.productNameLabel,
+      cell: (p) =>
+        onEdit ? (
+          <button
+            type="button"
+            onClick={() => onEdit(p)}
+            className="text-left font-bold text-ink underline decoration-rule underline-offset-4"
+          >
+            {p.name}
+          </button>
+        ) : (
+          <span className="font-bold text-ink">{p.name}</span>
+        ),
+      mobile: 'title',
+      sortValue: (p) => p.name,
+    },
+    {
+      id: 'formula',
+      header: L.formulaEdit,
+      cell: (p) => FORMULA_LABEL[p.formulaType],
+      mobile: 'secondary',
+    },
+    {
+      id: 'unit',
+      header: L.unitOfMeasure,
+      cell: (p) => p.unit,
+      mobile: 'secondary',
+      hideBelow: 'lg',
+    },
+    {
+      id: 'rules',
+      // Lối tắt sang trang Quy tắc giá, lọc sẵn đúng mặt hàng này.
+      header: L.ruleCountShort,
+      cell: (p) => (
+        <Link to={`${ROUTES.pricing}?product=${p.id}`} className="font-semibold text-brand underline">
+          {L.ruleCountShort} ({ruleCount(p.id)})
+        </Link>
       ),
-    align: 'right',
-    mobile: 'badge',
-    sortValue: (p) => (p.isActive ? 0 : 1),
-  },
-  {
-    id: 'edit',
-    header: '',
-    cell: (p) => (
-      <button
-        type="button"
-        aria-label={`${L.editParty}: ${p.name}`}
-        onClick={() => onEdit(p)}
-        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-rule text-ink-2"
-      >
-        <PencilIcon className="h-4 w-4" />
-      </button>
-    ),
-    align: 'right',
-    mobile: 'badge',
-  },
-];
+      mobile: 'badge',
+      sortValue: (p) => ruleCount(p.id),
+    },
+    {
+      id: 'lastPrice',
+      header: L.lastPrice,
+      cell: (p) => (p.lastPricePerUnit ? formatVnd(p.lastPricePerUnit) : '—'),
+      align: 'right',
+      numeric: true,
+      mobile: 'value',
+      sortValue: (p) => p.lastPricePerUnit ?? 0,
+    },
+    {
+      id: 'state',
+      header: L.productInUse,
+      cell: (p) =>
+        p.isActive ? (
+          <Badge tone="in" mark="✓" label={L.productInUse} />
+        ) : (
+          <Badge tone="neutral" mark="○" label={L.productHidden} />
+        ),
+      align: 'right',
+      mobile: 'badge',
+      sortValue: (p) => (p.isActive ? 0 : 1),
+    },
+    {
+      id: 'edit',
+      header: '',
+      cell: (p) => (
+        <button
+          type="button"
+          aria-label={`${L.editParty}: ${p.name}`}
+          onClick={() => onEdit?.(p)}
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-rule text-ink-2"
+        >
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      ),
+      align: 'right',
+      mobile: 'badge',
+    },
+  ];
+  return columns.filter((column) => onEdit || column.id !== 'edit');
+};
 
 export function ProductsPage() {
   const { data, addProduct, updateProduct } = useStore();
+  const { can } = useAccess();
   const toast = useToast();
+  const attempt = useAttempt();
   const [draft, setDraft] = useState<ProductDraft | null>(null);
   const [sort, setSort] = useState<SortState>({ columnId: 'state', desc: false });
 
@@ -121,11 +133,16 @@ export function ProductsPage() {
       name: next.name.trim(),
       unit: next.unit.trim() || 'kg',
       formulaType: next.formulaType,
+      // Luôn có khoá: đổi về mủ nước / công thức khác thì gỡ trên máy chủ (`productToPatch`).
+      rubberKind: next.formulaType === 'rubberLatex' && next.rubberKind === 'cuplump' ? ('cuplump' as const) : undefined,
+      // Như rubberKind: luôn có khoá, tỷ lệ không hợp lệ / đổi công thức là gỡ.
+      greenRatio: greenRatioOf(next),
       trackInventory: next.trackInventory,
       isActive: next.isActive,
     };
-    if (next.id) updateProduct(next.id, patch);
-    else addProduct(patch);
+    const id = next.id;
+    // Không nhận (B4): form còn mở để sửa.
+    if (!attempt(() => (id ? updateProduct(id, patch) : addProduct(patch)))) return;
     setDraft(null);
     toast({ message: `${L.save}: ${patch.name}` });
   };
@@ -147,7 +164,10 @@ export function ProductsPage() {
 
       <DataView
         rows={data.products}
-        columns={productColumns(ruleCount, (p) => setDraft(draftFromProduct(p)))}
+        columns={productColumns(
+          ruleCount,
+          can('pricing:manage') ? (p) => setDraft(draftFromProduct(p)) : undefined,
+        )}
         getKey={(p) => p.id}
         caption={L.navProducts}
         sort={sort}

@@ -1,23 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
-import { PlusIcon } from '@/components/ui/icons';
-import { formatVnd } from '@/core/format';
-import { newId } from '@/core/id';
-import type { TransactionKind } from '@/core/types';
+import { PlusIcon, TrashIcon } from '@/components/ui/icons';
+import { formatVnd } from '@mambo/core/format';
+import { cashPaidOnDay, needsCashReminder } from '@mambo/core/cashReminder';
+import { newId } from '@mambo/core/id';
+import type { PaymentMethod, TransactionKind } from '@mambo/core/types';
+import { useEntitlement } from '@/data/hooks/useEntitlement';
 import { useSubscription } from '@/data/hooks/useSubscription';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { QuotaWall } from '../billing/QuotaWall';
+import { contractNote } from '../contracts/contractDraft';
 import { HelpButton } from '../help/HelpButton';
+import { metricsForProduct } from '../pricing/quality';
 import { FirstReceiptCoach } from '../onboarding/FirstReceiptCoach';
+import { CashReminderDialog } from '../shared/CashReminderDialog';
 import { ROUTES } from '../shared/navItems';
+import { copyTransferContent } from '../shared/payMethod';
 import { CounterpartyPicker } from './CounterpartyPicker';
+import { discardConsequence, nextSession } from './draftSessions';
+import { finishMessage } from './finishText';
 import { LineEditor } from './LineEditor';
+import { NamesakeDialog } from './NamesakeDialog';
+import { namesakesOf, type PartyChoice } from './namesakes';
 import { MoreInfoPanel } from './MoreInfoPanel';
+import { OrderPicker } from './OrderPicker';
 import { PayPartDialog } from './PayPartDialog';
 import { ReceiptSummary } from './ReceiptSummary';
 import { SessionRail } from './SessionRail';
@@ -39,7 +51,9 @@ export function CreateReceiptPage() {
   const sessionKey = draftId ?? params.get('moi') ?? `moi-${kind}`;
 
   return (
-    <ReceiptWorkspace key={sessionKey} draftId={draftId} kind={kind} setParams={setParams} />
+    // Đổi khách thay URL chứ không thêm lịch sử: Quay lại phải ra khỏi màn cân, không nhảy về từng khách
+    // trước đó — càng không về `?draft=` của phiếu vừa chốt (gõ vào là dựng lại nháp mang id đã chốt).
+    <ReceiptWorkspace key={sessionKey} draftId={draftId} kind={kind} setParams={(next) => setParams(next, { replace: true })} />
   );
 }
 
@@ -51,13 +65,41 @@ interface WorkspaceProps {
 
 function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   const { data } = useStore();
+  const paidQuality = useEntitlement('quality:pricing');
   const { quota } = useSubscription();
   const navigate = useNavigate();
   const toast = useToast();
   const receipt = useDraftReceipt(draftId, kind);
+  // Khoản nhận từ lời mời của quy tắc nằm ở khối "Theo quy tắc giá", không lặp lại ở ô cộng / trừ gõ tay.
+  const acceptedStored = receipt.adjustments.filter((a) => a.ruleId);
+  const typed = receipt.adjustments.filter((a) => !a.ruleId);
+  const accepted = receipt.acceptedAdjustments;
   const [payPartOpen, setPayPartOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  /** Lần bấm chốt đang chờ người dùng trả lời "người này hay người mới?" (B3). */
+  const [askParty, setAskParty] = useState<{ readonly amountPaid: number; readonly dueDate?: string } | null>(null);
+  // V13: gói Pro ghi hình thức trả cho người bán (phiếu mua); tiền mặt từ 5 triệu/ngày thì nhắc trước khi chốt.
+  const payQr = useEntitlement('pay:qr') && kind === 'purchase';
+  const [method, setMethod] = useState<PaymentMethod>('cash');
+  const [cashAsk, setCashAsk] = useState<{
+    readonly amountPaid: number;
+    readonly dueDate?: string;
+    readonly party?: PartyChoice;
+    readonly partyId?: string;
+  } | null>(null);
+  const namesakes = useMemo(
+    () => namesakesOf(data, kind, receipt.partyName, receipt.counterpartyId),
+    [data, kind, receipt.partyName, receipt.counterpartyId],
+  );
 
   const sessions = data.drafts.filter((d) => d.status === 'draft' && (d.kind ?? 'purchase') === kind);
+
+  // Thanh tổng dính đáy nổi đè lên form: trình duyệt phải coi phần nó che là ngoài màn hình, không thì
+  // chạm vào ô cân / giá ở đáy màn là gõ vào ô bị che. Xem `.sticky-total` trong index.css.
+  useEffect(() => {
+    document.documentElement.classList.add('sticky-total');
+    return () => document.documentElement.classList.remove('sticky-total');
+  }, []);
 
   const goToDraft = (id?: string) => {
     const next = new URLSearchParams();
@@ -67,14 +109,68 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
     setParams(next);
   };
 
-  const finish = (amountPaid: number, dueDate?: string) => {
-    const tx = receipt.finish(amountPaid, dueDate);
+  /** Máy không nhận phiếu (số vượt mức máy chủ nhận — `opCheck.ts`): nói ngay, phiếu vẫn là nháp. */
+  const attempt = <T,>(action: () => T): T | null => {
+    try {
+      return action();
+    } catch (error) {
+      toast({ message: error instanceof Error ? error.message : L.cannotSaveInvalid, tone: 'alert' });
+      return null;
+    }
+  };
+
+  /** `paidBy`: hình thức đã chốt qua hộp nhắc tiền mặt — có rồi thì không hỏi lại. */
+  const finish = async (amountPaid: number, dueDate?: string, party?: PartyChoice, paidBy?: PaymentMethod) => {
+    // Gõ tên trùng người đã có mà chưa chọn ai: hỏi trước, không tự gộp vào người cũ (B3).
+    if (!party && namesakes.length > 0) {
+      setPayPartOpen(false);
+      setAskParty({ amountPaid, dueDate });
+      return;
+    }
+    setAskParty(null);
+    const partyId = party && 'id' in party ? party.id : party && 'asNew' in party ? undefined : receipt.counterpartyId;
+    if (payQr && !paidBy && needsCashReminder(data, partyId, amountPaid, method)) {
+      setPayPartOpen(false);
+      setCashAsk({ amountPaid, dueDate, party, partyId });
+      return;
+    }
+    const paying = payQr ? (paidBy ?? method) : undefined;
+    const tx = attempt(() => receipt.finish(amountPaid, dueDate, party, paying));
     if (!tx) return;
     setPayPartOpen(false);
-    toast({ message: `${L.total}: ${formatVnd(amountPaid)} · ${tx.supplierName}` });
-    // Quay về đúng thanh chip: còn khách đang cân thì mở khách kế, hết thì phiếu mới.
-    const remaining = sessions.filter((d) => d.id !== receipt.draftId);
-    goToDraft(remaining[0]?.id);
+    const copied = paying === 'transfer' && amountPaid > 0 ? ` · ${await copyTransferContent(tx.id)}` : '';
+    // V15: phiếu giao vào hợp đồng mùa vụ đang mở thì nói luôn đã giao bao nhiêu, còn bao nhiêu.
+    const contract = contractNote(data, tx);
+    toast({ message: `${finishMessage(tx)}${copied}${contract ? ` · ${contract}` : ''}` });
+    goToDraft(nextSession(sessions, receipt.draftId));
+  };
+
+  /**
+   * Khách bỏ đi, cân nhầm, bấm "Khách mới" thừa — nháp không chốt được thì phải xoá được, không
+   * thì nằm mãi trên thanh "Đang cân". Không có "Hoàn tác": nháp đã xoá thì máy khác cũng xoá theo.
+   */
+  const discard = () => {
+    const name = receipt.partyName;
+    setDiscardOpen(false);
+    receipt.discard();
+    toast({ message: `${L.draftDiscarded} · ${name.trim() || L.walkIn}`, tone: 'alert' });
+    goToDraft(nextSession(sessions, receipt.draftId));
+  };
+
+  /**
+   * Khách gửi hàng lại, chờ giá, chưa lấy tiền: cất phiếu sang "Để dành" để thanh "Đang cân" chỉ còn
+   * khách đang đứng ở sân. Về thẳng tab "Để dành" của màn Phiếu — thấy phiếu vừa cất nằm đó; bấm vào
+   * là mở lại để chốt như thường.
+   */
+  const saveForLater = () => {
+    const name = receipt.partyName;
+    const saved = attempt(() => {
+      receipt.saveForLater();
+      return true;
+    });
+    if (!saved) return;
+    toast({ message: `${L.savedForLater} · ${name.trim() || L.walkIn}` });
+    navigate(`${ROUTES.receipts}?tab=waiting`);
   };
 
   /**
@@ -97,7 +193,7 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
       />
 
       {/* Hướng dẫn bốn bước — chỉ hiện một lần, ngay trên màn hình nó nói về. */}
-      <FirstReceiptCoach />
+      <FirstReceiptCoach kind={kind} />
 
       <div className="mb-3 lg:hidden">
         <SessionRail
@@ -122,6 +218,14 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
         </aside>
 
         <div className="flex flex-col gap-4 lg:col-span-6">
+          <OrderPicker
+            data={data}
+            kind={kind}
+            orderId={receipt.orderId}
+            onPick={receipt.setOrderId}
+            onCounterparty={receipt.setCounterparty}
+          />
+
           <CounterpartyPicker
             data={data}
             kind={kind}
@@ -136,33 +240,116 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
               line={line}
               products={data.products}
               canRemove={receipt.lines.length > 1}
+              // Phiếu bán không áp quy tắc giá nên cũng không hỏi chỉ tiêu.
+              metrics={paidQuality && kind !== 'sale' ? metricsForProduct(data.pricingRules ?? [], line.productId) : undefined}
               onChange={(patch) => receipt.updateLine(line.id, patch)}
               onRemove={() => receipt.removeLine(line.id)}
             />
           ))}
 
-          <Button block onClick={receipt.addLine}>
+          {(receipt.ruleAdjustments.length > 0 || accepted.length > 0 || receipt.offeredAdjustments.length > 0) && (
+            <section aria-label={L.ruleAdjustments} className="card flex flex-col gap-1 p-3">
+              <p className="text-sm font-bold text-ink">{L.ruleAdjustments}</p>
+              <p className="text-xs text-ink-3">{L.ruleAdjustmentsHint}</p>
+              <ul aria-live="polite" className="mt-1 flex flex-col gap-1">
+                {receipt.ruleAdjustments.map((adj) => (
+                  <li key={adj.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-ink-2">{adj.label}</span>
+                    <span className="num font-semibold text-ink">{formatVnd(adj.amount)}</span>
+                  </li>
+                ))}
+                {accepted.map((adj) => (
+                  <li key={adj.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-ink-2">{adj.label}</span>
+                    {adj.amount === 0 ? (
+                      <span className="text-xs text-ink-3">{L.ruleNotMet}</span>
+                    ) : (
+                      <span className="num font-semibold text-ink">{formatVnd(adj.amount)}</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => receipt.setAdjustments(receipt.adjustments.filter((a) => a.id !== adj.id))}
+                      aria-label={`${L.del} ${adj.label}`}
+                      className="text-sm font-semibold text-alert"
+                    >
+                      {L.del}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {receipt.offeredAdjustments.length > 0 && (
+                <>
+                  <p className="mt-2 text-xs text-ink-3">{L.ruleOffersHint}</p>
+                  {receipt.offeredAdjustments.map((offer) => (
+                    <Button
+                      key={offer.adjustment.id}
+                      block
+                      className="py-2"
+                      disabled={receipt.adjustmentsFull}
+                      onClick={() => receipt.acceptOffer(offer)}
+                    >
+                      <PlusIcon className="h-4 w-4 shrink-0" />
+                      {/* Xuống dòng, không cắt chữ: tên quy tắc dài mà ép một dòng thì cả màn cuộn ngang ở 390px. */}
+                      <span className="flex-1 text-left">
+                        {offer.adjustment.label} · {offer.pickup ? L.rulePickupOnly : L.ruleBringOnly}
+                      </span>
+                      <span className="num shrink-0">{formatVnd(offer.adjustment.amount)}</span>
+                    </Button>
+                  ))}
+                </>
+              )}
+            </section>
+          )}
+
+          <Button block disabled={!receipt.canAddLine} onClick={receipt.addLine}>
             <PlusIcon className="h-4 w-4" />
-            {L.addLine}
+            {receipt.canAddLine ? L.addLine : L.linesFull}
           </Button>
 
           <MoreInfoPanel
-            adjustments={receipt.adjustments}
+            adjustments={typed}
+            full={receipt.adjustmentsFull}
             note={receipt.note}
             attachmentIds={receipt.attachmentIds}
-            onAdjustmentsChange={receipt.setAdjustments}
+            onAdjustmentsChange={(next) => receipt.setAdjustments([...next, ...acceptedStored])}
             onNoteChange={receipt.setNote}
             onAttachmentsChange={receipt.setAttachmentIds}
           />
+
+          {receipt.status === 'waiting' ? (
+            <div className="card flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-ink-2">{L.waitingNotice}</p>
+              <Button className="shrink-0" onClick={receipt.backToWeighing}>
+                {L.backToWeighing}
+              </Button>
+            </div>
+          ) : (
+            (receipt.draftId || receipt.canFinish) && (
+              <Button block onClick={saveForLater}>
+                {L.saveForLater}
+              </Button>
+            )
+          )}
+
+          {/* Cuối cột, xa hai nút chốt ở thanh tổng tiền — tay đeo găng không chạm nhầm. Nháp
+              chưa lưu lần nào thì chưa có gì để xoá: rời màn là nó mất. */}
+          {receipt.draftId && (
+            <Button tone="danger" block onClick={() => setDiscardOpen(true)}>
+              <TrashIcon className="h-4 w-4" />
+              {L.discardDraft}
+            </Button>
+          )}
         </div>
 
-        <div className="lg:col-span-3">
+        {/* Điện thoại: `contents` để thanh tổng dính theo cả lưới, không kẹt trong khung cao bằng chính nó. */}
+        <div className="max-lg:contents lg:col-span-3">
           <ReceiptSummary
             total={receipt.finalTotal}
             canFinish={receipt.canFinish}
             saveState={receipt.saveState}
-            onPayFull={() => finish(receipt.finalTotal)}
+            onPayFull={() => void finish(receipt.finalTotal)}
             onPayPart={() => setPayPartOpen(true)}
+            {...(payQr ? { method, onMethodChange: setMethod } : {})}
           />
         </div>
       </div>
@@ -170,8 +357,42 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
       <PayPartDialog
         open={payPartOpen}
         total={receipt.finalTotal}
-        onConfirm={finish}
+        onConfirm={(amountPaid, dueDate) => void finish(amountPaid, dueDate)}
         onCancel={() => setPayPartOpen(false)}
+      />
+
+      <NamesakeDialog
+        open={askParty !== null && namesakes.length > 0}
+        name={receipt.partyName}
+        namesakes={namesakes}
+        onPick={(choice) => askParty && void finish(askParty.amountPaid, askParty.dueDate, choice)}
+        onCancel={() => setAskParty(null)}
+      />
+
+      <CashReminderDialog
+        open={cashAsk !== null}
+        paidToday={cashAsk?.partyId ? cashPaidOnDay(data, cashAsk.partyId, new Date()) : 0}
+        onTransfer={() => {
+          if (!cashAsk) return;
+          setCashAsk(null);
+          setMethod('transfer');
+          void finish(cashAsk.amountPaid, cashAsk.dueDate, cashAsk.party, 'transfer');
+        }}
+        onCash={() => {
+          if (!cashAsk) return;
+          setCashAsk(null);
+          void finish(cashAsk.amountPaid, cashAsk.dueDate, cashAsk.party, 'cash');
+        }}
+        onCancel={() => setCashAsk(null)}
+      />
+
+      <ConfirmDialog
+        open={discardOpen}
+        title={L.discardDraftTitle}
+        consequence={discardConsequence(receipt.partyName, receipt.finalTotal)}
+        confirmLabel={L.del}
+        onConfirm={discard}
+        onCancel={() => setDiscardOpen(false)}
       />
     </PageContainer>
   );

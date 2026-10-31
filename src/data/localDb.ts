@@ -1,78 +1,219 @@
 /**
- * Kết nối IndexedDB dùng chung và hình dạng của bốn kho cục bộ.
+ * Kết nối IndexedDB dùng chung và hình dạng của các kho cục bộ.
  *
  * Tách riêng khỏi `cache.ts` / `queue.ts` / `attachments.ts` để ba file đó
  * không phải import lẫn nhau chỉ vì cùng dùng một kết nối.
  */
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { z } from 'zod';
+import { newId } from '@mambo/core/id';
+import type { SyncEntity, SyncOpKind } from '@mambo/contracts';
 import type { TableName } from './rows';
 
 const DB_NAME = 'thumua365';
-const DB_VERSION = 2;
+const DB_VERSION = 5;
 
-export type OpKind = 'insert' | 'update' | 'softDelete';
+export type OpKind = SyncOpKind;
 
 /** Một thao tác ghi đang chờ đẩy lên máy chủ. */
 export interface QueuedOp {
-  /** Khoá chống trùng: bấm hai lần vì mạng chậm không thành hai phiếu. */
+  /** Khoá chống trùng / opId: bấm hai lần vì mạng chậm không thành hai phiếu. */
   readonly id: string;
-  readonly kind: OpKind;
-  readonly table: TableName;
-  /** Hàng đã map sang snake_case. Với softDelete chỉ cần biết `recordId`. */
-  readonly payload: Record<string, unknown>;
-  /** Bản ghi nghiệp vụ bị chạm — dùng để gắn cờ "đang chờ gửi" lên phiếu. */
+  readonly opId: string;
+  readonly kind: SyncOpKind;
+  readonly entity: SyncEntity;
   readonly recordId: string;
+  /** Dữ liệu op theo schema zod của contracts (camelCase) */
+  readonly data?: Record<string, unknown>;
+  readonly orgId: string;
   /**
-   * Số thứ tự tăng dần — khoá sắp xếp của hàng đợi.
+   * Người ghi op (B8). Chỉ gửi bằng phiên của chính người này: máy dùng chung, người sau đăng nhập mà đẩy op
+   * của người trước thì máy chủ ghi `createdBy` là người sau. Thiếu = op của bản app trước — không đoán là của
+   * ai, cách ly (`isolateOtherUsers`) chờ người dùng nhận.
+   */
+  readonly userId?: string;
+
+  /** Tương thích ngược với code cũ */
+  readonly table?: TableName;
+  readonly payload?: Record<string, unknown>;
+
+  /**
+   * Số thứ tự tăng dần — khoá sắp xếp của hàng đợi. Cấp trong transaction ghi op (`enqueue`):
+   * luôn lớn hơn mọi op đang chờ, dù đồng hồ máy bị chỉnh lùi hay hai tab cùng ghi.
    *
    * 🔴 KHÔNG dùng `createdAt` để sắp: một lần bấm "Trả đủ & xong" xếp bốn thao
-   * tác trong cùng một mili giây, và khi mốc thời gian bằng nhau thì IndexedDB
-   * trả về theo khoá chính (uuid ngẫu nhiên). Lần trả tiền có thể lên trước
-   * phiếu → khoá ngoại lỗi và khoản tiền rơi mất.
+   * tác trong cùng một mili giây.
    */
   readonly seq: number;
   readonly createdAt: string;
+  /** Mọi lần gửi hỏng (mất mạng, cả lượt bị từ chối, máy chủ từ chối op) — chỉ để giãn cách thử lại. */
   readonly tries: number;
+  /**
+   * Số lần MÁY CHỦ từ chối chính op này với lỗi thử-lại-được (PARENT_MISSING / INTERNAL) — quyết định khi
+   * nào thành kẹt (`MAX_REJECTED_TRIES`). Mất mạng không cộng vào: rớt mạng 4 lần rồi gặp một lần
+   * INTERNAL không được thành kẹt ngay. Op của bản app cũ không có trường này = 0.
+   */
+  readonly rejectedTries?: number;
   readonly nextAttemptAt: string;
   readonly lastError?: string;
+  readonly conflict?: { code: string; message: string; details?: unknown };
 }
 
+/** Runtime guard also protects queues created by older or interrupted deployments. */
+export const isScopedOp = (value: unknown): value is QueuedOp => {
+  if (!value || typeof value !== 'object') return false;
+  const op = value as Partial<QueuedOp>;
+  return typeof op.orgId === 'string' && Boolean(op.orgId.trim()) &&
+    typeof op.opId === 'string' && Boolean(op.opId) &&
+    typeof op.id === 'string' && Boolean(op.id) &&
+    ['supplier', 'buyer', 'product', 'pricingRule', 'note', 'draft', 'transaction', 'payment', 'seasonContract'].includes(op.entity ?? '') &&
+    ['insert', 'update', 'softDelete'].includes(op.kind ?? '') &&
+    typeof op.recordId === 'string' && Boolean(op.recordId) &&
+    Number.isSafeInteger(op.seq);
+};
+
 interface LocalDbSchema extends DBSchema {
-  /** Sổ của từng tài khoản. Khoá = userId. */
+  /** Sổ của từng tài khoản / tổ chức. Khoá = orgId hoặc userId. */
   books: { key: string; value: unknown };
+  legacyQueue: { key: string; value: unknown };
   queue: { key: string; value: QueuedOp; indexes: { seq: number } };
+  /** Cursors phân trang theo tổ chức */
+  cursors: { key: string; value: string };
   /** Ảnh chứng từ. Khoá = attachmentId. */
   attachments: { key: string; value: Blob };
-  /** Mốc đồng bộ gần nhất theo tài khoản. Khoá = userId. */
+  /** Ảnh chờ đẩy lên máy chủ — riêng với hàng đợi op sổ. Khoá = attachmentId. Xem `AttachmentQueueEntry`. */
+  attachmentQueue: { key: string; value: string | { readonly orgId: string; readonly tries: number; readonly userId?: string } };
+  /** Mốc đồng bộ gần nhất theo tài khoản / tổ chức. */
   syncMarks: { key: string; value: string };
 }
 
 let dbPromise: Promise<IDBPDatabase<LocalDbSchema>> | null = null;
 
-export const openLocalDb = (): Promise<IDBPDatabase<LocalDbSchema>> => {
-  dbPromise ??= openDB<LocalDbSchema>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains('books')) db.createObjectStore('books');
-      if (!db.objectStoreNames.contains('attachments')) db.createObjectStore('attachments');
-      if (!db.objectStoreNames.contains('syncMarks')) db.createObjectStore('syncMarks');
-
-      // v1 sắp hàng đợi theo createdAt — không đủ chính xác, dựng lại theo seq.
-      if (db.objectStoreNames.contains('queue')) db.deleteObjectStore('queue');
-      db.createObjectStore('queue', { keyPath: 'id' }).createIndex('seq', 'seq');
-    },
-  });
-  return dbPromise;
+/**
+ * Xin trình duyệt đừng tự dọn sổ khi máy đầy bộ nhớ: phiếu chưa gửi chỉ nằm ở đây. Chrome tự quyết (app đã cài thì
+ * gần như luôn cho), không hỏi người dùng; trình duyệt không hỗ trợ thì thôi.
+ */
+export const keepBookOnDevice = (): void => {
+  void navigator.storage?.persist?.().catch(() => undefined);
 };
 
-let lastSeq = 0;
+export const openLocalDb = (): Promise<IDBPDatabase<LocalDbSchema>> => {
+  if (dbPromise) return dbPromise;
+  const opening = openDB<LocalDbSchema>(DB_NAME, DB_VERSION, {
+    upgrade(db, _oldVersion, _newVersion, transaction) {
+      if (!db.objectStoreNames.contains('books')) db.createObjectStore('books');
+      if (!db.objectStoreNames.contains('attachments')) db.createObjectStore('attachments');
+      if (!db.objectStoreNames.contains('attachmentQueue')) db.createObjectStore('attachmentQueue');
+      if (!db.objectStoreNames.contains('syncMarks')) db.createObjectStore('syncMarks');
+      if (!db.objectStoreNames.contains('cursors')) db.createObjectStore('cursors');
+
+      if (!db.objectStoreNames.contains('legacyQueue')) db.createObjectStore('legacyQueue');
+      if (!db.objectStoreNames.contains('queue')) {
+        db.createObjectStore('queue', { keyPath: 'id' }).createIndex('seq', 'seq');
+      } else {
+        const queue = transaction.objectStore('queue');
+        if (!queue.indexNames.contains('seq')) queue.createIndex('seq', 'seq');
+        // Never infer an organization from the active session or a legacy user_id.
+        void queue.openCursor().then(async function migrate(cursor): Promise<void> {
+          if (!cursor) return;
+          const op = cursor.value;
+          if (!isScopedOp(op)) {
+            await transaction.objectStore('legacyQueue').put(op, String(cursor.primaryKey));
+            await cursor.delete();
+          }
+          await migrate(await cursor.continue());
+        }).catch(() => transaction.abort());
+      }
+    },
+    // Tab khác vừa mở bản app mới (DB_VERSION tăng): nhường kết nối, không thì tab mới treo chờ nâng cấp.
+    blocking(_current, _blocked, event) {
+      (event.target as IDBDatabase).close();
+      if (dbPromise === opening) dbPromise = null;
+    },
+    // Trình duyệt tự đóng kết nối (dọn bộ nhớ, người dùng xoá dữ liệu trang): lần sau phải mở lại.
+    terminated() {
+      if (dbPromise === opening) dbPromise = null;
+    },
+  });
+  dbPromise = opening;
+  // Mở hỏng (VersionError: tab khác đã nâng DB lên bản mới hơn) thì lần gọi sau mở lại, không trả mãi lỗi cũ.
+  opening.catch(() => {
+    if (dbPromise === opening) dbPromise = null;
+  });
+  return opening;
+};
 
 /**
- * Số thứ tự tăng dần, không bao giờ lặp trong một phiên và vẫn tăng qua các
- * lần mở app (phần nguyên là mốc thời gian).
+ * Lỗi vì kết nối đã đóng / DB đã lên bản mới hơn bản app này — không phải lỗi của dữ liệu đang ghi (B7).
+ * `InvalidStateError`: mở giao dịch trên kết nối đã đóng. `VersionError`: mở lại bằng `DB_VERSION` cũ.
  */
-export const nextSeq = (): number => {
-  const now = Date.now() * 1_000;
-  lastSeq = now > lastSeq ? now : lastSeq + 1;
-  return lastSeq;
+export const isClosedDb = (error: unknown): boolean =>
+  typeof error === 'object' && error !== null && 'name' in error &&
+  (error.name === 'InvalidStateError' || error.name === 'VersionError');
+
+/**
+ * Chạy `task`; hỏng vì kết nối đã đóng thì mở lại DB và chạy lại MỘT lần. `task` phải chạy lại được mà không
+ * ghi trùng phần đã ghi xong (xem `commit` trong store.tsx). Kết nối đóng thì `blocking` / `terminated` đã bỏ
+ * kết nối cũ, nên lần chạy lại tự mở kết nối mới.
+ */
+export const withReopen = async <T>(task: () => Promise<T>): Promise<T> => {
+  try {
+    return await task();
+  } catch (error) {
+    if (!isClosedDb(error)) throw error;
+    return task();
+  }
+};
+
+const DEVICE_KEY = 'thumua365_device_id';
+
+/** Máy chủ bắt `deviceId: z.uuid()` — sai định dạng thì MỌI lượt đẩy bị 422. */
+const isDeviceId = (id: string | null): id is string => id !== null && z.uuid().safeParse(id).success;
+
+/**
+ * Sinh MỘT lần cho mỗi máy và lưu lại. `newId()` có dự phòng đúng định dạng UUID cho trình duyệt
+ * không có `crypto.randomUUID` (Chrome Android < 92, iOS Safari < 15.4). Bản app cũ lưu `dev-…` ở
+ * đúng trường hợp đó: sinh lại và ghi đè, không thì máy đó không bao giờ gửi được.
+ */
+export const getDeviceId = (): string => {
+  let id: string | null = null;
+  try {
+    id = typeof localStorage !== 'undefined' ? localStorage.getItem(DEVICE_KEY) : null;
+  } catch {
+    // Trình duyệt chặn lưu
+  }
+  if (!isDeviceId(id)) {
+    id = newId();
+    try {
+      if (typeof localStorage !== 'undefined') localStorage.setItem(DEVICE_KEY, id);
+    } catch {
+      // Trình duyệt chặn lưu
+    }
+  }
+  return id;
+};
+
+/**
+ * Khoá con trỏ kéo sổ của một tổ chức. Đổi tiền tố khi máy chủ có thêm loại bản ghi hay trường mà app bản cũ bỏ qua lúc
+ * kéo (0.24: hợp đồng mùa vụ, chỉ tiêu chất lượng, tỷ lệ tươi / nhân…): bản cũ vẫn đẩy con trỏ đi tiếp nên không bao
+ * giờ kéo lại những bản ghi đó. Con trỏ cũ bỏ đi thì máy kéo lại từ đầu một lần, gộp theo id — sổ và hàng đợi giữ nguyên.
+ */
+export const cursorKey = (orgId: string): string => `v2:${orgId}`;
+
+export const readCursor = async (orgId: string): Promise<string | null> => {
+  const db = await openLocalDb();
+  return (await db.get('cursors', cursorKey(orgId))) ?? null;
+};
+
+export const writeCursor = async (orgId: string, cursor: string): Promise<void> => {
+  const db = await openLocalDb();
+  await db.put('cursors', cursor, cursorKey(orgId));
+};
+
+export const clearCursor = async (orgId: string): Promise<void> => {
+  const db = await openLocalDb();
+  await db.delete('cursors', cursorKey(orgId));
+  // Con trỏ bản cũ (khoá trần) — không còn đọc, dọn luôn.
+  await db.delete('cursors', orgId);
 };

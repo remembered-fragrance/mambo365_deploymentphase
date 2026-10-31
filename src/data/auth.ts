@@ -1,23 +1,46 @@
 /**
- * Đăng ký / đăng nhập.
+ * Đăng ký / đăng nhập / bootstrap tổ chức.
  *
- * Người dùng gõ MỘT ô: tên tài khoản, số điện thoại hoặc email. Hàm RPC
- * `resolve_identifier` phía database dịch ra email nội bộ rồi mới đăng nhập.
+ * Khoá đăng nhập Supabase LUÔN là email nội bộ sinh từ SĐT (`849…@id.thumua365.vn`),
+ * kể cả khi người dùng khai thêm email thật. Email thật chỉ là email khôi phục:
+ * backend ghi vào hồ sơ ở bước "Bạn là ai?" để đăng nhập bằng email tra ra đúng
+ * tài khoản đó. Trước đây có email thì dùng email làm khoá ⇒ một người thành hai
+ * tài khoản (issue #9).
  *
- * 🔴 Lỗi LUÔN cùng một câu, dù sai tài khoản hay sai mật khẩu. Phân biệt hai
- * trường hợp là biến màn đăng nhập thành công cụ dò xem ai có tài khoản.
+ * Quy tắc đăng nhập:
+ * - Số điện thoại: thử email nội bộ; không được thì hỏi resolveIdentifier
+ *   (tài khoản cũ đăng ký bằng email thật).
+ * - Email: thử thẳng (tài khoản cũ); không được thì hỏi resolveIdentifier
+ *   (email khôi phục → email nội bộ).
+ * - Tên đăng nhập: resolve qua API rồi mới đăng nhập Supabase.
+ *
+ * 🔴 Lỗi đăng nhập luôn dùng cùng một câu:
+ * "Tài khoản hoặc mật khẩu không đúng".
+ *
+ * Không gọi trực tiếp bảng `profiles` qua PostgREST.
  */
 
-import type { SupabaseClient, User } from '@supabase/supabase-js';
-import { detectIdentifierKind, normalizePhone } from '@/core/identifier';
-import type { UserProfile } from '@/core/types';
+import type { User } from '@supabase/auth-js';
+import type { Me, MeBootstrapInput, MeProfile, MeProfilePatch } from '@mambo/contracts';
+import { detectIdentifierKind, normalizePhone } from '@mambo/core/identifier';
+import type { UserProfile } from '@mambo/core/types';
+import { L } from '@/i18n/labels';
+import { api, fetchMe, setCurrentOrg, type SupabaseAuth } from './client';
+import { profileFromMe, profileFromRow } from './authProfile';
 import { claimReferral } from './billing';
-import type { ProfileRow } from './rows';
+import { track, utmProps } from './track';
 
-/** Tên miền ta sở hữu, không gửi thư tới. Dùng cho người chỉ có số điện thoại. */
+export { profileFromMe, profileFromRow };
+
+/** Tên miền nội bộ dùng cho tài khoản chỉ có số điện thoại. */
 const INTERNAL_EMAIL_DOMAIN = 'id.thumua365.vn';
 
 export const SIGN_IN_ERROR = 'Tài khoản hoặc mật khẩu không đúng';
+
+const PHONE_TAKEN = L.authPhoneTaken;
+
+const signUpErrorMessage = (message: string | undefined): string =>
+  message && /already|registered|exists/i.test(message) ? PHONE_TAKEN : message ?? 'Không tạo được tài khoản';
 
 export interface SignUpInput {
   readonly name: string;
@@ -26,124 +49,260 @@ export interface SignUpInput {
   readonly username?: string;
   readonly email?: string;
   readonly businessName?: string;
-  /** Mã của người đã mời. Sai mã thì bỏ qua, không chặn việc đăng ký. */
   readonly referralCode?: string;
 }
 
 const internalEmail = (phoneE164: string): string =>
   `${phoneE164.replace('+', '')}@${INTERNAL_EMAIL_DOMAIN}`;
 
-export const profileFromRow = (row: ProfileRow, loginEmail: string): UserProfile => ({
-  id: row.id,
-  identifier: row.phone ?? row.username ?? loginEmail,
-  name: row.name,
-  username: row.username ?? undefined,
-  email: row.recovery_email ?? undefined,
-  phone: row.phone ?? undefined,
-  businessName: row.business_name ?? undefined,
-  referralCode: row.referral_code ?? undefined,
-});
+const signInWithEmail = async (
+  supabase: SupabaseAuth,
+  email: string,
+  password: string,
+): Promise<User | null> => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-export const signIn = async (
-  supabase: SupabaseClient,
+  if (error || !data.user) return null;
+  return data.user;
+};
+
+/**
+ * Hỏi backend email đăng nhập của định danh rồi thử. `alreadyTried` = email vừa thử
+ * thất bại: backend trả đúng email đó (hoặc email mồi cùng hình dạng) thì thôi, khỏi
+ * gọi Supabase lần nữa. Lỗi gì cũng trả null — người gọi báo MỘT câu chung.
+ */
+const signInViaBackend = async (
+  supabase: SupabaseAuth,
+  identifier: string,
+  password: string,
+  alreadyTried: string,
+): Promise<User | null> => {
+  try {
+    const resolved = await api.resolveIdentifier({ identifier });
+    const email = resolved?.email?.trim().toLowerCase();
+    if (!email || email === alreadyTried.toLowerCase()) return null;
+    return await signInWithEmail(supabase, email, password);
+  } catch {
+    return null;
+  }
+};
+
+export const signIn = async (supabase: SupabaseAuth, identifier: string, password: string): Promise<User> => {
+  try {
+    const user = await signInOnce(supabase, identifier, password);
+    track('login_succeeded', { method: detectIdentifierKind(identifier.trim()) });
+    return user;
+  } catch (err) {
+    const reason = err instanceof TypeError ? 'network' : err instanceof Error && err.message === SIGN_IN_ERROR ? 'wrong_credentials' : 'other';
+    track('login_failed', { reason });
+    throw err;
+  }
+};
+
+const signInOnce = async (
+  supabase: SupabaseAuth,
   identifier: string,
   password: string,
 ): Promise<User> => {
-  const { data: email, error: rpcError } = await supabase.rpc('resolve_identifier', {
-    raw: identifier,
-  });
-  // Không tra được cũng báo y hệt sai mật khẩu.
-  if (rpcError || !email) throw new Error(SIGN_IN_ERROR);
+  const rawIdentifier = identifier.trim();
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: String(email),
-    password,
-  });
-  if (error || !data.user) throw new Error(SIGN_IN_ERROR);
-  return data.user;
+  if (!rawIdentifier || !password) {
+    throw new Error(SIGN_IN_ERROR);
+  }
+
+  const kind = detectIdentifierKind(rawIdentifier);
+
+  // 1. Email: tài khoản cũ dùng chính email này làm khoá; tài khoản mới dùng
+  //    email nội bộ và email này là email khôi phục — backend tra hộ.
+  if (kind === 'email') {
+    const email = rawIdentifier.toLowerCase();
+    const directUser = await signInWithEmail(supabase, email, password);
+    if (directUser) return directUser;
+
+    const resolvedUser = await signInViaBackend(supabase, rawIdentifier, password, email);
+    if (resolvedUser) return resolvedUser;
+    throw new Error(SIGN_IN_ERROR);
+  }
+
+  // 2. Số điện thoại:
+  //    thử đúng email nội bộ được tạo bởi signUp() trước.
+  if (kind === 'phone') {
+    const phone = normalizePhone(rawIdentifier);
+    if (!phone) throw new Error(SIGN_IN_ERROR);
+
+    const generatedEmail = internalEmail(phone);
+
+    const directUser = await signInWithEmail(
+      supabase,
+      generatedEmail,
+      password,
+    );
+
+    if (directUser) return directUser;
+
+    // Tài khoản cũ đăng ký bằng email thật: khoá là email đó, backend tra từ SĐT.
+    const resolvedUser = await signInViaBackend(supabase, rawIdentifier, password, generatedEmail);
+    if (resolvedUser) return resolvedUser;
+    throw new Error(SIGN_IN_ERROR);
+  }
+
+  // 3. Tên đăng nhập: backend là nơi duy nhất biết username thuộc email nào.
+  try {
+    const resolved = await api.resolveIdentifier({
+      identifier: rawIdentifier,
+    });
+
+    const loginEmail = resolved?.email?.trim().toLowerCase();
+    if (!loginEmail) throw new Error(SIGN_IN_ERROR);
+
+    const user = await signInWithEmail(
+      supabase,
+      loginEmail,
+      password,
+    );
+
+    if (!user) throw new Error(SIGN_IN_ERROR);
+    return user;
+  } catch {
+    throw new Error(SIGN_IN_ERROR);
+  }
 };
 
-export const signUp = async (supabase: SupabaseClient, input: SignUpInput): Promise<User> => {
+export const signUp = async (
+  supabase: SupabaseAuth,
+  input: SignUpInput,
+): Promise<User> => {
   const phone = normalizePhone(input.phone);
-  if (!phone) throw new Error('Số điện thoại chưa đúng');
+  if (!phone) throw new Error(L.authPhoneInvalid);
 
   const recoveryEmail =
-    input.email && detectIdentifierKind(input.email) === 'email'
+    input.email && detectIdentifierKind(input.email.trim()) === 'email'
       ? input.email.trim().toLowerCase()
       : undefined;
 
-  // Có email thật thì dùng chính nó để đăng nhập; không thì dùng email nội bộ.
-  const loginEmail = recoveryEmail ?? internalEmail(phone);
+  /*
+   * SĐT là khoá đăng nhập duy nhất ⇒ mỗi số đúng một tài khoản; số đã đăng ký
+   * thì Supabase báo trùng. Email thật chỉ đi vào user_metadata.recoveryEmail,
+   * backend ghi thành email khôi phục ở bước "Bạn là ai?".
+   */
+  const loginEmail = internalEmail(phone);
 
-  const { data, error } = await supabase.auth.signUp({ email: loginEmail, password: input.password });
-  if (error || !data.user) throw new Error(error?.message ?? 'Không tạo được tài khoản');
+  const { data, error } = await supabase.auth.signUp({
+    email: loginEmail,
+    password: input.password,
+    options: {
+      data: {
+        name: input.name.trim(),
+        phone,
+        ...(input.username?.trim()
+          ? { username: input.username.trim().toLowerCase() }
+          : {}),
+        ...(recoveryEmail ? { recoveryEmail } : {}),
+      },
+    },
+  });
 
-  const profile = {
-    id: data.user.id,
-    name: input.name.trim(),
-    username: input.username?.trim().toLowerCase() || null,
-    phone,
-    recovery_email: recoveryEmail ?? null,
-    business_name: input.businessName?.trim() || null,
-  };
-  const { error: profileError } = await supabase.from('profiles').insert(profile);
-  if (profileError) throw new Error(`Không lưu được hồ sơ: ${profileError.message}`);
+  if (error || !data.user) {
+    throw new Error(signUpErrorMessage(error?.message));
+  }
+  // Supabase (khi tắt "Confirm email") trả user GIẢ, không có identities, nếu email
+  // đã có tài khoản — để không lộ ai đã đăng ký. Với ta email = SĐT ⇒ số đã dùng.
+  if (data.user.identities?.length === 0) {
+    throw new Error(PHONE_TAKEN);
+  }
 
-  // Ghi nhận lời mời SAU khi hồ sơ đã có. Mã sai không được làm hỏng việc đăng
-  // ký: người dùng gõ nhầm mã của bạn mình thì vẫn phải vào được app.
-  if (input.referralCode) await claimReferral(supabase, input.referralCode);
+  // Mã giới thiệu ghi nhận SAU khi có tài khoản; mã không dùng được thì thôi, không chặn đăng ký.
+  const referral = input.referralCode?.trim();
+  if (referral) await claimReferral(referral).catch(() => false);
 
   return data.user;
 };
 
-export const signOut = async (supabase: SupabaseClient): Promise<void> => {
+export const bootstrap = async (input: MeBootstrapInput): Promise<Me> => {
+  const me = await api.meBootstrap(input);
+  track('sign_up_completed', { orgType: input.orgType, ...utmProps() });
+  return me;
+};
+
+export const getMe = (): Promise<Me> => fetchMe();
+
+export const signOut = async (supabase: SupabaseAuth): Promise<void> => {
   await supabase.auth.signOut();
+  setCurrentOrg(null);
 };
 
 export interface ProfilePatch {
   readonly name?: string;
-  readonly businessName?: string;
+  /** Rỗng = bỏ tên đăng nhập. */
+  readonly username?: string;
+  /** Email khôi phục; rỗng = bỏ. */
   readonly email?: string;
 }
 
 /**
- * Sửa hồ sơ vựa. KHÔNG đụng tới số điện thoại: nó là khoá đăng nhập, đổi số
- * là việc phải xác minh chứ không phải sửa một ô trong form.
+ * Sửa hồ sơ: `PATCH /v1/me/profile` trước (server kiểm trùng tên đăng nhập / email
+ * khôi phục, ghi bảng `profiles` mà đăng nhập bằng email / tên tra vào), rồi chép tên +
+ * email sang `user_metadata` — `/v1/me` đọc hai thứ đó từ Supabase, không đồng bộ thì
+ * tải lại trang sẽ hiện giá trị cũ.
  */
 export const updateProfile = async (
-  supabase: SupabaseClient,
-  userId: string,
+  supabase: SupabaseAuth,
+  _userId: string,
   patch: ProfilePatch,
-): Promise<void> => {
-  const row: Record<string, string | null> = {};
-  if (patch.name !== undefined) row.name = patch.name.trim();
-  if (patch.businessName !== undefined) row.business_name = patch.businessName.trim() || null;
-  if (patch.email !== undefined) {
-    const email = patch.email.trim().toLowerCase();
-    row.recovery_email = email && detectIdentifierKind(email) === 'email' ? email : null;
-  }
+): Promise<MeProfile> => {
+  const body: MeProfilePatch = {
+    ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
+    ...(patch.username !== undefined ? { username: patch.username.trim().toLowerCase() || null } : {}),
+    ...(patch.email !== undefined ? { recoveryEmail: patch.email.trim().toLowerCase() || null } : {}),
+  };
+  const saved = await api.account.updateProfile(body);
+  await supabase.auth.updateUser({
+    data: {
+      name: saved.name,
+      ...(body.recoveryEmail !== undefined ? { recoveryEmail: saved.recoveryEmail } : {}),
+    },
+  });
+  return saved;
+};
 
-  const { error } = await supabase.from('profiles').update(row).eq('id', userId);
-  if (error) throw new Error(`Không lưu được hồ sơ: ${error.message}`);
+/** Link đặt lại mật khẩu (BE 0.16.0): `token_hash` → phiên của chủ tài khoản. */
+export const openRecoverySession = async (supabase: SupabaseAuth, tokenHash: string): Promise<User> => {
+  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+  if (error || !data.user) throw new Error(L.resetLinkInvalid, { cause: error ?? undefined });
+  return data.user;
 };
 
 export const changePassword = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseAuth,
   password: string,
 ): Promise<void> => {
   const { error } = await supabase.auth.updateUser({ password });
-  if (error) throw new Error(`Không đổi được mật khẩu: ${error.message}`);
+
+  if (error) {
+    throw new Error(`Không đổi được mật khẩu: ${error.message}`);
+  }
 };
 
-export const loadProfile = async (
-  supabase: SupabaseClient,
-  user: User,
-): Promise<UserProfile | null> => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (error || !data) return null;
-  return profileFromRow(data as unknown as ProfileRow, user.email ?? '');
-};
+/**
+ * Hồ sơ tạm khi `/v1/me` không trả lời — chỉ từ phiên Supabase, không gọi mạng. Gọi lại
+ * `/v1/me` ở đây (như trước) là bắt người dùng chờ thêm đúng một lần hỏng nữa.
+ */
+export const profileFromAccount = (user: User): UserProfile => ({
+  id: user.id,
+  identifier:
+    (user.user_metadata?.phone as string | undefined) ??
+    user.phone ??
+    user.email ??
+    '',
+  name:
+    (user.user_metadata?.name as string | undefined) ??
+    '',
+  email: user.email ?? undefined,
+  phone:
+    (user.user_metadata?.phone as string | undefined) ??
+    user.phone ??
+    undefined,
+});

@@ -7,7 +7,8 @@
 
 import { useCallback, useState } from 'react';
 
-export type OnceKey = 'coach-first-receipt';
+/** `tax-ledger-ack`: đã bấm "Tôi hiểu" trước lần xuất bảng kê thu mua đầu tiên (KE_HOACH_GOI_PRO §4.2). */
+export type OnceKey = 'coach-first-receipt' | 'install-card' | 'tax-ledger-ack';
 
 const storageKey = (key: OnceKey): string => `thumua365:once:${key}`;
 
