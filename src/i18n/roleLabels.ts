@@ -25,6 +25,11 @@ export const ROLE_LABELS = {
   orgFarmerHint: 'Bán nông sản cho vựa. Xem phiếu cân, tiền vựa còn nợ. Miễn phí.',
   orgTrader: 'Thương lái / Vựa',
   orgTraderHint: 'Sổ thu mua: phiếu cân, công nợ, kho, đối tác, báo cáo. Dùng thử 30 ngày.',
+  // Tài khoản vựa theo gói chọn lúc đăng ký (0.28.0) — dùng thử 30 ngày cũng theo gói đó.
+  orgSolo: 'Thương lái',
+  orgSoloHint: 'Một mình đi cân: phiếu cân, công nợ, kho, đối tác, báo cáo. Dùng thử 30 ngày.',
+  orgVua: 'Vựa',
+  orgVuaHint: 'Vựa có người cân: thêm người cân, nhật ký thao tác, báo cáo tổng. Dùng thử 30 ngày.',
   orgEnterprise: 'Doanh nghiệp',
   orgEnterpriseHint: 'Như vựa, thêm nhân viên và chi nhánh. Dùng thử 30 ngày.',
 

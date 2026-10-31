@@ -39,7 +39,7 @@ const me = (): Me => ({
     branch: null,
     permissions: ['book:sync'],
     features: [],
-    plan: { tier: 'trial', status: 'trialing', periodEnd: null, branchLimit: null },
+    plan: { tier: 'trial', status: 'trialing', periodEnd: null, branchLimit: null, plan: 'vua', extraStaff: 0, staffLimit: 3 },
   }],
   pendingLinks: 0,
 });

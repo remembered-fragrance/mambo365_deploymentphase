@@ -18,6 +18,7 @@ import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { FREE_RECEIPTS_PER_MONTH, GRACE_DAYS } from '@/config';
 import { quotaFor, type QuotaState } from '@mambo/core/receiptQuota';
 import { planFor, type PaymentIntent, type PlanState, type Subscription } from '@mambo/core/subscription';
+import type { PaymentIntentCreateInput, PlanCode } from '@mambo/contracts';
 import { createPaymentIntent, type BillingOffer } from '../billing';
 import { isDemoActive } from '../demoMode';
 import {
@@ -35,20 +36,22 @@ export interface SubscriptionValue {
   /** null khi chưa tải được hoặc người dùng không có `billing:manage`. */
   readonly offer: BillingOffer | null;
   readonly plan: PlanState;
+  /** Gói vựa đang có (Thương lái / Vựa) — từ `/v1/me`. Doanh nghiệp, dữ liệu mẫu, sổ của máy: null. */
+  readonly planCode: PlanCode | null;
   readonly quota: QuotaState;
   readonly subscription: Subscription | null;
   readonly intents: readonly PaymentIntent[];
   readonly loading: boolean;
   /** Hỏi lại máy chủ ngay. Màn chờ chuyển khoản gọi cái này theo nhịp. */
   readonly refresh: () => void;
-  /** Tạo ý định thanh toán (gói 1 hoặc 12 tháng) và trả về mã đối soát để vẽ QR. */
-  readonly startPayment: (months: 1 | 12) => Promise<PaymentIntent>;
+  /** Tạo ý định thanh toán (mua / gia hạn gói, hoặc mua thêm người cân) và trả về mã đối soát để vẽ QR. */
+  readonly startPayment: (input: PaymentIntentCreateInput) => Promise<PaymentIntent>;
 }
 
 const SERVER: SubscriptionSnapshot = { subscription: null, intents: [], offer: null, loading: false };
 
 export function useSubscription(): SubscriptionValue {
-  const { data, currentOrgId, permissions, bookKey } = useStore();
+  const { data, currentOrgId, permissions, bookKey, plan: summary } = useStore();
   const userId = currentOrgId;
   const billing = permissions.includes('billing:manage');
 
@@ -77,8 +80,8 @@ export function useSubscription(): SubscriptionValue {
     void loadSubscription(userId, true, billing);
   }, [userId, billing]);
 
-  const startPayment = useCallback(async (months: 1 | 12) => {
-    const intent = await createPaymentIntent(months);
+  const startPayment = useCallback(async (input: PaymentIntentCreateInput) => {
+    const intent = await createPaymentIntent(input);
     addPaymentIntent(intent);
     return intent;
   }, []);
@@ -87,6 +90,7 @@ export function useSubscription(): SubscriptionValue {
     billingAvailable: snapshot.offer?.selfServe ?? false,
     offer: snapshot.offer,
     plan,
+    planCode: summary?.plan ?? null,
     quota,
     subscription: snapshot.subscription,
     intents: snapshot.intents,

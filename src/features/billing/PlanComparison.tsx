@@ -7,11 +7,15 @@
  * Ở điện thoại là hai cột hẹp chứ không phải bảng cuộn ngang — cùng nguyên tắc
  * với `DataView`: điện thoại không bao giờ cuộn ngang.
  *
+ * Cột trả phí là gói Vựa. Gói Thương lái (0.28.0) chỉ khác ở vài dòng — dòng đó ghi thêm một câu phụ
+ * "Gói Thương lái: …" ngay dưới, thay vì thêm cột thứ ba làm chật màn điện thoại.
+ *
  * 🔴 Chỉ hứa đúng cái code chặn (KE_HOACH_GOI_PRO §7): dòng khác nhau giữa hai bên phải gắn `entitlement` có
- * trong bảng quyền lợi của contracts; dòng không gắn là dòng hai bên như nhau. Test giữ hai luật đó.
+ * trong bảng quyền lợi của contracts; dòng không gắn là dòng hai bên như nhau. Có câu Thương lái (`solo`) đúng khi
+ * quyền lợi đó nằm trong `PLAN_EXCLUDES.thuong_lai`. Test giữ các luật đó.
  */
 
-import { STAFF_LIMIT, type Entitlement } from '@mambo/contracts';
+import { EXTRA_STAFF_MAX, STAFF_INCLUDED, type Entitlement } from '@mambo/contracts';
 import { FREE_RECEIPTS_PER_MONTH } from '@/config';
 import { L } from '@/i18n/labels';
 
@@ -19,6 +23,8 @@ export interface Row {
   readonly what: string;
   readonly free: string;
   readonly paid: string;
+  /** Gói Thương lái khác gói Vựa ở dòng này. Không có = như cột trả phí. */
+  readonly solo?: string;
   readonly entitlement?: Entitlement;
 }
 
@@ -33,7 +39,8 @@ export const ROWS: readonly Row[] = [
   {
     what: L.featureStaff,
     free: L.featureStaffFree,
-    paid: `${L.featureStaffPaidPrefix} ${STAFF_LIMIT.trader} ${L.featureStaffPaidSuffix}`,
+    paid: `${STAFF_INCLUDED} ${L.featureStaffPaidMid} ${STAFF_INCLUDED + EXTRA_STAFF_MAX} ${L.featureStaffPaidSuffix}`,
+    solo: L.featureStaffSolo,
     entitlement: 'members:add',
   },
   { what: L.featurePhotos, free: L.featurePhotosFree, paid: L.featurePhotosPaid, entitlement: 'attachments' },
@@ -54,8 +61,20 @@ export const ROWS: readonly Row[] = [
   { what: L.featureAnalytics, free: L.featureAnalyticsFree, paid: L.featureAnalyticsPaid, entitlement: 'analytics' },
   { what: L.featureSeason, free: L.featureSeasonFree, paid: L.featureSeasonPaid, entitlement: 'sync' },
   { what: L.featureMapPrices, free: L.featureMapPricesFree, paid: L.featureMapPricesPaid, entitlement: 'map:prices' },
-  { what: L.featureAudit, free: L.featureAuditFree, paid: L.featureAuditPaid, entitlement: 'audit:view' },
-  { what: L.featureOrgReport, free: L.featureOrgReportFree, paid: L.featureYes, entitlement: 'reports:org' },
+  {
+    what: L.featureAudit,
+    free: L.featureAuditFree,
+    paid: L.featureAuditPaid,
+    solo: L.featureAuditFree,
+    entitlement: 'audit:view',
+  },
+  {
+    what: L.featureOrgReport,
+    free: L.featureOrgReportFree,
+    paid: L.featureYes,
+    solo: L.featureOrgReportFree,
+    entitlement: 'reports:org',
+  },
   {
     what: L.featureStatement,
     free: L.featureStatementFree,
@@ -86,6 +105,11 @@ export function PlanComparison() {
               {L.planPremium}
             </span>
             {row.paid}
+            {row.solo && (
+              <span className="mt-1 block text-ink-3">
+                {L.featureSoloPrefix} {row.solo}
+              </span>
+            )}
           </dd>
         </div>
       ))}

@@ -1,5 +1,26 @@
-import type { OrgType } from '@mambo/contracts';
+import type { OrgType, PlanCode } from '@mambo/contracts';
 import { L } from '@/i18n/labels';
+
+export interface SetupChoice {
+  /** Khoá của thẻ — hai thẻ Thương lái / Vựa cùng `type: 'trader'`. */
+  readonly key: string;
+  readonly type: OrgType;
+  /** Gói vựa gửi kèm `bootstrap` (0.28.0); bỏ trống với nông dân, doanh nghiệp. */
+  readonly plan?: PlanCode;
+  readonly label: string;
+  readonly hint: string;
+}
+
+/**
+ * Các thẻ của bước "Bạn là ai?". Tài khoản vựa tách hai thẻ theo gói (yêu cầu 30/10/2026) nhưng vẫn là một loại
+ * `trader` — chỉ ghi thêm gói, vì `trader` đang dùng ở kết nối, bản đồ, đơn hàng.
+ */
+export const SETUP_CHOICES: readonly SetupChoice[] = [
+  { key: 'farmer', type: 'farmer', label: L.orgFarmer, hint: L.orgFarmerHint },
+  { key: 'thuong_lai', type: 'trader', plan: 'thuong_lai', label: L.orgSolo, hint: L.orgSoloHint },
+  { key: 'vua', type: 'trader', plan: 'vua', label: L.orgVua, hint: L.orgVuaHint },
+  { key: 'enterprise', type: 'enterprise', label: L.orgEnterprise, hint: L.orgEnterpriseHint },
+];
 
 /** Nông dân không có ô tên tổ chức: tên hộ suy từ tên hiển thị. */
 export const asksOrgName = (orgType: OrgType | null): orgType is Exclude<OrgType, 'farmer'> =>

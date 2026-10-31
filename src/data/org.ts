@@ -55,7 +55,8 @@ export const orgErrorMessage = (err: unknown): string => {
     if (reason === 'ALREADY_MEMBER') return L.memberAlreadyIn;
     if (err.code === 'BRANCH_LIMIT') return `${L.branchLimit} ${String(err.details?.limit ?? '')}`.trim();
     if (err.code === 'MEMBER_LIMIT') return `${L.memberLimit} ${String(err.details?.limit ?? '')}`.trim();
-    if (err.code === 'PLAN_REQUIRED') return L.planRequired;
+    // `requiredPlan` (0.28.0): gói còn hạn nhưng thấp (Thương lái) — mời nâng gói chứ không bảo gia hạn.
+    if (err.code === 'PLAN_REQUIRED') return err.details?.requiredPlan ? L.planRequiredVua : L.planRequired;
     if (err.code === 'VALIDATION_FAILED') {
       // `fields` = { tên trường: câu lỗi } — câu để hiện cho người dùng. Không có `fields`: lưu trữ chi nhánh còn người gắn.
       const first = Object.values((err.details?.fields as Record<string, unknown> | undefined) ?? {})[0];

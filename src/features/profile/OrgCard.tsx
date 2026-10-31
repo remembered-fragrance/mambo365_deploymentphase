@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/Toast';
 import { orgErrorMessage, renameOrg } from '@/data/hooks/useOrg';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
-import { ORG_TYPE_TEXT, roleText } from '../shared/roleText';
+import { orgTypeText, roleText } from '../shared/roleText';
 
 /**
  * Tổ chức đang làm việc: loại (vỏ giao diện), vai trò, chi nhánh. Thuộc nhiều tổ
@@ -22,7 +22,7 @@ export function OrgCard() {
   const [busy, setBusy] = useState(false);
   if (!currentOrg) return null;
 
-  const { organization, role, branch } = currentOrg;
+  const { organization, role, branch, plan } = currentOrg;
   const owner = role === 'owner';
 
   const run = async (work: () => Promise<void>, done: string) => {
@@ -67,7 +67,7 @@ export function OrgCard() {
       )}
       <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt className="text-ink-3">{L.orgCardType}</dt>
-        <dd className="font-semibold text-ink">{ORG_TYPE_TEXT[organization.type].label}</dd>
+        <dd className="font-semibold text-ink">{orgTypeText(organization.type, plan?.plan)}</dd>
         <dt className="text-ink-3">{L.orgCardRole}</dt>
         <dd className="font-semibold text-ink">{roleText(organization.type, role)}</dd>
         {branch && (

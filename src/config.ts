@@ -7,21 +7,26 @@
 export const FREE_RECEIPTS_PER_MONTH = 30;
 
 /**
- * Giá thuê bao tháng (đồng).
- * 🔴 Mô hình tài chính CP4 §11.1 xây trên đúng con số này. Đổi giá phải qua
- * Linh (finance), không phải một lần sửa file.
+ * Giá gói vựa (đồng), theo số tháng — 0.28.0: Thương lái làm một mình, Vựa có 3 người cân đi kèm. Năm = 10 tháng
+ * (tặng 2 tháng): nông nghiệp theo mùa vụ, chủ vựa có tiền vào mùa và quen trả một lần.
+ * Giá thật máy chủ giữ (`offer.prices`, số tiền của ý định); ở đây chỉ để vẽ trước khi tải xong và cho trang pháp lý.
+ * 🔴 Mô hình tài chính xây trên đúng các con số này. Đổi giá phải qua Linh (finance), và đổi cùng máy chủ.
  */
-export const PRICE_MONTHLY = 149_000;
+export const PLAN_PRICES = {
+  thuong_lai: { 1: 199_000, 12: 1_990_000 },
+  vua: { 1: 449_000, 12: 4_490_000 },
+} as const;
 
-/** Giá thuê bao năm — tặng 2 tháng. Nông nghiệp theo mùa vụ, chủ vựa có tiền
- * vào mùa và quen trả một lần, nên đây là gói cần đẩy. */
-export const PRICE_YEARLY = 1_490_000;
+/** Giá một người cân thêm của gói Vựa cho trọn một kỳ (tháng / năm). */
+export const STAFF_PRICE = { 1: 79_000, 12: 790_000 } as const;
 
-/** Số tháng gia hạn cho mỗi mức giá. Webhook suy ra kỳ hạn từ số tiền nhận được. */
-export const MONTHS_PER_PRICE: Readonly<Record<number, number>> = {
-  [PRICE_MONTHLY]: 1,
-  [PRICE_YEARLY]: 12,
-};
+/** Số tháng gia hạn cho mỗi mức giá gói (`scripts/admin-activate.ts` đối chiếu số tiền kích hoạt tay). */
+export const MONTHS_PER_PRICE: Readonly<Record<number, number>> = Object.fromEntries(
+  Object.values(PLAN_PRICES).flatMap((byMonths) => [
+    [byMonths[1], 1],
+    [byMonths[12], 12],
+  ]),
+);
 
 /** Số ngày dùng thử đầy đủ tính từ lúc đăng ký. */
 export const TRIAL_DAYS = 30;
@@ -96,8 +101,8 @@ export const MAIL_LINKS = {
 } as const;
 
 /** Phiên bản và ngày áp dụng của Điều khoản + Chính sách — đổi nội dung thì đổi cả hai. */
-export const LEGAL_VERSION = '2.7';
-export const LEGAL_EFFECTIVE_DATE = '27/10/2026';
+export const LEGAL_VERSION = '2.8';
+export const LEGAL_EFFECTIVE_DATE = '31/10/2026';
 
 /**
  * Thông tin chủ thể vận hành — Luật BVDLCN 2025 và Luật TMĐT 2025 bắt buộc công khai.

@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { ORG_TYPES, type OrgType } from '@mambo/contracts';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
-import { ORG_TYPE_TEXT } from '../shared/roleText';
-import { asksOrgName, emptyFields, orgNameFor } from './setupOrg';
+import { asksOrgName, emptyFields, orgNameFor, SETUP_CHOICES, type SetupChoice } from './setupOrg';
 
 const ORG_NAME_TEXT = {
   trader: { label: L.setupOrgNameTrader, hint: L.setupOrgNameTraderHint },
@@ -35,7 +33,8 @@ const fieldErrorsOf = (e: unknown): FieldErrors => {
  */
 export function SetupOrgPage() {
   const { user, bootstrap, signOut } = useStore();
-  const [orgType, setOrgType] = useState<OrgType | null>(null);
+  const [choice, setChoice] = useState<SetupChoice | null>(null);
+  const orgType = choice?.type ?? null;
   const [orgName, setOrgName] = useState('');
   const [name, setName] = useState(user?.name ?? '');
   const [username, setUsername] = useState('');
@@ -62,6 +61,7 @@ export function SetupOrgPage() {
         orgType,
         orgName: orgNameFor(orgType, orgName, name),
         name: name.trim(),
+        ...(choice?.plan ? { plan: choice.plan } : {}),
         ...(username.trim() ? { username: username.trim().toLowerCase() } : {}),
       });
     } catch (e) {
@@ -85,24 +85,24 @@ export function SetupOrgPage() {
         <p className="mt-1 text-sm text-ink-2">{L.setupSubtitle}</p>
 
         <div role="radiogroup" aria-label={L.setupTitle} className="mt-4 grid gap-2">
-          {ORG_TYPES.map((type) => {
-            const selected = orgType === type;
+          {SETUP_CHOICES.map((option) => {
+            const selected = choice?.key === option.key;
             return (
               <button
-                key={type}
+                key={option.key}
                 type="button"
                 role="radio"
                 aria-checked={selected}
                 onClick={() => {
-                  setOrgType(type);
+                  setChoice(option);
                   setErrors((prev) => ({ ...prev, orgType: undefined }));
                 }}
                 className={`min-h-16 rounded-xl border p-3 text-left ${selected ? 'border-brand bg-paper' : 'border-rule bg-card'}`}
               >
                 <span className={`block text-base font-bold ${selected ? 'text-brand' : 'text-ink'}`}>
-                  {ORG_TYPE_TEXT[type].label}
+                  {option.label}
                 </span>
-                <span className="mt-0.5 block text-sm text-ink-3">{ORG_TYPE_TEXT[type].hint}</span>
+                <span className="mt-0.5 block text-sm text-ink-3">{option.hint}</span>
               </button>
             );
           })}

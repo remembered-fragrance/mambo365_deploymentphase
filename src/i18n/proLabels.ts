@@ -36,15 +36,15 @@ export const PRO_LABELS = {
   featureGreenRatioFree: 'Trừ hao hụt gõ tay',
 
   // ─── Bức tường ────────────────────────────────────────────────────────────
-  gateAudit: 'Nhật ký vẫn được ghi đầy đủ ở mọi gói — gia hạn gói Pro để xem lại ai sửa, xoá gì.',
-  gateStatement: 'Công nợ vẫn xem được trong app — gói Pro gửi được sao kê cho khách.',
-  gateTaxLedger: 'Báo cáo thuế tổng vẫn xem, xuất được — gói Pro xuất thêm bảng kê thu mua theo kỳ.',
-  gateReports: 'Sổ, phiếu, công nợ vẫn xem được trong app — gói Pro xem việc từng người và báo cáo tổng.',
-  gateAnalytics: 'Báo cáo thuế tổng vẫn xem được — gói Pro tính thêm lời ước tính theo từng mặt hàng, so kỳ trước.',
-  gateRubberReconcile: 'Phiếu mủ vẫn cân, vẫn tính tiền như thường — gói Pro đối chiếu độ vựa đo với độ nhà máy chốt.',
-  gateSeason: 'Hợp đồng đang có vẫn xem được tiến độ — gia hạn gói Pro để thêm hợp đồng mới.',
-  gatePlacePrices: 'Điểm trên bản đồ vẫn hiện bình thường — gói Pro khai được giá thu mua hôm nay cho nông dân xem.',
-  gateGreenRatio: 'Trừ hao hụt vẫn gõ tay được — gói Pro tự quy đổi cà phê tươi ra nhân theo tỷ lệ.',
+  gateAudit: 'Nhật ký vẫn được ghi đầy đủ ở mọi gói — gia hạn gói để xem lại ai sửa, xoá gì.',
+  gateStatement: 'Công nợ vẫn xem được trong app — gói trả phí gửi được sao kê cho khách.',
+  gateTaxLedger: 'Báo cáo thuế tổng vẫn xem, xuất được — gói trả phí xuất thêm bảng kê thu mua theo kỳ.',
+  gateReports: 'Sổ, phiếu, công nợ vẫn xem được trong app — gói trả phí xem việc từng người và báo cáo tổng.',
+  gateAnalytics: 'Báo cáo thuế tổng vẫn xem được — gói trả phí tính thêm lời ước tính theo từng mặt hàng, so kỳ trước.',
+  gateRubberReconcile: 'Phiếu mủ vẫn cân, vẫn tính tiền như thường — gói trả phí đối chiếu độ vựa đo với độ nhà máy chốt.',
+  gateSeason: 'Hợp đồng đang có vẫn xem được tiến độ — gia hạn gói để thêm hợp đồng mới.',
+  gatePlacePrices: 'Điểm trên bản đồ vẫn hiện bình thường — gói trả phí khai được giá thu mua hôm nay cho nông dân xem.',
+  gateGreenRatio: 'Trừ hao hụt vẫn gõ tay được — gói trả phí tự quy đổi cà phê tươi ra nhân theo tỷ lệ.',
 
   // ─── Nhật ký ──────────────────────────────────────────────────────────────
   navAudit: 'Nhật ký',

@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { formatDate, formatVnd } from '@mambo/core/format';
 import { formatPhoneVn, normalizePhone } from '@mambo/core/identifier';
-import { STAFF_LIMIT, type AssignableRole, type MemberActivity, type MemberRole, type OrgMember } from '@mambo/contracts';
+import { EXTRA_STAFF_MAX, STAFF_INCLUDED, type AssignableRole, type MemberActivity, type MemberRole, type OrgMember } from '@mambo/contracts';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -28,9 +29,12 @@ import {
   useMembers,
 } from '@/data/hooks/useOrg';
 import { useEntitlement } from '@/data/hooks/useEntitlement';
+import { useSubscription } from '@/data/hooks/useSubscription';
+import { useStore } from '@/data/useStore';
 import { MAX_PASSWORD_LENGTH } from '@/config';
 import { L } from '@/i18n/labels';
 import { PlanGate } from '../billing/PlanGate';
+import { ROUTES } from '../shared/navItems';
 import { passwordProblem } from '../shared/password';
 import { useAccess } from '../shared/useAccess';
 
@@ -83,8 +87,9 @@ function ActivityLine({ activity }: { readonly activity: MemberActivity | undefi
  * Quản lý nhân viên của chủ (FRONTEND §5.9): ai đang làm, mỗi người làm được gì trong tháng, thêm /
  * đổi vai trò / gỡ. Vựa chỉ thêm người cân (`staff`); doanh nghiệp thêm quản lý / nhân viên và gắn
  * chi nhánh. Người làm không tự rời được — chỉ chủ gỡ ra ở đây. Không có nút trên dòng của chủ và của chính mình.
- * Hết gói thì không thêm (hay bật lại) người được; vựa có gói tối đa `STAFF_LIMIT.trader` người cân — máy chủ
- * chặn y như vậy (PLAN_REQUIRED / MEMBER_LIMIT), ở đây chỉ khoá nút trước. Việc từng người (tháng, số liệu)
+ * Hết gói thì không thêm (hay bật lại) người được; vựa tối đa `plan.staffLimit` người cân (Thương lái 0, Vựa 3 +
+ * số mua thêm — 0.28.0) — máy chủ chặn y như vậy (PLAN_REQUIRED / MEMBER_LIMIT), ở đây chỉ khoá nút trước. Vựa đã
+ * trả tiền mà đủ chỗ thì có đường sang màn Gói mua thêm người cân. Việc từng người (tháng, số liệu)
  * cần `reports:org` (D3); hết gói thì danh sách người vẫn hiện, chỉ phần số liệu nằm sau `PlanGate`.
  */
 export function MembersPage() {
@@ -93,6 +98,8 @@ export function MembersPage() {
   const members = useMembers();
   const branches = useBranches(enterprise && can('branch:manage'));
   const toast = useToast();
+  const { plan } = useStore();
+  const { plan: tier, planCode } = useSubscription();
   const paid = useEntitlement('members:add');
   const reports = useEntitlement('reports:org');
 
@@ -114,9 +121,12 @@ export function MembersPage() {
   const liveBranches = (branches.data?.branches ?? []).filter((b) => !b.archived);
   const branchOptions = [{ value: '', label: L.memberBranchAll }, ...liveBranches.map((b) => ({ value: b.id, label: b.name }))];
 
-  const staffLimit = orgType ? STAFF_LIMIT[orgType] : undefined;
+  const staffLimit = plan?.staffLimit ?? undefined;
   const staffCount = (members.data ?? []).filter((m) => m.status === 'active' && m.role !== 'owner').length;
   const full = staffLimit !== undefined && staffCount >= staffLimit;
+  // Cùng điều kiện với `staffTopUps` của máy chủ: gói Vựa đã trả tiền, còn hạn, chưa đủ 8 người.
+  const canBuyMore = full && planCode === 'vua' && tier.tier === 'premium' && can('billing:manage') &&
+    staffLimit < STAFF_INCLUDED + EXTRA_STAFF_MAX;
   const addable = paid && !full;
 
   const byId = new Map((activity.data?.members ?? []).map((a) => [a.member.id, a]));
@@ -196,7 +206,12 @@ export function MembersPage() {
                 {staffCount} / {staffLimit}
               </span>{' '}
               {L.staffUsed}
-              {full && ` — ${L.staffFull}`}
+              {full && ` — ${L.staffFull}`}{' '}
+              {canBuyMore && (
+                <Link to={ROUTES.plans} className="font-semibold text-brand underline">
+                  {L.staffBuyMore}
+                </Link>
+              )}
             </p>
           )
         )}
