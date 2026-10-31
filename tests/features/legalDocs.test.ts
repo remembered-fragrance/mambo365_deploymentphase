@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FREE_RECEIPTS_PER_MONTH, PRICE_MONTHLY, PRICE_YEARLY, REFUND_DAYS, SUPPORT_ZALO, TRIAL_DAYS } from '@/config';
+import { FREE_RECEIPTS_PER_MONTH, PLAN_PRICES, REFUND_DAYS, STAFF_PRICE, SUPPORT_ZALO, TRIAL_DAYS } from '@/config';
 import { GUIDE } from '@/i18n/legal/guide';
 import { vnd, type LegalDoc } from '@/i18n/legal/legalDoc';
 import { PRIVACY } from '@/i18n/legal/privacy';
@@ -23,8 +23,9 @@ describe('trang pháp lý trong app', () => {
 
   it('Điều khoản nói đúng giá, dùng thử, hoàn tiền, hạn mức miễn phí trong config', () => {
     const text = textOf(TERMS);
-    expect(text).toContain(vnd(PRICE_MONTHLY));
-    expect(text).toContain(vnd(PRICE_YEARLY));
+    for (const price of [...Object.values(PLAN_PRICES).flatMap((p) => [p[1], p[12]]), STAFF_PRICE[1], STAFF_PRICE[12]]) {
+      expect(text).toContain(vnd(price));
+    }
     expect(text).toContain(`${TRIAL_DAYS} ngày`);
     expect(text).toContain(`${REFUND_DAYS} ngày`);
     expect(text).toContain(`${FREE_RECEIPTS_PER_MONTH} phiếu`);

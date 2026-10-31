@@ -24,13 +24,13 @@ const INTENT_LABEL: Record<PaymentIntentStatus, string> = {
  * họ sẽ phát hiện ra vào đúng lúc cần nó nhất.
  */
 export function PlanCard() {
-  const { plan, quota, intents } = useSubscription();
+  const { plan, planCode, quota, intents } = useSubscription();
 
   return (
     <Card
       title={L.planTitle}
       subtitle={plan.endsAt ? `${L.planEndsOn} ${formatDate(plan.endsAt)}` : undefined}
-      action={<Badge label={planLabel(plan)} tone={planTone(plan)} />}
+      action={<Badge label={planLabel(plan, planCode)} tone={planTone(plan)} />}
     >
       <div className="flex flex-col gap-3">
         {plan.tier === 'free' ? (

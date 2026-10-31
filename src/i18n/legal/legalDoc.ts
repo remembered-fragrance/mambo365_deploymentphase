@@ -5,7 +5,7 @@
  * và để test đối chiếu được lời hứa với hằng số thật trong `config.ts`.
  */
 
-import { LEGAL_OPERATOR, PRICE_MONTHLY, PRICE_YEARLY, SUPPORT_ZALO } from '@/config';
+import { LEGAL_OPERATOR, PLAN_PRICES, STAFF_PRICE, SUPPORT_ZALO } from '@/config';
 
 export type LegalBlock =
   | { readonly kind: 'p'; readonly text: string }
@@ -39,7 +39,13 @@ const PENDING = 'đang cập nhật';
 /** "149.000₫" — i18n là lá dùng chung nên không import `core/format`. */
 export const vnd = (n: number): string => `${n.toLocaleString('vi-VN')}₫`;
 
-export const PRICE_TEXT = `${vnd(PRICE_MONTHLY)} mỗi tháng, hoặc ${vnd(PRICE_YEARLY)} mỗi năm`;
+/** "199.000₫ mỗi tháng, hoặc 1.990.000₫ mỗi năm" — giá một gói vựa (0.28.0). */
+const priceText = (prices: { readonly 1: number; readonly 12: number }): string =>
+  `${vnd(prices[1])} mỗi tháng, hoặc ${vnd(prices[12])} mỗi năm`;
+
+export const SOLO_PRICE_TEXT = priceText(PLAN_PRICES.thuong_lai);
+export const VUA_PRICE_TEXT = priceText(PLAN_PRICES.vua);
+export const STAFF_PRICE_TEXT = `${vnd(STAFF_PRICE[1])} mỗi người mỗi tháng, hoặc ${vnd(STAFF_PRICE[12])} mỗi người mỗi năm`;
 
 /** Khối "Ai vận hành" dùng chung cho Điều khoản và Chính sách — một chỗ điền, hai trang khớp nhau. */
 export const OPERATOR_ROWS: string[][] = [

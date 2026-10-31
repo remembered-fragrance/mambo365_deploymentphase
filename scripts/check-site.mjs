@@ -31,12 +31,19 @@ const configValue = (name) => {
 
 const groupThousands = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
+/** Mọi số tiền trong một bảng giá của config.ts (`PLAN_PRICES`, `STAFF_PRICE`) — khoá 1 / 12 không phải tiền. */
+const configPrices = (name) => {
+  const source = read('src/config.ts');
+  const match = new RegExp(`export const ${name} = ([\\s\\S]*?) as const;`).exec(source);
+  if (!match) throw new Error(`Không thấy ${name} trong src/config.ts`);
+  return [...match[1].matchAll(/:\s*([\d_]+)/g)].map((m) => groupThousands(Number(m[1].replace(/_/g, ''))));
+};
+
 const main = () => {
   const pages = readdirSync(join(ROOT, SITE)).filter((f) => f.endsWith('.html'));
   if (pages.length === 0) throw new Error('site/ chưa có trang nào');
 
-  const priceMonthly = groupThousands(Number(configValue('PRICE_MONTHLY').replace(/_/g, '')));
-  const priceYearly = groupThousands(Number(configValue('PRICE_YEARLY').replace(/_/g, '')));
+  const prices = [...configPrices('PLAN_PRICES'), ...configPrices('STAFF_PRICE')];
   const zalo = configValue('SUPPORT_ZALO');
 
   for (const page of pages) {
@@ -68,15 +75,15 @@ const main = () => {
     //    chí F §5: giá trên site và trong app phải giống nhau.
     for (const match of html.matchAll(/([\d.]+)₫/g)) {
       const figure = match[1];
-      if (![priceMonthly, priceYearly, '0'].includes(figure)) {
-        report(`Số tiền lạ trên site (chỉ được ${priceMonthly}₫ · ${priceYearly}₫ · 0₫)`, path, `${figure}₫`);
+      if (![...prices, '0'].includes(figure)) {
+        report(`Số tiền lạ trên site (chỉ được ${prices.join('₫ · ')}₫ · 0₫)`, path, `${figure}₫`);
       }
     }
   }
 
-  // ⑤ Trang chính phải công khai cả hai mức giá — đó là chỗ khách đi tìm.
+  // ⑤ Trang chính phải công khai mọi mức giá — đó là chỗ khách đi tìm.
   const index = read(`${SITE}/index.html`);
-  for (const price of [priceMonthly, priceYearly]) {
+  for (const price of prices) {
     if (!index.includes(price)) {
       report(`Trang chính thiếu giá ${price}₫`, `${SITE}/index.html`, '');
     }

@@ -25,6 +25,8 @@ const POLL_MS = 10_000;
 
 interface Props {
   readonly intent: PaymentIntent | null;
+  /** Đang trả cho gì — "Gói Vựa · 1 năm · thêm 2 người cân". */
+  readonly purchase?: string;
   readonly paid: boolean;
   readonly onPoll: () => void;
   readonly onClose: () => void;
@@ -49,7 +51,7 @@ function CopyRow({ label, value }: { readonly label: string; readonly value: str
   );
 }
 
-export function PaymentQrDialog({ intent, paid, onPoll, onClose }: Props) {
+export function PaymentQrDialog({ intent, purchase, paid, onPoll, onClose }: Props) {
   useEffect(() => {
     if (!intent || paid) return;
     const timer = setInterval(onPoll, POLL_MS);
@@ -72,6 +74,12 @@ export function PaymentQrDialog({ intent, paid, onPoll, onClose }: Props) {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
+          {purchase && (
+            <p className="text-center">
+              <span className="block text-base font-bold text-ink">{purchase}</span>
+              <span className="num block text-2xl font-extrabold text-ink">{formatVnd(intent.amount)}</span>
+            </p>
+          )}
           <img
             src={vietQrImageUrl(intent.amount, content)}
             alt={L.payQrAlt}

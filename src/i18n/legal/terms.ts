@@ -14,7 +14,19 @@ import {
   REFUND_DAYS,
   TRIAL_DAYS,
 } from '@/config';
-import { LEGAL_BASIS, list, note, OPERATOR_ROWS, p, PRICE_TEXT, table, type LegalDoc } from './legalDoc';
+import { EXTRA_STAFF_MAX, STAFF_INCLUDED } from '@mambo/contracts';
+import {
+  LEGAL_BASIS,
+  list,
+  note,
+  OPERATOR_ROWS,
+  p,
+  SOLO_PRICE_TEXT,
+  STAFF_PRICE_TEXT,
+  table,
+  VUA_PRICE_TEXT,
+  type LegalDoc,
+} from './legalDoc';
 
 export const TERMS: LegalDoc = {
   title: 'Điều khoản sử dụng',
@@ -106,9 +118,14 @@ export const TERMS: LegalDoc = {
         table(
           ['Mục', 'Nội dung'],
           ['Nông dân', 'Miễn phí.'],
-          ['Dùng thử (vựa, doanh nghiệp)', `${TRIAL_DAYS} ngày đầy đủ tính năng, tính từ lúc tạo vựa / doanh nghiệp. Không cần trả trước.`],
+          ['Dùng thử (vựa, doanh nghiệp)', `${TRIAL_DAYS} ngày, tính từ lúc tạo vựa / doanh nghiệp, với tính năng của gói đã chọn lúc đăng ký (Thương lái hoặc Vựa). Không cần trả trước.`],
           ['Gói miễn phí', `Sau dùng thử: ${FREE_RECEIPTS_PER_MONTH} phiếu mỗi tháng; công nợ, nông hộ và xuất file như gói trả phí. Không thêm người cân, chi nhánh hay ảnh chứng từ mới.`],
-          ['Gói trả phí', `${PRICE_TEXT}. Giá đã hiện trong app trước khi bạn chuyển tiền.`],
+          ['Gói Thương lái', `${SOLO_PRICE_TEXT}. Làm một mình: không thêm người cân, không có nhật ký thao tác và báo cáo tổng.`],
+          ['Gói Vựa', `${VUA_PRICE_TEXT}. Có ${STAFF_INCLUDED} người cân đi kèm, nhật ký thao tác và báo cáo tổng.`],
+          ['Người cân thêm (gói Vựa)', `${STAFF_PRICE_TEXT}, tối đa ${STAFF_INCLUDED + EXTRA_STAFF_MAX} người cân. Mua giữa kỳ tính theo số ngày còn lại và hết hạn cùng gói. Bớt người cân chỉ lúc gia hạn; không hoàn tiền phần đã mua.`],
+          ['Đổi gói', 'Từ Thương lái lên Vựa giữa kỳ: số ngày còn lại được quy đổi theo giá sang ngày gói Vựa. Từ Vựa về Thương lái: chỉ sau khi gói Vựa hết hạn.'],
+          ['Doanh nghiệp', 'Giá theo số chi nhánh — nhắn Zalo hỗ trợ để được báo giá, kích hoạt sau khi nhận tiền.'],
+          ['Giá', 'Giá và số tiền phải trả đã hiện trong app trước khi bạn chuyển tiền.'],
           ['Cách trả', 'Chuyển khoản ngân hàng theo mã QR trong app, kèm đúng nội dung app đưa sẵn.'],
         ),
         list(

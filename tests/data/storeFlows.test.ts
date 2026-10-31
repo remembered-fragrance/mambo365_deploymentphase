@@ -35,7 +35,7 @@ vi.mock('@/data/client', () => {
 
 /** Tổ chức đã gỡ người dùng: `/v1/me` không còn kể (B8). */
 const removedFrom = new Set<string>();
-const TRIAL = { tier: 'trial', status: 'trialing', periodEnd: null, branchLimit: null } as const;
+const TRIAL = { tier: 'trial', status: 'trialing', periodEnd: null, branchLimit: null, plan: 'vua', extraStaff: 0, staffLimit: 3 } as const;
 /** Gói máy chủ đang giữ — đổi giữa chừng như khi được kích hoạt ngoài app. */
 const serverPlan: { current: Me['memberships'][number]['plan'] } = { current: TRIAL };
 const me = (): Me => ({
@@ -200,7 +200,7 @@ describe('gói mở lại ngoài app', () => {
     await until(() => Boolean(store.status.blocked), 'máy chủ báo hết gói');
 
     // Hỗ trợ kích hoạt gói trong lúc app vẫn mở.
-    serverPlan.current = { tier: 'premium', status: 'active', periodEnd: '2027-10-20T00:00:00.000Z', branchLimit: null };
+    serverPlan.current = { tier: 'premium', status: 'active', periodEnd: '2027-10-20T00:00:00.000Z', branchLimit: null, plan: 'vua', extraStaff: 0, staffLimit: 3 };
     net.push.mockImplementation(applied);
     act(() => { store.syncNow(); });
     await until(() => store.plan?.tier === 'premium', 'đọc lại gói');
@@ -215,7 +215,7 @@ describe('gói mở lại ngoài app', () => {
     act(() => { store.addSupplier({ name: 'Ghi lúc hết gói' }); });
     await until(() => Boolean(store.status.blocked), 'máy chủ báo hết gói');
 
-    serverPlan.current = { tier: 'premium', status: 'active', periodEnd: '2027-10-20T00:00:00.000Z', branchLimit: null };
+    serverPlan.current = { tier: 'premium', status: 'active', periodEnd: '2027-10-20T00:00:00.000Z', branchLimit: null, plan: 'vua', extraStaff: 0, staffLimit: 3 };
     net.push.mockImplementation(() => Promise.reject(new TypeError('Failed to fetch')));
     net.pull.mockImplementation(() => Promise.reject(new TypeError('Failed to fetch')));
     act(() => { store.syncNow(); });
