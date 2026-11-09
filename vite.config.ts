@@ -85,6 +85,8 @@ export default defineConfig(({ mode }) => {
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
           navigateFallback: 'index.html',
+          // Link ngắn UTM (redirects trong vercel.json) phải tới Vercel, không để service worker trả index.html.
+          navigateFallbackDenylist: [/^\/(fb|zalo|qr|goi|gioithieu|doitac)$/],
         },
       }),
     ],

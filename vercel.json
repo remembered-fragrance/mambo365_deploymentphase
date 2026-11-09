@@ -3,6 +3,14 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "redirects": [
+    { "source": "/fb", "destination": "/?utm_source=facebook&utm_medium=nhom&utm_campaign=oc2&utm_content=tin-a", "permanent": false },
+    { "source": "/zalo", "destination": "/?utm_source=zalo&utm_medium=chat&utm_campaign=oc2&utm_content=tin-a", "permanent": false },
+    { "source": "/qr", "destination": "/?utm_source=truc-tiep&utm_medium=qr&utm_campaign=oc2&utm_content=tin-b", "permanent": false },
+    { "source": "/goi", "destination": "/?utm_source=goi-dien&utm_medium=zalo&utm_campaign=oc2&utm_content=tin-b", "permanent": false },
+    { "source": "/gioithieu", "destination": "/?utm_source=gioi-thieu&utm_medium=nguoi-dung&utm_campaign=oc2&utm_content=tin-c", "permanent": false },
+    { "source": "/doitac", "destination": "/?utm_source=gioi-thieu&utm_medium=doi-tac&utm_campaign=oc2&utm_content=tin-c", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ],
