@@ -31,7 +31,23 @@ Ba thông điệp:
 
 ## Link cho 5 kênh
 
-Đổi `utm_content` sang `tin-a` / `tin-b` / `tin-c` theo thông điệp đang dùng ở bài / lần gửi đó.
+**Link ngắn để phát ra ngoài** (`vercel.json` → `redirects`, chuyển tiếp sang link đầy đủ bên dưới, mỗi link cố định
+một thông điệp):
+
+| Link ngắn | Kênh | Thông điệp |
+|---|---|---|
+| `thumua365.id.vn/fb` | Facebook | `tin-a` |
+| `thumua365.id.vn/zalo` | Zalo | `tin-a` |
+| `thumua365.id.vn/qr` | Trực tiếp (mã QR) | `tin-b` |
+| `thumua365.id.vn/goi` | Gọi điện | `tin-b` |
+| `thumua365.id.vn/gioithieu` | Giới thiệu | `tin-c` |
+| `thumua365.id.vn/doitac` | Đối tác | `tin-c` |
+
+Thêm link ngắn: thêm một dòng `redirects` trong `vercel.json` **và** thêm tên đó vào `navigateFallbackDenylist` trong
+`vite.config.ts` (thiếu thì máy đã cài app mở link sẽ vào app mà mất UTM).
+
+Cần thông điệp khác với bảng trên thì dùng link đầy đủ: đổi `utm_content` sang `tin-a` / `tin-b` / `tin-c` theo
+thông điệp đang dùng ở bài / lần gửi đó.
 
 | # | Kênh (slide 7) | Bắt đầu | Link |
 |---|---|---|---|
