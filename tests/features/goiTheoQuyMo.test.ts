@@ -31,13 +31,15 @@ const OFFER: BillingOffer = {
     { plan: 'vua', months: 1, amount: 449_000 },
     { plan: 'vua', months: 12, amount: 4_490_000 },
     { plan: 'thuong_lai', months: 1, amount: 199_000 },
-    { plan: 'thuong_lai', months: 12, amount: 1_990_000 },
+    { plan: 'thuong_lai', months: 6, amount: 1_074_600 },
+    { plan: 'thuong_lai', months: 12, amount: 2_030_400 },
   ],
   staffPrices: [
     { months: 1, amount: 79_000 },
     { months: 12, amount: 790_000 },
   ],
   staffTopUps: [],
+  promo: null,
 };
 
 const TRIAL: PlanState = { tier: 'trial', premium: true, endsAt: '2026-11-30T00:00:00.000Z', daysLeft: 30 };
@@ -64,6 +66,7 @@ const subscriptionOf = (plan: PlanState, planCode: PlanCode | null, offer: Billi
   loading: false,
   refresh: () => undefined,
   startPayment,
+  redeemPromo: async () => undefined,
 });
 
 const summaryOf = (plan: PlanCode | null, extraStaff = 0): PlanSummary => ({
@@ -134,12 +137,26 @@ describe('màn Gói — Thương lái · Vựa · người cân thêm', () => {
 
   it('đang Thương lái: thẻ Thương lái là "Gia hạn", gửi gói thuong_lai, không kèm người cân', async () => {
     sub = subscriptionOf(PAID, 'thuong_lai');
-    startPayment.mockResolvedValue(intent(1_990_000));
+    startPayment.mockResolvedValue(intent(2_030_400));
     render({ plan: summaryOf('thuong_lai'), refreshPlan: () => undefined }, createElement(PlansPage));
 
-    expect(pageText()).toContain(formatVnd(1_990_000));
+    expect(pageText()).toContain(formatVnd(2_030_400));
     await click(buttons(L.planRenew)[0]);
     expect(startPayment).toHaveBeenCalledWith({ kind: 'plan', plan: 'thuong_lai', months: 12 });
+  });
+
+  it('6 tháng (0.30.0): Thương lái 1.074.600₫ gửi months 6; thẻ Vựa không có nút mua', async () => {
+    sub = subscriptionOf(TRIAL, 'thuong_lai');
+    startPayment.mockResolvedValue(intent(1_074_600));
+    render({ plan: summaryOf('thuong_lai'), refreshPlan: () => undefined }, createElement(PlansPage));
+
+    await click([...host.querySelectorAll('button[role="radio"]')].find((b) => b.textContent === L.priceHalfYearly) as HTMLElement);
+    expect(pageText()).toContain(formatVnd(1_074_600));
+    expect(pageText()).toContain(L.priceHalfYearHint);
+    expect(pageText()).toContain(L.planVuaNoHalfYear);
+    expect(buttons(L.planBuy)).toHaveLength(1);
+    await click(buttons(L.planBuy)[0]);
+    expect(startPayment).toHaveBeenCalledWith({ kind: 'plan', plan: 'thuong_lai', months: 6 });
   });
 
   it('Vựa còn hạn: nút mua Thương lái khoá, ghi rõ mua được sau ngày hết hạn', () => {
@@ -185,10 +202,10 @@ describe('màn Gói — Thương lái · Vựa · người cân thêm', () => {
 });
 
 describe('câu chặn khi gói thấp', () => {
-  it('Thương lái còn hạn bị chặn thêm người cân → mời nâng lên gói Vựa, không bảo gia hạn', () => {
+  it('Thương lái còn hạn bị chặn xem nhật ký → mời nâng lên gói Vựa, không bảo gia hạn', () => {
     sub = subscriptionOf(PAID, 'thuong_lai');
-    render({}, createElement(PlanGate, { reason: L.gateMembers, feature: 'members' }));
-    expect(host.textContent).toContain(L.gateSoloMembers);
+    render({}, createElement(PlanGate, { reason: L.gateAudit, feature: 'audit' }));
+    expect(host.textContent).toContain(L.gateSoloAudit);
     expect(host.textContent).toContain(L.gateUpgradeVua);
   });
 

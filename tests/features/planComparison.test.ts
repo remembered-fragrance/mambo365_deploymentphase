@@ -17,10 +17,12 @@ describe('màn so sánh gói khớp bảng quyền lợi', () => {
     }
   });
 
-  it('câu "Gói Thương lái" có đúng ở dòng gói Thương lái không có quyền lợi đó (0.28.0)', () => {
+  it('câu "Gói Thương lái" có đúng ở dòng gói Thương lái không có quyền lợi đó (0.28.0), và dòng người cân (0.30.0)', () => {
     for (const row of ROWS) {
       const excluded = row.entitlement !== undefined && paid.includes(row.entitlement) && !solo.includes(row.entitlement);
-      expect(row.solo !== undefined && row.solo !== row.paid, row.what).toBe(excluded);
+      // Người cân: Thương lái có quyền thêm người nhưng chỉ `staffLimit` = 1 người — số khác gói Vựa.
+      const fewer = row.entitlement === 'members:add';
+      expect(row.solo !== undefined && row.solo !== row.paid, row.what).toBe(excluded || fewer);
     }
   });
 
