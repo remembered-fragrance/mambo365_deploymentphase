@@ -3,17 +3,21 @@
  * Đổi giá bán, đổi hạn dùng thử — sửa đúng một chỗ này.
  */
 
-/** Số phiếu miễn phí mỗi tháng khi hết hạn dùng thử. */
-export const FREE_RECEIPTS_PER_MONTH = 30;
+/**
+ * Số phiếu mới được ghi mỗi tháng khi hết dùng thử / hết hạn gói. 0 = chỉ xem: sổ cũ vẫn xem, tìm, xuất file được,
+ * không ghi phiếu mới (bảng giá Giai đoạn 1, chốt 10/11/2026 — trước là 30 phiếu).
+ */
+export const FREE_RECEIPTS_PER_MONTH = 0;
 
 /**
- * Giá gói vựa (đồng), theo số tháng — 0.28.0: Thương lái làm một mình, Vựa có 3 người cân đi kèm. Năm = 10 tháng
- * (tặng 2 tháng): nông nghiệp theo mùa vụ, chủ vựa có tiền vào mùa và quen trả một lần.
+ * Giá gói vựa (đồng), theo số tháng. Thương lái làm một mình (+ 1 người), Vựa có 3 người cân đi kèm (0.28.0).
+ *  - Thương lái (bảng giá Giai đoạn 1, duyệt 10/11/2026 — API 0.30.0): 6 tháng giảm 10%, năm giảm 15%.
+ *  - Vựa: năm = 10 tháng (tặng 2 tháng); không có kỳ 6 tháng.
  * Giá thật máy chủ giữ (`offer.prices`, số tiền của ý định); ở đây chỉ để vẽ trước khi tải xong và cho trang pháp lý.
  * 🔴 Mô hình tài chính xây trên đúng các con số này. Đổi giá phải qua Linh (finance), và đổi cùng máy chủ.
  */
 export const PLAN_PRICES = {
-  thuong_lai: { 1: 199_000, 12: 1_990_000 },
+  thuong_lai: { 1: 199_000, 6: 1_074_600, 12: 2_030_400 },
   vua: { 1: 449_000, 12: 4_490_000 },
 } as const;
 
@@ -22,14 +26,11 @@ export const STAFF_PRICE = { 1: 79_000, 12: 790_000 } as const;
 
 /** Số tháng gia hạn cho mỗi mức giá gói (`scripts/admin-activate.ts` đối chiếu số tiền kích hoạt tay). */
 export const MONTHS_PER_PRICE: Readonly<Record<number, number>> = Object.fromEntries(
-  Object.values(PLAN_PRICES).flatMap((byMonths) => [
-    [byMonths[1], 1],
-    [byMonths[12], 12],
-  ]),
+  Object.values(PLAN_PRICES).flatMap((byMonths) => Object.entries(byMonths).map(([months, amount]) => [amount, Number(months)])),
 );
 
-/** Số ngày dùng thử đầy đủ tính từ lúc đăng ký. */
-export const TRIAL_DAYS = 30;
+/** Số ngày dùng thử đầy đủ tính từ lúc đăng ký — 2 tháng (bảng giá Giai đoạn 1, API 0.30.0). */
+export const TRIAL_DAYS = 60;
 
 /**
  * Hết kỳ rồi vẫn đồng bộ thêm bấy nhiêu ngày, kèm banner nhắc.
@@ -101,8 +102,8 @@ export const MAIL_LINKS = {
 } as const;
 
 /** Phiên bản và ngày áp dụng của Điều khoản + Chính sách — đổi nội dung thì đổi cả hai. */
-export const LEGAL_VERSION = '2.8';
-export const LEGAL_EFFECTIVE_DATE = '31/10/2026';
+export const LEGAL_VERSION = '2.9';
+export const LEGAL_EFFECTIVE_DATE = '10/11/2026';
 
 /**
  * Thông tin chủ thể vận hành — Luật BVDLCN 2025 và Luật TMĐT 2025 bắt buộc công khai.

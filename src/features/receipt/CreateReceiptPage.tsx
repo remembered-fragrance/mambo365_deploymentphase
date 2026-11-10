@@ -174,11 +174,11 @@ function ReceiptWorkspace({ draftId, kind, setParams }: WorkspaceProps) {
   };
 
   /**
-   * Chạm trần thì thay cả màn tạo phiếu, không phải chặn lúc bấm "xong": người
+   * Hết hạn (sổ chỉ xem) thì thay cả màn tạo phiếu, không phải chặn lúc bấm "xong": người
    * dùng cân xong cả chuyến hàng rồi mới bị từ chối là cách tệ nhất để nói
    * chuyện tiền nong. Nháp đang cân dở vẫn nằm nguyên trong sổ.
    */
-  if (quota.blocked) return <QuotaWall used={quota.used} limit={quota.limit} />;
+  if (quota.blocked) return <QuotaWall />;
 
   return (
     <PageContainer width="wide">

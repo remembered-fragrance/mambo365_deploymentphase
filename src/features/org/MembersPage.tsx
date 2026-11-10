@@ -87,9 +87,9 @@ function ActivityLine({ activity }: { readonly activity: MemberActivity | undefi
  * Quản lý nhân viên của chủ (FRONTEND §5.9): ai đang làm, mỗi người làm được gì trong tháng, thêm /
  * đổi vai trò / gỡ. Vựa chỉ thêm người cân (`staff`); doanh nghiệp thêm quản lý / nhân viên và gắn
  * chi nhánh. Người làm không tự rời được — chỉ chủ gỡ ra ở đây. Không có nút trên dòng của chủ và của chính mình.
- * Hết gói thì không thêm (hay bật lại) người được; vựa tối đa `plan.staffLimit` người cân (Thương lái 0, Vựa 3 +
- * số mua thêm — 0.28.0) — máy chủ chặn y như vậy (PLAN_REQUIRED / MEMBER_LIMIT), ở đây chỉ khoá nút trước. Vựa đã
- * trả tiền mà đủ chỗ thì có đường sang màn Gói mua thêm người cân. Việc từng người (tháng, số liệu)
+ * Hết gói thì không thêm (hay bật lại) người được; vựa tối đa `plan.staffLimit` người cân (Thương lái 1 — 0.30.0, Vựa
+ * 3 + số mua thêm) — máy chủ chặn y như vậy (PLAN_REQUIRED / MEMBER_LIMIT), ở đây chỉ khoá nút trước. Vựa đã trả
+ * tiền mà đủ chỗ thì có đường sang màn Gói mua thêm người cân; Thương lái đủ chỗ thì có đường nâng lên gói Vựa. Việc từng người (tháng, số liệu)
  * cần `reports:org` (D3); hết gói thì danh sách người vẫn hiện, chỉ phần số liệu nằm sau `PlanGate`.
  */
 export function MembersPage() {
@@ -127,6 +127,7 @@ export function MembersPage() {
   // Cùng điều kiện với `staffTopUps` của máy chủ: gói Vựa đã trả tiền, còn hạn, chưa đủ 8 người.
   const canBuyMore = full && planCode === 'vua' && tier.tier === 'premium' && can('billing:manage') &&
     staffLimit < STAFF_INCLUDED + EXTRA_STAFF_MAX;
+  const canUpgrade = full && planCode === 'thuong_lai' && can('billing:manage');
   const addable = paid && !full;
 
   const byId = new Map((activity.data?.members ?? []).map((a) => [a.member.id, a]));
@@ -210,6 +211,11 @@ export function MembersPage() {
               {canBuyMore && (
                 <Link to={ROUTES.plans} className="font-semibold text-brand underline">
                   {L.staffBuyMore}
+                </Link>
+              )}
+              {canUpgrade && (
+                <Link to={ROUTES.plans} className="font-semibold text-brand underline">
+                  {L.gateSoloMembers}
                 </Link>
               )}
             </p>

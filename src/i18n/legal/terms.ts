@@ -7,14 +7,13 @@
  */
 
 import {
-  FREE_RECEIPTS_PER_MONTH,
   GRACE_DAYS,
   LEGAL_EFFECTIVE_DATE,
   LEGAL_VERSION,
   REFUND_DAYS,
   TRIAL_DAYS,
 } from '@/config';
-import { EXTRA_STAFF_MAX, STAFF_INCLUDED } from '@mambo/contracts';
+import { EXTRA_STAFF_MAX, STAFF_INCLUDED, THUONG_LAI_STAFF } from '@mambo/contracts';
 import {
   LEGAL_BASIS,
   list,
@@ -119,8 +118,8 @@ export const TERMS: LegalDoc = {
           ['Mục', 'Nội dung'],
           ['Nông dân', 'Miễn phí.'],
           ['Dùng thử (vựa, doanh nghiệp)', `${TRIAL_DAYS} ngày, tính từ lúc tạo vựa / doanh nghiệp, với tính năng của gói đã chọn lúc đăng ký (Thương lái hoặc Vựa). Không cần trả trước.`],
-          ['Gói miễn phí', `Sau dùng thử: ${FREE_RECEIPTS_PER_MONTH} phiếu mỗi tháng; công nợ, nông hộ và xuất file như gói trả phí. Không thêm người cân, chi nhánh hay ảnh chứng từ mới.`],
-          ['Gói Thương lái', `${SOLO_PRICE_TEXT}. Làm một mình: không thêm người cân, không có nhật ký thao tác và báo cáo tổng.`],
+          ['Hết dùng thử, hết hạn gói', `Sổ chỉ còn xem: phiếu, công nợ, nông hộ, báo cáo cũ vẫn xem, tìm và xuất file được; không ghi phiếu mới — mua gói để ghi tiếp. Không thêm người cân, chi nhánh hay ảnh chứng từ mới. Dữ liệu nhập trong lúc dùng thử giữ nguyên khi mua gói.`],
+          ['Gói Thương lái', `${SOLO_PRICE_TEXT}. Chủ tài khoản và thêm được ${THUONG_LAI_STAFF} người; không có nhật ký thao tác và báo cáo tổng.`],
           ['Gói Vựa', `${VUA_PRICE_TEXT}. Có ${STAFF_INCLUDED} người cân đi kèm, nhật ký thao tác và báo cáo tổng.`],
           ['Người cân thêm (gói Vựa)', `${STAFF_PRICE_TEXT}, tối đa ${STAFF_INCLUDED + EXTRA_STAFF_MAX} người cân. Mua giữa kỳ tính theo số ngày còn lại và hết hạn cùng gói. Bớt người cân chỉ lúc gia hạn; không hoàn tiền phần đã mua.`],
           ['Đổi gói', 'Từ Thương lái lên Vựa giữa kỳ: số ngày còn lại được quy đổi theo giá sang ngày gói Vựa. Từ Vựa về Thương lái: chỉ sau khi gói Vựa hết hạn.'],
@@ -147,7 +146,7 @@ export const TERMS: LegalDoc = {
       id: 'het-han',
       title: '9. Khi hết hạn gói',
       blocks: [
-        p(`Không khoá dữ liệu. Hết hạn, app còn đồng bộ thêm ${GRACE_DAYS} ngày kèm nhắc nhở, rồi chuyển về gói miễn phí. Bạn vẫn xem, tìm và xuất được toàn bộ sổ như thường.`),
+        p(`Không khoá dữ liệu. Hết hạn, app còn đồng bộ thêm ${GRACE_DAYS} ngày kèm nhắc nhở, rồi sổ chỉ còn xem: bạn vẫn xem, tìm và xuất được toàn bộ sổ như thường, chỉ chưa ghi phiếu mới.`),
         p('Người cân, chi nhánh và ảnh đã có vẫn giữ nguyên: người cân vẫn đăng nhập và ghi phiếu trên máy, ảnh cũ vẫn xem được. Chỉ thêm người, thêm hoặc dùng lại chi nhánh và gửi ảnh mới là chờ gia hạn.'),
       ],
     },

@@ -10,7 +10,15 @@ import type {
   Subscription,
   SubscriptionStatus,
 } from '@mambo/core/subscription';
-import type { PaymentIntentCreateInput, PlanPrice, PlanSummary, StaffPrice, StaffTopUp } from '@mambo/contracts';
+import type {
+  PaymentIntentCreateInput,
+  PlanPrice,
+  PlanSummary,
+  PromoView,
+  StaffPrice,
+  StaffTopUp,
+  SubscriptionView,
+} from '@mambo/contracts';
 import { api, fetchMe } from './client';
 import { track } from './track';
 
@@ -45,13 +53,27 @@ export interface BillingOffer {
   readonly staffPrices: readonly StaffPrice[];
   /** Mua thêm 1…n người cân ngay lúc này (theo ngày còn lại). Rỗng = không có nút mua thêm. */
   readonly staffTopUps: readonly StaffTopUp[];
+  /** Mã Khách hàng sáng lập đã gắn (0.29.0) — `prices` đã là giá sau mã. null = chưa nhập mã. */
+  readonly promo: PromoView | null;
 }
 
+const offerOf = ({ selfServe, prices, staffPrices, staffTopUps, promo }: SubscriptionView): BillingOffer => ({
+  selfServe,
+  prices,
+  staffPrices,
+  staffTopUps,
+  promo: promo ?? null,
+});
+
 /** Cần `billing:manage`. */
-export const fetchBillingOffer = async (): Promise<BillingOffer> => {
-  const { selfServe, prices, staffPrices, staffTopUps } = await api.billing.subscription();
-  return { selfServe, prices, staffPrices, staffTopUps };
-};
+export const fetchBillingOffer = async (): Promise<BillingOffer> => offerOf(await api.billing.subscription());
+
+/**
+ * Nhập mã Khách hàng sáng lập — trả bảng giá mới. Mã sai / đã có người dùng / tài khoản đã có mã: lỗi kèm câu báo của
+ * máy chủ (không nói mã có thật hay không).
+ */
+export const redeemPromoCode = async (code: string): Promise<BillingOffer> =>
+  offerOf(await api.billing.redeemPromo({ code }));
 
 /** Lịch sử chuyển khoản, mới nhất trước (tối đa 12). Cần `billing:manage`. */
 export const fetchPaymentIntents = async (): Promise<PaymentIntent[]> => (await api.billing.intents()).intents;
@@ -61,7 +83,7 @@ export const fetchPaymentIntents = async (): Promise<PaymentIntent[]> => (await 
  * số người cân trả đúng ý định cũ, không sinh thêm mã.
  */
 export const createPaymentIntent = async (input: PaymentIntentCreateInput): Promise<PaymentIntent> => {
-  // Mua người cân không có số tháng (hết hạn cùng gói) — sự kiện chỉ nhận 1 | 12 nên ghi 1.
+  // Mua người cân không có số tháng (hết hạn cùng gói) — sự kiện chỉ nhận 1 | 6 | 12 nên ghi 1.
   track('checkout_started', { months: input.kind === 'staff' ? 1 : input.months });
   return api.billing.createIntent(input);
 };

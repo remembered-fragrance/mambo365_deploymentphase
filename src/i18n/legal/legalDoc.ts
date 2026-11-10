@@ -39,9 +39,11 @@ const PENDING = 'đang cập nhật';
 /** "149.000₫" — i18n là lá dùng chung nên không import `core/format`. */
 export const vnd = (n: number): string => `${n.toLocaleString('vi-VN')}₫`;
 
-/** "199.000₫ mỗi tháng, hoặc 1.990.000₫ mỗi năm" — giá một gói vựa (0.28.0). */
-const priceText = (prices: { readonly 1: number; readonly 12: number }): string =>
-  `${vnd(prices[1])} mỗi tháng, hoặc ${vnd(prices[12])} mỗi năm`;
+/** "199.000₫ mỗi tháng, 1.074.600₫ mỗi 6 tháng, hoặc 2.030.400₫ mỗi năm" — giá một gói vựa; có kỳ 6 tháng thì ghi thêm. */
+const priceText = (prices: { readonly 1: number; readonly 6?: number; readonly 12: number }): string =>
+  prices[6] === undefined
+    ? `${vnd(prices[1])} mỗi tháng, hoặc ${vnd(prices[12])} mỗi năm`
+    : `${vnd(prices[1])} mỗi tháng, ${vnd(prices[6])} mỗi 6 tháng, hoặc ${vnd(prices[12])} mỗi năm`;
 
 export const SOLO_PRICE_TEXT = priceText(PLAN_PRICES.thuong_lai);
 export const VUA_PRICE_TEXT = priceText(PLAN_PRICES.vua);

@@ -24,7 +24,7 @@ const INTENT_LABEL: Record<PaymentIntentStatus, string> = {
  * họ sẽ phát hiện ra vào đúng lúc cần nó nhất.
  */
 export function PlanCard() {
-  const { plan, planCode, quota, intents } = useSubscription();
+  const { plan, planCode, intents } = useSubscription();
 
   return (
     <Card
@@ -34,9 +34,7 @@ export function PlanCard() {
     >
       <div className="flex flex-col gap-3">
         {plan.tier === 'free' ? (
-          <p className="text-sm text-ink-2">
-            {L.quotaUsed}: <b className="text-ink">{quota.used}</b> {L.quotaOfLimit} {quota.limit}
-          </p>
+          <p className="text-sm text-ink-2">{L.quotaReadOnlyHint}</p>
         ) : (
           <p className="text-sm text-ink-2">{daysLeftText(plan)}</p>
         )}

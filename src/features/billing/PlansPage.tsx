@@ -16,11 +16,18 @@ import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { PaymentQrDialog } from './PaymentQrDialog';
 import { PlanComparison } from './PlanComparison';
+import { PromoCodeCard } from './PromoCodeCard';
 import { daysLeftText, PLAN_NAME, planLabel, planTone } from './planText';
 
-type Months = 1 | 12;
+type Months = 1 | 6 | 12;
 
-const PERIOD_TEXT: Readonly<Record<Months, string>> = { 1: L.payPeriodMonth, 12: L.payPeriodYear };
+const PERIOD_TEXT: Readonly<Record<Months, string>> = { 1: L.payPeriodMonth, 6: L.payPeriodHalfYear, 12: L.payPeriodYear };
+const PER_PERIOD: Readonly<Record<Months, string>> = { 1: L.pricePerMonth, 6: L.pricePerHalfYear, 12: L.pricePerYear };
+const PERIOD_HINT: Readonly<Record<Months, string | undefined>> = { 1: undefined, 6: L.priceHalfYearHint, 12: L.priceYearlyHint };
+
+/** Giá niêm yết của gói theo kỳ; `undefined` = gói không bán kỳ đó (Vựa không có 6 tháng, 0.30.0). */
+const listPrice = (code: PlanCode, months: Months): number | undefined =>
+  (PLAN_PRICES[code] as Readonly<Partial<Record<Months, number>>>)[months];
 
 /** "Gói Vựa · 1 năm · thêm 2 người cân" — ghi trên màn chuyển khoản để người trả biết mình đang trả cho gì. */
 const purchaseText = (input: PaymentIntentCreateInput): string => {
@@ -33,7 +40,8 @@ const purchaseText = (input: PaymentIntentCreateInput): string => {
 };
 
 /**
- * Màn gói dịch vụ — vựa chọn gói Thương lái (làm một mình) hoặc Vựa (có người cân), trả tháng hoặc năm (0.28.0).
+ * Màn gói dịch vụ — vựa chọn gói Thương lái (chủ + 1 người) hoặc Vựa (có người cân), trả tháng hoặc năm (0.28.0).
+ * Thương lái có thêm kỳ 6 tháng (bảng giá Giai đoạn 1, API 0.30.0); chọn 6 tháng thì thẻ Vựa chỉ nhắc chọn kỳ khác.
  *
  * Gói năm chọn sẵn: nông nghiệp theo mùa vụ, chủ vựa có tiền vào mùa và quen trả một lần cho xong (F §3.1).
  * Giá và số tiền phải trả do MÁY CHỦ giữ (`offer`); bảng trong `config.ts` chỉ để vẽ trước khi tải xong. Máy chủ
@@ -41,7 +49,7 @@ const purchaseText = (input: PaymentIntentCreateInput): string => {
  * Doanh nghiệp không tự mua — chỉ có câu liên hệ Zalo.
  */
 export function PlansPage() {
-  const { plan, planCode, intents, loading, startPayment, refresh, billingAvailable, offer } = useSubscription();
+  const { plan, planCode, intents, loading, startPayment, refresh, billingAvailable, offer, redeemPromo } = useSubscription();
   const { plan: summary, refreshPlan } = useStore();
   const [months, setMonths] = useState<Months>(12);
   const [extraStaff, setExtraStaff] = useState(() => (summary?.plan === 'vua' ? summary.extraStaff : 0));
@@ -64,10 +72,12 @@ export function PlansPage() {
     refreshPlan();
   }, [paid, intent, refreshPlan]);
 
-  const price = (code: PlanCode) =>
-    offer?.prices.find((p) => p.plan === code && p.months === months)?.amount ?? PLAN_PRICES[code][months];
-  const staffPrice = offer?.staffPrices.find((p) => p.months === months)?.amount ?? STAFF_PRICE[months];
+  const price = (code: PlanCode): number | undefined =>
+    offer?.prices.find((p) => p.plan === code && p.months === months)?.amount ?? listPrice(code, months);
+  const staffMonths = months === 12 ? 12 : 1;
+  const staffPrice = offer?.staffPrices.find((p) => p.months === staffMonths)?.amount ?? STAFF_PRICE[staffMonths];
   const topUps = offer?.staffTopUps ?? [];
+  const promo = offer?.promo ?? null;
   const topUpAmount = topUps.find((t) => t.extraStaff === topUp)?.amount;
   // Hạ gói chỉ khi hết hạn (chốt 30/10) — máy chủ cũng từ chối, khoá nút trước để không bày nút bấm vào là lỗi.
   const downgradeLocked = planCode === 'vua' && plan.tier === 'premium';
@@ -90,19 +100,49 @@ export function PlansPage() {
     const current = planCode === code && plan.tier !== 'free';
     // Dùng thử chưa trả đồng nào — mua lần đầu chứ chưa phải gia hạn.
     const renew = current && plan.tier !== 'trial';
-    const total = price(code) + (code === 'vua' ? extraStaff * staffPrice : 0);
+    const amount = price(code);
+    const list = listPrice(code, months);
     const locked = code === 'thuong_lai' && downgradeLocked;
-    return (
-      <div className={`rounded-xl border p-4 ${code === 'vua' ? 'border-brand' : 'border-rule'}`}>
+    const header = (
+      <>
         <div className="flex items-start justify-between gap-3">
           <p className="text-lg font-bold text-ink">{PLAN_NAME[code]}</p>
           {current && <Badge label={L.planCurrent} tone="in" />}
         </div>
         <p className="mt-1 text-sm text-ink-2">{code === 'vua' ? L.planVuaDesc : L.planSoloDesc}</p>
+      </>
+    );
+    // Gói không bán kỳ đang chọn (Vựa · 6 tháng): giữ thẻ để không mất chỗ so sánh, chỉ nhắc chọn kỳ khác.
+    if (amount === undefined || list === undefined) {
+      return (
+        <div className="rounded-xl border border-rule p-4">
+          {header}
+          <p className="mt-3 text-sm text-ink-2">{L.planVuaNoHalfYear}</p>
+        </div>
+      );
+    }
+    const total = amount + (code === 'vua' ? extraStaff * staffPrice : 0);
+    return (
+      <div className={`rounded-xl border p-4 ${code === 'vua' ? 'border-brand' : 'border-rule'}`}>
+        {header}
         <p className="mt-3 text-2xl font-extrabold text-ink">
-          {formatVnd(price(code))}{' '}
-          <span className="text-base font-semibold text-ink-3">{months === 12 ? L.pricePerYear : L.pricePerMonth}</span>
+          {formatVnd(amount)} <span className="text-base font-semibold text-ink-3">{PER_PERIOD[months]}</span>
         </p>
+        {/* Giá sau mã sáng lập thấp hơn bảng giá — ghi giá thường gạch ngang để thấy được ưu đãi. */}
+        {amount < list && (
+          <p className="text-sm text-ink-3">
+            {L.promoListPrice} <s className="num">{formatVnd(list)}</s>
+            {months > 1 && promo?.plan === code && (
+              <>
+                {' · '}
+                {L.promoPrepayIs} {months} × <span className="num">{formatVnd(promo.monthlyAmount)}</span>
+              </>
+            )}
+          </p>
+        )}
+        {months > 1 && promo?.plan === code && promo.periodsLeft > 0 && promo.periodsLeft < months && (
+          <p className="text-sm text-ink-2">{L.promoPrepayLost}</p>
+        )}
 
         {code === 'vua' && (
           <div className="mt-3 flex flex-col gap-2">
@@ -113,7 +153,7 @@ export function PlansPage() {
                 value: String(n),
                 label: `${n === 0 ? L.planExtraStaffNone : `${L.payExtraStaffPrefix} ${n}`} · ${L.planExtraStaffTotal} ${STAFF_INCLUDED + n} ${L.payExtraStaffSuffix}`,
               }))}
-              hint={`${STAFF_INCLUDED} ${L.planExtraStaffIncluded} ${formatVnd(staffPrice)} ${months === 12 ? L.pricePerYear : L.pricePerMonth}.`}
+              hint={`${STAFF_INCLUDED} ${L.planExtraStaffIncluded} ${formatVnd(staffPrice)} ${PER_PERIOD[staffMonths]}.`}
               onValueChange={(v) => setExtraStaff(Number.parseInt(v, 10))}
             />
             {extraStaff > 0 && (
@@ -155,7 +195,7 @@ export function PlansPage() {
           subtitle={plan.endsAt ? `${L.planEndsOn} ${formatDate(plan.endsAt)}` : undefined}
           action={plan.tier === 'free' ? undefined : <Badge label={daysLeftText(plan)} tone={planTone(plan)} />}
         >
-          {plan.tier === 'free' && <p className="text-sm text-ink-2">{L.quotaResetHint}</p>}
+          {plan.tier === 'free' && <p className="text-sm text-ink-2">{L.quotaReadOnlyHint}</p>}
           {summary?.staffLimit !== null && summary?.staffLimit !== undefined && plan.tier !== 'free' && (
             <p className="text-sm text-ink-2">
               {L.featureStaff}: <b className="num text-ink">{summary.staffLimit}</b>
@@ -168,6 +208,14 @@ export function PlansPage() {
             {error}
           </p>
         )}
+
+        {/* Trên bảng giá: nhập mã xong thấy ngay giá đổi ở thẻ bên dưới. */}
+        {offer?.selfServe && <PromoCodeCard
+            promo={offer.promo}
+            planCode={planCode}
+            vuaPaidUntil={downgradeLocked ? (plan.endsAt ?? null) : null}
+            onRedeem={redeemPromo}
+          />}
 
         {offer && !offer.selfServe ? (
           <Card title={L.planUpgrade}>
@@ -184,11 +232,12 @@ export function PlansPage() {
                   value={String(months)}
                   options={[
                     { value: '12', label: L.priceYearly },
+                    { value: '6', label: L.priceHalfYearly },
                     { value: '1', label: L.priceMonthly },
                   ]}
-                  onValueChange={(v) => setMonths(v === '1' ? 1 : 12)}
+                  onValueChange={(v) => setMonths(v === '1' ? 1 : v === '6' ? 6 : 12)}
                 />
-                {months === 12 && <p className="text-sm text-ink-2">{L.priceYearlyHint}</p>}
+                {PERIOD_HINT[months] && <p className="text-sm text-ink-2">{PERIOD_HINT[months]}</p>}
               </div>
 
               {option('vua')}

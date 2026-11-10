@@ -7,32 +7,19 @@ import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
 import { PlanComparison } from './PlanComparison';
 
-interface Props {
-  readonly used: number;
-  readonly limit: number;
-}
-
 /**
- * 🔴 Màn chạm hạn mức — điểm chuyển đổi quan trọng nhất của cả sản phẩm.
+ * 🔴 Màn chặn ghi phiếu khi hết dùng thử / hết hạn — điểm chuyển đổi quan trọng nhất của cả sản phẩm.
  *
- * Nói bằng SỐ CỦA CHÍNH HỌ ở dòng đầu, trước mọi thứ khác. Bảng so sánh có ở
- * dưới cho ai muốn đọc, nhưng thứ đập vào mắt phải là "tháng này bạn đã ghi 30
- * phiếu" — người đọc câu đó biết ngay chuyện gì đang xảy ra, còn người đọc một
- * bảng tính năng thì không.
- *
- * Hai câu trấn an đi kèm, vì cả hai đều đúng và cả hai đều là thứ người dùng
- * đang lo: phiếu đang cân dở không mất, và sang tháng là đếm lại từ đầu.
+ * Bảng giá Giai đoạn 1 (chốt 10/11/2026): hết hạn thì sổ chỉ còn xem, không ghi phiếu mới (trước là 30 phiếu mỗi
+ * tháng). Câu đầu nói thẳng chuyện đó, câu sau trấn an đúng thứ người dùng đang lo: dữ liệu cũ còn nguyên, vẫn xem
+ * và xuất được; phiếu đang cân dở không mất. Bảng so sánh ở dưới cho ai muốn đọc.
  */
-export function QuotaWall({ used, limit }: Props) {
+export function QuotaWall() {
   useEffect(() => track('quota_wall_shown', { feature: 'other' }), []);
   return (
     <PageContainer width="content">
       <Card title={L.quotaWallTitle}>
         <div className="flex flex-col gap-3">
-          <p className="text-3xl font-extrabold text-ink">
-            {used}
-            <span className="text-lg font-semibold text-ink-3"> / {limit}</span>
-          </p>
           <p className="text-base text-ink-2">{L.quotaWallBody}</p>
 
           <Link
@@ -43,7 +30,6 @@ export function QuotaWall({ used, limit }: Props) {
           </Link>
 
           <p className="text-sm text-ink-3">{L.quotaDraftsKept}</p>
-          <p className="text-sm text-ink-3">{L.quotaResetHint}</p>
         </div>
       </Card>
 
