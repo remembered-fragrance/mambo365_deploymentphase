@@ -82,6 +82,9 @@ Luật được ép bằng máy trong [`.dependency-cruiser.cjs`](.dependency-cr
 Route công khai (ngoài cổng đăng nhập): `/dieu-khoan`, `/quyen-rieng-tu`, `/huong-dan`, và hai trang mở từ link trong
 thư `/dat-lai-mat-khau`, `/xac-nhan-email` (API dựng link bằng đúng hai đường dẫn này).
 
+Trang quản trị `/quan-tri` (mở gói bằng tay, đặt lại mật khẩu cho khách, phễu đo lường) không có mục điều hướng — người
+vận hành vào bằng URL. Ai là quản trị do máy chủ quyết bằng biến `ADMIN_USER_IDS` trên Render; app không giữ danh sách nào.
+
 ## Ba số phải giữ trong tầm
 
 | Chỉ số | Ngưỡng | Lần đo gần nhất |

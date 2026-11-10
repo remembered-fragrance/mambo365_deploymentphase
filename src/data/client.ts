@@ -68,12 +68,18 @@ export const warmUpApi = (): void => {
   fetch(`${apiUrl.replace(/\/+$/, '')}/v1/health`, { cache: 'no-store' }).catch(() => undefined);
 };
 
+/** Gốc URL của API, không có `/` ở cuối. */
+export const apiBaseUrl = (apiUrl ?? '').replace(/\/+$/, '');
+
+/** Token của phiên đang đăng nhập; `null` khi chưa đăng nhập. Chưa cấu hình máy chủ thì ném — không gửi gì đi. */
+export const accessToken = async (): Promise<string | null> => {
+  if (!apiUrl) throw new Error('Chưa cấu hình VITE_API_URL');
+  return (await client?.auth.getSession())?.data.session?.access_token ?? null;
+};
+
 const makeApi = (orgId: () => string | null): ApiClient => createApiClient({
-  baseUrl: (apiUrl ?? '').replace(/\/+$/, ''),
-  getAccessToken: async () => {
-    if (!apiUrl) throw new Error('Chưa cấu hình VITE_API_URL');
-    return (await client?.auth.getSession())?.data.session?.access_token ?? null;
-  },
+  baseUrl: apiBaseUrl,
+  getAccessToken: accessToken,
   getOrganizationId: orgId,
   fetch: (input, init) => {
     if (!apiUrl) throw new Error('Chưa cấu hình VITE_API_URL');
