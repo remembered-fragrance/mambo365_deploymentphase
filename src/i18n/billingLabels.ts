@@ -11,7 +11,8 @@ export const BILLING_LABELS = {
   billingContact: 'Gói doanh nghiệp tính theo số chi nhánh và kích hoạt tay — nhắn Zalo hỗ trợ để được báo giá.',
   // ─── Bậc gói ──────────────────────────────────────────────────────────────
   planTitle: 'Gói dịch vụ',
-  planFree: 'Gói miễn phí',
+  /** Hết dùng thử / hết hạn: sổ chỉ còn xem, không ghi phiếu mới (bảng giá Giai đoạn 1, chốt 10/11/2026). */
+  planFree: 'Hết hạn · chỉ xem',
   planPremium: 'Gói trả phí',
   planTrial: 'Đang dùng thử',
   planGrace: 'Vừa hết hạn',
@@ -20,12 +21,12 @@ export const BILLING_LABELS = {
   planDaysLeft: 'ngày nữa',
   planUpgrade: 'Nâng cấp',
   planSeePlans: 'Xem gói trả phí',
-  planCompareTitle: 'Miễn phí và trả phí khác nhau chỗ nào',
+  planCompareTitle: 'Hết hạn và trả phí khác nhau chỗ nào',
 
   // ─── Gói vựa (0.28.0) ─────────────────────────────────────────────────────
   planNameSolo: 'Gói Thương lái',
   planNameVua: 'Gói Vựa',
-  planSoloDesc: 'Làm một mình: phiếu không giới hạn, giữ sổ trên mạng, ảnh chứng từ. Không thêm người cân.',
+  planSoloDesc: 'Chủ tài khoản + 1 người: phiếu không giới hạn, giữ sổ trên mạng, ảnh chứng từ.',
   planVuaDesc: 'Có 3 người cân đi kèm, nhật ký thao tác và báo cáo tổng. Mua thêm người cân, tối đa 8 người.',
   planCurrent: 'Đang dùng',
   planBuy: 'Mua gói này',
@@ -47,6 +48,7 @@ export const BILLING_LABELS = {
   staffTopUpBuy: 'Mua thêm',
   staffBuyMore: 'Mua thêm người cân',
   payPeriodMonth: '1 tháng',
+  payPeriodHalfYear: '6 tháng',
   payPeriodYear: '1 năm',
   /** Ghép: "Gói Vựa · 1 năm · thêm 2 người cân". */
   payExtraStaffPrefix: 'thêm',
@@ -54,8 +56,7 @@ export const BILLING_LABELS = {
 
   // ─── Nội dung so sánh ─────────────────────────────────────────────────────
   featureReceipts: 'Ghi phiếu',
-  /** Ghép sau con số hạn mức: "30 phiếu mỗi tháng". Số lấy từ `config.ts`. */
-  featureReceiptsPerMonth: 'phiếu mỗi tháng',
+  featureReceiptsFree: 'Không ghi phiếu mới — xem, tìm, xuất sổ cũ',
   featureReceiptsPaid: 'Không giới hạn',
   featureParties: 'Nông hộ và người mua',
   featurePartiesDetail: 'Tên, số điện thoại, lịch sử mua bán và dư nợ từng người',
@@ -70,7 +71,8 @@ export const BILLING_LABELS = {
   /** Ghép: "3 người đi kèm, mua thêm tới 8 người". Số lấy từ `STAFF_INCLUDED`, `EXTRA_STAFF_MAX` của contracts. */
   featureStaffPaidMid: 'người đi kèm, mua thêm tới',
   featureStaffPaidSuffix: 'người',
-  featureStaffSolo: 'Không có — làm một mình',
+  /** Ghép sau `THUONG_LAI_STAFF`: "1 người đi kèm, không mua thêm". */
+  featureStaffSolo: 'người đi kèm, không mua thêm',
   /** Đầu dòng phụ dưới cột trả phí khi gói Thương lái khác gói Vựa. */
   featureSoloPrefix: 'Gói Thương lái:',
   featurePhotos: 'Ảnh phiếu cân, hoá đơn',
@@ -85,13 +87,11 @@ export const BILLING_LABELS = {
   featureYes: 'Có',
 
   // ─── Hạn mức ──────────────────────────────────────────────────────────────
-  quotaWallTitle: 'Tháng này bạn đã ghi hết số phiếu miễn phí',
+  quotaWallTitle: 'Gói đã hết hạn — sổ chỉ còn xem',
   quotaWallBody:
-    'Nâng cấp để ghi không giới hạn, thêm người cân và giữ sổ trên mạng phòng khi mất máy.',
-  quotaUsed: 'Đã ghi tháng này',
-  quotaOfLimit: 'trên',
+    'Phiếu, công nợ, báo cáo cũ vẫn xem, tìm và xuất Excel được. Mua gói để ghi phiếu mới không giới hạn và giữ sổ trên mạng phòng khi mất máy.',
   quotaLeftWarning: 'Còn ghi được',
-  quotaResetHint: 'Sang tháng mới số phiếu tự đếm lại từ đầu.',
+  quotaReadOnlyHint: 'Sổ chỉ còn xem — mua gói để ghi phiếu mới. Dữ liệu cũ giữ nguyên.',
   quotaDraftsKept: 'Phiếu đang cân dở vẫn còn nguyên, không mất đi đâu.',
 
   // ─── Việc cần gói (PlanGate) ────────────────────────────────────────────────
@@ -102,7 +102,7 @@ export const BILLING_LABELS = {
   gateBranches: 'Gói đã hết hạn — chi nhánh đang có vẫn giữ nguyên, gia hạn để thêm hoặc dùng lại chi nhánh.',
   gateSeePlans: 'Xem gói',
   gateUpgradeVua: 'Nâng lên gói Vựa',
-  gateSoloMembers: 'Gói Thương lái làm một mình — nâng lên gói Vựa để thêm người cân.',
+  gateSoloMembers: 'Gói Thương lái có 1 người đi kèm — nâng lên gói Vựa để thêm người cân.',
   gateSoloAudit: 'Gói Thương lái chưa có nhật ký thao tác — nâng lên gói Vựa để xem ai sửa, xoá gì.',
   gateSoloReports: 'Gói Thương lái chưa có báo cáo tổng — nâng lên gói Vựa để xem việc từng người.',
   gateAskOwner: 'Báo chủ gia hạn gói để dùng tiếp.',
@@ -113,11 +113,17 @@ export const BILLING_LABELS = {
   memberLimit: 'Gói hiện tại cho tối đa số người cân:',
 
   // ─── Giá ──────────────────────────────────────────────────────────────────
-  priceMonthly: 'Trả từng tháng',
-  priceYearly: 'Trả cả năm',
-  priceYearlyHint: 'Trả cả năm được tặng 2 tháng',
+  /** Ba lựa chọn của ô "Kỳ trả" — ngắn để vừa một dòng trên điện thoại. */
+  priceMonthly: 'Từng tháng',
+  priceHalfYearly: '6 tháng',
+  priceYearly: 'Cả năm',
+  priceYearlyHint: 'Cả năm: gói Thương lái giảm 15%, gói Vựa tặng 2 tháng',
+  priceHalfYearHint: '6 tháng: gói Thương lái giảm 10%',
   pricePerMonth: 'mỗi tháng',
+  pricePerHalfYear: 'mỗi 6 tháng',
   pricePerYear: 'mỗi năm',
+  /** Thẻ gói Vựa khi đang chọn kỳ 6 tháng (0.30.0 — kỳ 6 tháng chỉ có ở Thương lái). */
+  planVuaNoHalfYear: 'Gói Vựa trả từng tháng hoặc cả năm — chọn kỳ khác để mua gói này.',
 
   // ─── Chuyển khoản ─────────────────────────────────────────────────────────
   payTitle: 'Chuyển khoản để mở gói',
@@ -148,12 +154,12 @@ export const BILLING_LABELS = {
   // ─── Banner ───────────────────────────────────────────────────────────────
   bannerTrialLeft: 'Dùng thử còn',
   bannerGrace: 'Gói đã hết hạn, còn gửi lên mạng thêm',
-  bannerExpired: 'Gói đã hết hạn — sổ vẫn dùng được trên máy này, chỉ ngừng gửi lên mạng',
+  bannerExpired: 'Gói đã hết hạn — sổ chỉ còn xem: phiếu cũ vẫn xem, xuất được, chưa ghi phiếu mới',
   bannerExpiredCta: 'Mở lại',
   /** Người không trả tiền được (người cân, quản lý): không có nút Mở lại, chỉ báo chủ. */
-  bannerExpiredStaff: 'Gói đã hết hạn — sổ vẫn ghi bình thường, chỉ tạm ngừng gửi lên mạng. Báo chủ gia hạn.',
+  bannerExpiredStaff: 'Gói đã hết hạn — sổ chỉ còn xem, chưa ghi phiếu mới được. Báo chủ gia hạn.',
   syncBlocked: 'Chưa gửi lên mạng vì gói đã hết hạn',
-  syncBlockedDetail: 'Phiếu vẫn ghi bình thường và sẽ tự gửi đi khi mở lại gói.',
+  syncBlockedDetail: 'Phiếu đã ghi vẫn nằm trong máy và sẽ tự gửi đi khi mở lại gói.',
 
   // ─── Mã Khách hàng sáng lập (0.29.0) ──────────────────────────────────────
   promoTitle: 'Mã ưu đãi',
@@ -165,11 +171,12 @@ export const BILLING_LABELS = {
   promoBadChars: 'Mã chỉ gồm chữ, số và dấu gạch ngang — không có dấu cách.',
   promoApplied: 'Đã áp dụng mã',
   promoLeftPrefix: 'còn',
-  promoLeftSuffix: 'lần trả tháng giá ưu đãi, sau đó về giá thường.',
+  promoLeftSuffix: 'tháng giá ưu đãi (trả 6 tháng hay cả năm thì trừ đủ số tháng đó), sau đó về giá thường.',
   promoUsedUp: 'Đã dùng hết các lần trả giá ưu đãi — gói về giá thường.',
   promoListPrice: 'Giá thường',
-  promoYearIs: 'Giá ưu đãi năm =',
-  promoYearLost: 'Đã dùng giá ưu đãi tháng nên trả năm tính giá thường — trả từng tháng vẫn được giá ưu đãi.',
+  /** Ghép: "Giá ưu đãi = 12 × 149.000₫", "Giá ưu đãi = 6 × 149.000₫". */
+  promoPrepayIs: 'Giá ưu đãi =',
+  promoPrepayLost: 'Không còn đủ tháng giá ưu đãi cho cả kỳ này nên tính giá thường — trả từng tháng vẫn được giá ưu đãi.',
 
   // ─── Mã mời ───────────────────────────────────────────────────────────────
   referralTitle: 'Mã mời của bạn',

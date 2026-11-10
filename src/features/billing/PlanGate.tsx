@@ -28,9 +28,11 @@ interface Props {
     | 'season';
 }
 
-/** Ba việc gói Thương lái không có (`PLAN_EXCLUDES.thuong_lai`) — bị chặn vì gói thấp thì nói câu riêng. */
+/**
+ * Việc gói Thương lái không có (`PLAN_EXCLUDES.thuong_lai`) — bị chặn vì gói thấp thì nói câu riêng. Thêm người thì
+ * Thương lái có (1 người, 0.30.0): đủ chỗ do màn Người cân nói, không qua đây.
+ */
 const SOLO: Partial<Record<Props['feature'], { readonly entitlement: Entitlement; readonly reason: string }>> = {
-  members: { entitlement: 'members:add', reason: L.gateSoloMembers },
   audit: { entitlement: 'audit:view', reason: L.gateSoloAudit },
   reports: { entitlement: 'reports:org', reason: L.gateSoloReports },
 };

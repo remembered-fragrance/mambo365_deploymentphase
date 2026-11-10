@@ -23,12 +23,14 @@ describe('trang pháp lý trong app', () => {
 
   it('Điều khoản nói đúng giá, dùng thử, hoàn tiền, hạn mức miễn phí trong config', () => {
     const text = textOf(TERMS);
-    for (const price of [...Object.values(PLAN_PRICES).flatMap((p) => [p[1], p[12]]), STAFF_PRICE[1], STAFF_PRICE[12]]) {
+    for (const price of [...Object.values(PLAN_PRICES).flatMap((p) => Object.values(p)), STAFF_PRICE[1], STAFF_PRICE[12]]) {
       expect(text).toContain(vnd(price));
     }
     expect(text).toContain(`${TRIAL_DAYS} ngày`);
     expect(text).toContain(`${REFUND_DAYS} ngày`);
-    expect(text).toContain(`${FREE_RECEIPTS_PER_MONTH} phiếu`);
+    // Bảng giá Giai đoạn 1 (chốt 10/11/2026): hết dùng thử chỉ xem, không ghi phiếu mới.
+    expect(FREE_RECEIPTS_PER_MONTH).toBe(0);
+    expect(text).toContain('chỉ còn xem');
     expect(text).toContain(SUPPORT_ZALO);
   });
 

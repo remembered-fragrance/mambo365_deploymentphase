@@ -83,7 +83,7 @@ export const fetchPaymentIntents = async (): Promise<PaymentIntent[]> => (await 
  * số người cân trả đúng ý định cũ, không sinh thêm mã.
  */
 export const createPaymentIntent = async (input: PaymentIntentCreateInput): Promise<PaymentIntent> => {
-  // Mua người cân không có số tháng (hết hạn cùng gói) — sự kiện chỉ nhận 1 | 12 nên ghi 1.
+  // Mua người cân không có số tháng (hết hạn cùng gói) — sự kiện chỉ nhận 1 | 6 | 12 nên ghi 1.
   track('checkout_started', { months: input.kind === 'staff' ? 1 : input.months });
   return api.billing.createIntent(input);
 };

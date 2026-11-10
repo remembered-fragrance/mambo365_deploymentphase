@@ -4,7 +4,7 @@
  * là sắp có.
  */
 
-import { FREE_RECEIPTS_PER_MONTH, GRACE_DAYS, SUPPORT_ZALO } from '@/config';
+import { GRACE_DAYS, SUPPORT_ZALO } from '@/config';
 import { list, note, p, steps, type LegalDoc } from './legalDoc';
 
 export const GUIDE: LegalDoc = {
@@ -83,7 +83,7 @@ export const GUIDE: LegalDoc = {
           `Không có email: nhắn Zalo ${SUPPORT_ZALO}. Chúng tôi gọi lại đúng số đã đăng ký và hỏi vài thông tin về sổ trước khi đặt lại — hỏi kỹ vì ai đặt lại được mật khẩu là đọc được sổ tiền của bạn.`,
         ),
         p('Hết hạn gói thì sổ có bị khoá không?'),
-        list(`Không. App đồng bộ thêm ${GRACE_DAYS} ngày kèm nhắc nhở, rồi về gói miễn phí ${FREE_RECEIPTS_PER_MONTH} phiếu mỗi tháng. Xem và xuất sổ, công nợ vẫn như thường; người cân và ảnh đã có giữ nguyên, chỉ thêm người và gửi ảnh mới là chờ gia hạn.`),
+        list(`Không mất gì. App đồng bộ thêm ${GRACE_DAYS} ngày kèm nhắc nhở, rồi sổ chỉ còn xem: phiếu, công nợ, báo cáo cũ vẫn xem, tìm và xuất file như thường; người cân và ảnh đã có giữ nguyên. Ghi phiếu mới, thêm người và gửi ảnh mới thì chờ gia hạn.`),
         p('Có tự trừ tiền hằng tháng không?'),
         list('Không. Trả bằng chuyển khoản, hết hạn thì bạn chủ động chuyển tiếp. Không ai giữ số thẻ của bạn.'),
         p('Chuyển khoản rồi mà gói chưa mở?'),

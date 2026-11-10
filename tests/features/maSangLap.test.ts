@@ -30,7 +30,8 @@ const offerOf = (promo: PromoView | null): BillingOffer => ({
     { plan: 'vua', months: 1, amount: 449_000 },
     { plan: 'vua', months: 12, amount: 4_490_000 },
     { plan: 'thuong_lai', months: 1, amount: promo && promo.periodsLeft > 0 ? 149_000 : 199_000 },
-    { plan: 'thuong_lai', months: 12, amount: promo?.periodsLeft === 12 ? 1_788_000 : 1_990_000 },
+    { plan: 'thuong_lai', months: 6, amount: promo && promo.periodsLeft >= 6 ? 894_000 : 1_074_600 },
+    { plan: 'thuong_lai', months: 12, amount: promo?.periodsLeft === 12 ? 1_788_000 : 2_030_400 },
   ],
   staffPrices: [
     { months: 1, amount: 79_000 },
@@ -48,7 +49,7 @@ const SUMMARY: PlanSummary = {
   branchLimit: null,
   plan: 'thuong_lai',
   extraStaff: 0,
-  staffLimit: 0,
+  staffLimit: 1,
 };
 
 const redeemPromo = vi.fn<(code: string) => Promise<void>>();
@@ -96,10 +97,11 @@ const render = () =>
 
 const text = () => host.textContent ?? '';
 const button = (label: string) => [...host.querySelectorAll('button')].find((b) => b.textContent === label);
-const monthly = async () => {
-  const radio = [...host.querySelectorAll('button[role="radio"]')].find((b) => b.textContent === L.priceMonthly) as HTMLElement;
+const period = async (label: string) => {
+  const radio = [...host.querySelectorAll('button[role="radio"]')].find((b) => b.textContent === label) as HTMLElement;
   await act(async () => radio.click());
 };
+const monthly = () => period(L.priceMonthly);
 const type = (value: string) => {
   const input = [...host.querySelectorAll('input')].find((i) => i.labels?.[0]?.textContent === L.promoInput);
   if (!input) throw new Error('Không thấy ô nhập mã');
@@ -151,23 +153,40 @@ describe('mã Khách hàng sáng lập trên màn Gói', () => {
     expect(text()).toContain(`${L.promoLeftPrefix} 12 ${L.promoLeftSuffix}`);
   });
 
-  it('trả năm khi còn đủ 12 kỳ: 1.788.000₫, giá thường 1.990.000₫ gạch ngang', () => {
+  it('trả năm khi còn đủ 12 kỳ: 1.788.000₫, giá thường 2.030.400₫ gạch ngang', () => {
     sub = subscriptionOf(offerOf(PROMO));
     render();
 
     expect(text()).toContain(formatVnd(1_788_000));
-    expect([...host.querySelectorAll('s')].map((s) => s.textContent)).toEqual([formatVnd(1_990_000)]);
+    expect([...host.querySelectorAll('s')].map((s) => s.textContent)).toEqual([formatVnd(2_030_400)]);
   });
 
   it('năm ưu đãi ghi rõ 12 × 149.000₫; đã dùng 1 kỳ thì năm về giá thường và có câu nhắc trả tháng', () => {
     sub = subscriptionOf(offerOf(PROMO));
     render();
-    expect(text()).toContain(`${L.promoYearIs} 12 × ${formatVnd(149_000)}`);
-    expect(text()).not.toContain(L.promoYearLost);
+    expect(text()).toContain(`${L.promoPrepayIs} 12 × ${formatVnd(149_000)}`);
+    expect(text()).not.toContain(L.promoPrepayLost);
 
     sub = subscriptionOf(offerOf({ ...PROMO, periodsLeft: 11 }));
     render();
-    expect(text()).toContain(L.promoYearLost);
+    expect(text()).toContain(L.promoPrepayLost);
+  });
+
+  it('6 tháng (0.30.0): 894.000₫ = 6 × 149.000₫, giá thường 1.074.600₫; còn 5 kỳ thì về giá thường', async () => {
+    sub = subscriptionOf(offerOf(PROMO));
+    render();
+    await period(L.priceHalfYearly);
+    expect(text()).toContain(formatVnd(894_000));
+    expect(text()).toContain(`${L.promoPrepayIs} 6 × ${formatVnd(149_000)}`);
+    expect([...host.querySelectorAll('s')].map((s) => s.textContent)).toEqual([formatVnd(1_074_600)]);
+    // Gói Vựa không có kỳ 6 tháng: thẻ chỉ nhắc chọn kỳ khác, không có nút mua.
+    expect(text()).toContain(L.planVuaNoHalfYear);
+
+    sub = subscriptionOf(offerOf({ ...PROMO, periodsLeft: 5 }));
+    render();
+    await period(L.priceHalfYearly);
+    expect(text()).toContain(formatVnd(1_074_600));
+    expect(text()).toContain(L.promoPrepayLost);
   });
 
   it('gói Vựa đã trả còn hạn: không có ô nhập mã, báo nhập sau ngày hết hạn', () => {

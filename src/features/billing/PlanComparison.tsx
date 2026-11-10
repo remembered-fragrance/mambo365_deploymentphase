@@ -8,15 +8,16 @@
  * với `DataView`: điện thoại không bao giờ cuộn ngang.
  *
  * Cột trả phí là gói Vựa. Gói Thương lái (0.28.0) chỉ khác ở vài dòng — dòng đó ghi thêm một câu phụ
- * "Gói Thương lái: …" ngay dưới, thay vì thêm cột thứ ba làm chật màn điện thoại.
+ * "Gói Thương lái: …" ngay dưới, thay vì thêm cột thứ ba làm chật màn điện thoại. Cột trái là lúc hết dùng thử /
+ * hết hạn: sổ chỉ còn xem (bảng giá Giai đoạn 1, chốt 10/11/2026).
  *
  * 🔴 Chỉ hứa đúng cái code chặn (KE_HOACH_GOI_PRO §7): dòng khác nhau giữa hai bên phải gắn `entitlement` có
  * trong bảng quyền lợi của contracts; dòng không gắn là dòng hai bên như nhau. Có câu Thương lái (`solo`) đúng khi
- * quyền lợi đó nằm trong `PLAN_EXCLUDES.thuong_lai`. Test giữ các luật đó.
+ * quyền lợi đó nằm trong `PLAN_EXCLUDES.thuong_lai`, hoặc ở dòng người cân (số người theo `staffLimit`, 0.30.0).
+ * Test giữ các luật đó.
  */
 
-import { EXTRA_STAFF_MAX, STAFF_INCLUDED, type Entitlement } from '@mambo/contracts';
-import { FREE_RECEIPTS_PER_MONTH } from '@/config';
+import { EXTRA_STAFF_MAX, STAFF_INCLUDED, THUONG_LAI_STAFF, type Entitlement } from '@mambo/contracts';
 import { L } from '@/i18n/labels';
 
 export interface Row {
@@ -31,7 +32,7 @@ export interface Row {
 export const ROWS: readonly Row[] = [
   {
     what: L.featureReceipts,
-    free: `${FREE_RECEIPTS_PER_MONTH} ${L.featureReceiptsPerMonth}`,
+    free: L.featureReceiptsFree,
     paid: L.featureReceiptsPaid,
     entitlement: 'receipts:unlimited',
   },
@@ -40,7 +41,7 @@ export const ROWS: readonly Row[] = [
     what: L.featureStaff,
     free: L.featureStaffFree,
     paid: `${STAFF_INCLUDED} ${L.featureStaffPaidMid} ${STAFF_INCLUDED + EXTRA_STAFF_MAX} ${L.featureStaffPaidSuffix}`,
-    solo: L.featureStaffSolo,
+    solo: `${THUONG_LAI_STAFF} ${L.featureStaffSolo}`,
     entitlement: 'members:add',
   },
   { what: L.featurePhotos, free: L.featurePhotosFree, paid: L.featurePhotosPaid, entitlement: 'attachments' },
