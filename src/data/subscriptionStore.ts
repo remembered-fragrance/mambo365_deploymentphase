@@ -109,6 +109,11 @@ export const loadSubscription = async (orgId: string | null, force = false, bill
   });
 };
 
+/** Bảng giá mới máy chủ vừa trả (sau khi nhập mã) — hiện ngay, chưa cần hỏi lại. */
+export const setBillingOffer = (offer: BillingOffer): void => {
+  emit({ ...snapshot, offer });
+};
+
 /** Thêm ý định thanh toán vừa tạo vào danh sách đang hiện, chưa cần hỏi lại. */
 export const addPaymentIntent = (intent: PaymentIntent): void => {
   emit({ ...snapshot, intents: [intent, ...snapshot.intents] });

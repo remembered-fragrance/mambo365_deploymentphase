@@ -38,6 +38,7 @@ const OFFER: BillingOffer = {
     { months: 12, amount: 790_000 },
   ],
   staffTopUps: [],
+  promo: null,
 };
 
 const TRIAL: PlanState = { tier: 'trial', premium: true, endsAt: '2026-11-30T00:00:00.000Z', daysLeft: 30 };
@@ -64,6 +65,7 @@ const subscriptionOf = (plan: PlanState, planCode: PlanCode | null, offer: Billi
   loading: false,
   refresh: () => undefined,
   startPayment,
+  redeemPromo: async () => undefined,
 });
 
 const summaryOf = (plan: PlanCode | null, extraStaff = 0): PlanSummary => ({

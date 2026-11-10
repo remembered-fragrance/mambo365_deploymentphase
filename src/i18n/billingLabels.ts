@@ -155,6 +155,22 @@ export const BILLING_LABELS = {
   syncBlocked: 'Chưa gửi lên mạng vì gói đã hết hạn',
   syncBlockedDetail: 'Phiếu vẫn ghi bình thường và sẽ tự gửi đi khi mở lại gói.',
 
+  // ─── Mã Khách hàng sáng lập (0.29.0) ──────────────────────────────────────
+  promoTitle: 'Mã ưu đãi',
+  promoHint: 'Mã Khách hàng sáng lập chỉ giảm giá gói Thương lái, và gắn luôn với tài khoản này sau khi áp dụng.',
+  promoVuaLocked: 'Mã sáng lập dùng cho gói Thương lái. Gói Vựa đang còn hạn — nhập mã sau ngày',
+  promoVuaWarning: 'Tài khoản đang dùng gói Vựa — mã chỉ dùng được khi chuyển sang gói Thương lái.',
+  promoInput: 'Nhập mã',
+  promoApply: 'Áp dụng',
+  promoBadChars: 'Mã chỉ gồm chữ, số và dấu gạch ngang — không có dấu cách.',
+  promoApplied: 'Đã áp dụng mã',
+  promoLeftPrefix: 'còn',
+  promoLeftSuffix: 'lần trả tháng giá ưu đãi, sau đó về giá thường.',
+  promoUsedUp: 'Đã dùng hết các lần trả giá ưu đãi — gói về giá thường.',
+  promoListPrice: 'Giá thường',
+  promoYearIs: 'Giá ưu đãi năm =',
+  promoYearLost: 'Đã dùng giá ưu đãi tháng nên trả năm tính giá thường — trả từng tháng vẫn được giá ưu đãi.',
+
   // ─── Mã mời ───────────────────────────────────────────────────────────────
   referralTitle: 'Mã mời của bạn',
   referralHint: 'Người quen đăng ký bằng mã này thì hệ thống ghi nhận là bạn giới thiệu.',

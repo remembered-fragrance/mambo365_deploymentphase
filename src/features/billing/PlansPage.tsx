@@ -16,6 +16,7 @@ import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { PaymentQrDialog } from './PaymentQrDialog';
 import { PlanComparison } from './PlanComparison';
+import { PromoCodeCard } from './PromoCodeCard';
 import { daysLeftText, PLAN_NAME, planLabel, planTone } from './planText';
 
 type Months = 1 | 12;
@@ -41,7 +42,7 @@ const purchaseText = (input: PaymentIntentCreateInput): string => {
  * Doanh nghiệp không tự mua — chỉ có câu liên hệ Zalo.
  */
 export function PlansPage() {
-  const { plan, planCode, intents, loading, startPayment, refresh, billingAvailable, offer } = useSubscription();
+  const { plan, planCode, intents, loading, startPayment, refresh, billingAvailable, offer, redeemPromo } = useSubscription();
   const { plan: summary, refreshPlan } = useStore();
   const [months, setMonths] = useState<Months>(12);
   const [extraStaff, setExtraStaff] = useState(() => (summary?.plan === 'vua' ? summary.extraStaff : 0));
@@ -68,6 +69,7 @@ export function PlansPage() {
     offer?.prices.find((p) => p.plan === code && p.months === months)?.amount ?? PLAN_PRICES[code][months];
   const staffPrice = offer?.staffPrices.find((p) => p.months === months)?.amount ?? STAFF_PRICE[months];
   const topUps = offer?.staffTopUps ?? [];
+  const promo = offer?.promo ?? null;
   const topUpAmount = topUps.find((t) => t.extraStaff === topUp)?.amount;
   // Hạ gói chỉ khi hết hạn (chốt 30/10) — máy chủ cũng từ chối, khoá nút trước để không bày nút bấm vào là lỗi.
   const downgradeLocked = planCode === 'vua' && plan.tier === 'premium';
@@ -103,6 +105,21 @@ export function PlansPage() {
           {formatVnd(price(code))}{' '}
           <span className="text-base font-semibold text-ink-3">{months === 12 ? L.pricePerYear : L.pricePerMonth}</span>
         </p>
+        {/* Giá sau mã sáng lập thấp hơn bảng giá — ghi giá thường gạch ngang để thấy được ưu đãi. */}
+        {price(code) < PLAN_PRICES[code][months] && (
+          <p className="text-sm text-ink-3">
+            {L.promoListPrice} <s className="num">{formatVnd(PLAN_PRICES[code][months])}</s>
+            {months === 12 && promo?.plan === code && (
+              <>
+                {' · '}
+                {L.promoYearIs} 12 × <span className="num">{formatVnd(promo.monthlyAmount)}</span>
+              </>
+            )}
+          </p>
+        )}
+        {months === 12 && promo?.plan === code && promo.periodsLeft > 0 && promo.periodsLeft < 12 && (
+          <p className="text-sm text-ink-2">{L.promoYearLost}</p>
+        )}
 
         {code === 'vua' && (
           <div className="mt-3 flex flex-col gap-2">
@@ -168,6 +185,14 @@ export function PlansPage() {
             {error}
           </p>
         )}
+
+        {/* Trên bảng giá: nhập mã xong thấy ngay giá đổi ở thẻ bên dưới. */}
+        {offer?.selfServe && <PromoCodeCard
+            promo={offer.promo}
+            planCode={planCode}
+            vuaPaidUntil={downgradeLocked ? (plan.endsAt ?? null) : null}
+            onRedeem={redeemPromo}
+          />}
 
         {offer && !offer.selfServe ? (
           <Card title={L.planUpgrade}>

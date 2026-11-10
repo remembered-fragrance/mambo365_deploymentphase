@@ -19,11 +19,12 @@ import { FREE_RECEIPTS_PER_MONTH, GRACE_DAYS } from '@/config';
 import { quotaFor, type QuotaState } from '@mambo/core/receiptQuota';
 import { planFor, type PaymentIntent, type PlanState, type Subscription } from '@mambo/core/subscription';
 import type { PaymentIntentCreateInput, PlanCode } from '@mambo/contracts';
-import { createPaymentIntent, type BillingOffer } from '../billing';
+import { createPaymentIntent, redeemPromoCode, type BillingOffer } from '../billing';
 import { isDemoActive } from '../demoMode';
 import {
   addPaymentIntent,
   loadSubscription,
+  setBillingOffer,
   subscribeSubscription,
   subscriptionSnapshot,
   type SubscriptionSnapshot,
@@ -46,6 +47,8 @@ export interface SubscriptionValue {
   readonly refresh: () => void;
   /** Tạo ý định thanh toán (mua / gia hạn gói, hoặc mua thêm người cân) và trả về mã đối soát để vẽ QR. */
   readonly startPayment: (input: PaymentIntentCreateInput) => Promise<PaymentIntent>;
+  /** Nhập mã Khách hàng sáng lập; thành công thì bảng giá đổi ngay. Lỗi ném ra kèm câu báo của máy chủ. */
+  readonly redeemPromo: (code: string) => Promise<void>;
 }
 
 const SERVER: SubscriptionSnapshot = { subscription: null, intents: [], offer: null, loading: false };
@@ -86,6 +89,10 @@ export function useSubscription(): SubscriptionValue {
     return intent;
   }, []);
 
+  const redeemPromo = useCallback(async (code: string) => {
+    setBillingOffer(await redeemPromoCode(code));
+  }, []);
+
   return {
     billingAvailable: snapshot.offer?.selfServe ?? false,
     offer: snapshot.offer,
@@ -97,5 +104,6 @@ export function useSubscription(): SubscriptionValue {
     loading: snapshot.loading,
     refresh,
     startPayment,
+    redeemPromo,
   };
 }
