@@ -9,9 +9,8 @@
  * màn khác nhau vẫn chỉ là một lượt hỏi máy chủ, và tất cả cùng thấy một câu
  * trả lời.
  *
- * Chưa cấu hình máy chủ (tài khoản của máy này) thì không có gói nào → bậc
- * `free`. Đúng như mô tả gói Free của CP4: một máy, dữ liệu nằm tại máy, tối đa
- * 30 phiếu mỗi tháng.
+ * Hết dùng thử / hết hạn thì sổ chỉ còn xem — hạn mức 0 phiếu (bảng giá Giai đoạn 1, chốt 10/11/2026). Vì hạn mức
+ * là 0, chỉ chặn khi BIẾT CHẮC gói đã hết: xem `knownFree`.
  */
 
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
@@ -53,6 +52,15 @@ export interface SubscriptionValue {
 
 const SERVER: SubscriptionSnapshot = { subscription: null, intents: [], offer: null, loading: false };
 
+/**
+ * Gói đã hết thật chưa — điều kiện chặn ghi phiếu. Chưa tải được gói (máy mới chưa có bản nhớ, API đang khởi động
+ * ~20 giây, mất mạng) thì `subscription` là null và `planFor` ra `free`: chặn lúc đó là người vừa đăng ký dùng thử
+ * thấy màn "gói đã hết hạn" ngay phiếu đầu. Nên: chưa có gói thì tin gói của `/v1/me` (nhớ trong máy); chưa có nốt
+ * thì không chặn — phần đáng tiền (đồng bộ) máy chủ vẫn chặn.
+ */
+export const knownFree = (plan: PlanState, subscription: Subscription | null, summaryTier: string | null | undefined): boolean =>
+  subscription !== null ? !plan.premium : summaryTier === 'free';
+
 export function useSubscription(): SubscriptionValue {
   const { data, currentOrgId, permissions, bookKey, plan: summary } = useStore();
   const userId = currentOrgId;
@@ -71,11 +79,11 @@ export function useSubscription(): SubscriptionValue {
   const plan = planFor(snapshot.subscription, new Date(), GRACE_DAYS);
 
   /**
-   * Chế độ trình diễn không bị hạn mức: sổ mẫu có sẵn hơn 30 phiếu, chặn ngay
+   * Chế độ trình diễn không bị hạn mức: sổ mẫu có sẵn nhiều phiếu, chặn ngay
    * lúc mở ra xem thì cái người xem thấy đầu tiên là màn đòi tiền.
    */
   const quota = quotaFor(data, new Date(), {
-    premium: plan.premium || isDemoActive(bookKey),
+    premium: !knownFree(plan, snapshot.subscription, summary?.tier) || isDemoActive(bookKey),
     limit: FREE_RECEIPTS_PER_MONTH,
   });
 
