@@ -133,6 +133,25 @@ describe('lời gọi /v1/admin/*', () => {
     expect(init.body).toBeUndefined();
   });
 
+  it('fetchPayments: GET /v1/admin/payments với khoảng from–to; dòng thiếu một phía (chưa trả, mở tay, tổ chức đã xoá) vẫn hợp lệ', async () => {
+    const at = '2026-11-09T02:00:00.000Z';
+    const payments = {
+      from: '2026-11-03T00:00:00.000Z',
+      to: '2026-11-10T00:00:00.000Z',
+      rows: [
+        { at, organization: null, intent: null, bank: { bankTxId: 'FT-TAY', amount: 449_000, source: 'admin', outcome: 'applied', createdAt: at } },
+        { at, organization: { id: ORG_ID, name: 'Vựa Tư Hùng', type: 'trader' }, intent: { id: ORG_ID, amount: 449_000, code: 'AB12CD', status: 'pending', createdAt: at }, bank: null },
+      ],
+    };
+    const transport = vi.fn(async () => json(payments));
+    vi.stubGlobal('fetch', transport);
+    const { fetchPayments } = await load();
+    await expect(fetchPayments(7, new Date('2026-11-10T00:00:00.000Z'))).resolves.toEqual(payments);
+    const [url, init] = transport.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe('https://backend.example/v1/admin/payments?from=2026-11-03T00%3A00%3A00.000Z&to=2026-11-10T00%3A00%3A00.000Z');
+    expect(init.method).toBe('GET');
+  });
+
   it('phản hồi sai hợp đồng → CONTRACT_MISMATCH, không chảy vào màn hình', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({ rows: 'sai' })));
     const { fetchFunnel } = await load();
