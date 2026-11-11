@@ -1,12 +1,12 @@
 /**
- * Quản trị: mở gói bằng tay, đặt lại mật khẩu cho khách, phễu đo lường (`/v1/admin/*`).
+ * Quản trị: mở gói bằng tay, đặt lại mật khẩu cho khách, giao dịch mua gói, phễu đo lường (`/v1/admin/*`).
  *
  * Quyền do MÁY CHỦ quyết (`ADMIN_USER_IDS` trên Render). App không giữ danh sách quản trị nào, và `/v1/me` không
  * nói ai là quản trị — trang hỏi phễu trước (lời gọi chỉ đọc); máy chủ từ chối thì `adminDeniedMessage` nói vì sao.
  *
- * Ba route này có trong `@mambo/contracts` nhưng `@mambo/sdk` 0.28.0 chưa có hàm gọi, nên `call` dưới đây gọi tay
- * theo đúng cách của SDK: cùng token, lỗi là `ApiError`, phản hồi kiểm bằng schema của hợp đồng.
- * shortcut: chép lõi `call` của SDK, đổi sang `api.admin.*` khi SDK có.
+ * Các route này có trong `@mambo/contracts` nhưng `@mambo/sdk` mới chỉ có `api.admin.payments` (0.31.0), nên `call`
+ * dưới đây gọi tay theo đúng cách của SDK: cùng token, lỗi là `ApiError`, phản hồi kiểm bằng schema của hợp đồng.
+ * shortcut: chép lõi `call` của SDK, đổi sang `api.admin.*` khi SDK có đủ.
  */
 
 import {
@@ -16,6 +16,7 @@ import {
   routes,
   type AdminActivatePlanResult,
   type AdminFunnel,
+  type AdminPayments,
   type PlanCode,
   type RouteResponse,
 } from '@mambo/contracts';
@@ -24,7 +25,7 @@ import { z } from 'zod';
 import { L } from '@/i18n/labels';
 import { accessToken, apiBaseUrl } from './client';
 
-type AdminRoute = 'adminActivatePlan' | 'adminResetPassword' | 'adminFunnel';
+type AdminRoute = 'adminActivatePlan' | 'adminResetPassword' | 'adminFunnel' | 'adminPayments';
 
 const call = async <N extends AdminRoute>(
   name: N,
@@ -130,12 +131,21 @@ export const resetPassword = async (input: AdminResetPasswordInput): Promise<voi
 
 const DAY_MS = 86_400_000;
 
+const lastDays = (days: number, now: Date) => ({
+  from: new Date(now.getTime() - days * DAY_MS).toISOString(),
+  to: now.toISOString(),
+});
+
 /** Phễu của `days` ngày gần nhất, tính tới `now`. */
 export const fetchFunnel = (days: number, now: Date = new Date()): Promise<AdminFunnel> =>
-  call('adminFunnel', undefined, {
-    from: new Date(now.getTime() - days * DAY_MS).toISOString(),
-    to: now.toISOString(),
-  });
+  call('adminFunnel', undefined, lastDays(days, now));
+
+/**
+ * Giao dịch mua gói của `days` ngày gần nhất, mới nhất trước (tối đa `ADMIN_PAYMENTS_MAX` dòng).
+ * 🔴 Mỗi lần gọi máy chủ ghi một dòng `admin_access_log` — chỉ gọi khi người quản trị bấm xem.
+ */
+export const fetchPayments = (days: number, now: Date = new Date()): Promise<AdminPayments> =>
+  call('adminPayments', undefined, lastDays(days, now));
 
 // ─── Lỗi ─────────────────────────────────────────────────────────────────────
 

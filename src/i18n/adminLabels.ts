@@ -71,9 +71,30 @@ export const ADMIN_LABELS = {
   adminResetDoneSuffix: 'Bạn báo mật khẩu mới cho khách và nhắc họ đổi lại sau khi đăng nhập.',
   adminErrPhone: 'Số điện thoại cần ít nhất 9 số.',
 
-  // ─── Giao dịch mua gói (chờ API) ──────────────────────────────────────────
+  // ─── Giao dịch mua gói ────────────────────────────────────────────────────
   adminPaymentsTitle: 'Giao dịch mua gói',
-  adminPaymentsSoon: 'Danh sách giao dịch sẽ hiện ở đây khi máy chủ có API cho phần này.',
+  adminPaymentsHint: 'Mọi lần định chuyển khoản và mọi khoản tiền vào. Mỗi lần bấm xem, máy chủ ghi một dòng vào nhật ký quản trị.',
+  adminPaymentsShow: 'Xem giao dịch',
+  adminPaymentsEmpty: 'Không có giao dịch nào trong khoảng này.',
+  adminPaymentsCapped: 'Đang hiện 500 dòng mới nhất — chọn khoảng ngắn hơn để xem đủ.',
+  adminPaymentsAt: 'Lúc',
+  adminPaymentsOrgDeleted: 'Tổ chức đã xoá',
+  adminPaymentsCode: 'Mã chuyển khoản',
+  adminPaymentsDue: 'Phải trả',
+  adminPaymentsPaid: 'Đã nhận',
+  adminPaymentsStatus: 'Tình trạng',
+  /** Ghép sau tình trạng khi tiền do quản trị viên ghi nhận: "Đã mở gói (mở tay)". */
+  adminPaymentsByHand: 'mở tay',
+  // Tiền đã vào sổ đối soát — chỉ dòng đầu là đã gia hạn gói, ba dòng sau cần người xem lại.
+  adminPayApplied: 'Đã mở gói',
+  adminPayUnderpaid: 'Chuyển thiếu — chưa mở gói',
+  adminPayNoIntent: 'Không khớp mã nào — chưa mở gói',
+  adminPayIntentClosed: 'Mã đã đóng — chưa mở gói',
+  // Mới định chuyển khoản, chưa có tiền vào.
+  adminPayPending: 'Chưa thấy tiền vào',
+  adminPayExpired: 'Hết hạn, chưa trả',
+  adminPayFailed: 'Thất bại',
+  adminPayPaid: 'Đã trả',
 
   // ─── Phễu đo lường ────────────────────────────────────────────────────────
   adminFunnelTitle: 'Phễu đo lường',

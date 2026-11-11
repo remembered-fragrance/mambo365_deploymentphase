@@ -877,6 +877,24 @@ sách, lời gọi phễu (chỉ đọc) là phép thử quyền của cả tran
 - Còn thiếu: `branchLimit` của doanh nghiệp; danh sách giao dịch chờ `GET /v1/admin/payments` (BE chưa có); hộp xác
   nhận mở gói chưa có tên tổ chức (BE không có API tra tổ chức); không chỉnh được người cân thêm khi "giữ gói đang có".
 
+## Trang quản trị: giao dịch mua gói · `@mambo/*` 0.31.0 · 11/11/2026
+
+Nhánh `feat/admin-giao-dich`; phía máy chủ là BE #57 (merge `8f45162`, tag `v0.31.0`). Thẻ "Giao dịch mua gói" ở `/quan-tri` thay câu giữ chỗ bằng bảng thật, gọi
+`GET /v1/admin/payments?from&to` (BE 0.31.0 — không migration, chỉ thêm).
+
+- **🔴 Chỉ gọi khi bấm "Xem giao dịch"** (`useAdminPayments(request)`, `request = null` thì không gọi): mỗi lần xem máy
+  chủ ghi một dòng `admin_access_log` (`list-payments`), nên mở trang để đặt lại mật khẩu không được tính là đã xem tiền.
+- Mỗi dòng = một lần định chuyển khoản và / hoặc một khoản tiền vào sổ đối soát. Cột "Tình trạng" (`paymentStatus.ts`):
+  tiền đã vào thì nói theo sổ đối soát, chỉ `applied` là đã gia hạn; `underpaid` / `no_intent` / `intent_closed` tô đỏ —
+  khách đã trả tiền mà gói chưa mở, phải xem rồi mở tay ở thẻ trên. Chưa có tiền vào thì nói theo trạng thái ý định.
+- API cũ chưa có route (404) → câu `adminUnavailable`, không phải "HTTP 404". Chạm trần 500 dòng → nhắc thu hẹp khoảng.
+- `src/data/admin.ts` vẫn gọi tay qua `call` (SDK 0.31.0 mới có `api.admin.payments`, ba route kia chưa có).
+- Test: `tests/data/admin.test.ts` (`fetchPayments`), `tests/features/adminPage.test.ts` (không tự gọi, bấm mới gọi,
+  dòng cần xem, lỗi). `npm run verify` xanh 80 file / 497 test trên release `v0.31.0`. BE: `verify` + `test:db` xanh
+  (19 file / 305 test), CI của BE #57 xanh.
+- Chưa kiểm: chưa nhìn bảng trên trình duyệt với dữ liệu thật (cần tài khoản quản trị + API 0.31.0 đã deploy). Chưa có:
+  mã tổ chức để chép sang ô "Mở gói"; gói / số tháng của từng lần mua (hợp đồng 0.31.0 không trả).
+
 ---
 
 ## Ba số phải giữ trong tầm

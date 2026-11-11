@@ -3,8 +3,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import type { AdminFunnel } from '@mambo/contracts';
-import { adminDeniedMessage, adminErrorMessage, fetchFunnel } from '../admin';
+import type { AdminFunnel, AdminPayments } from '@mambo/contracts';
+import { adminDeniedMessage, adminErrorMessage, fetchFunnel, fetchPayments } from '../admin';
 
 export { activateInput, activatePlan, adminErrorMessage, ownedOrganizations, resetInput, resetPassword } from '../admin';
 export type { ActivateDraft, ResetDraft } from '../admin';
@@ -45,4 +45,34 @@ export const useAdminFunnel = (days: number): FunnelState => {
 
   const reload = useCallback(() => setTick((t) => t + 1), []);
   return { ...state, reload };
+};
+
+export interface PaymentsState {
+  readonly data: AdminPayments | null;
+  readonly loading: boolean;
+  readonly error: string | null;
+}
+
+/**
+ * Giao dịch mua gói. `request = null`: chưa bấm xem — KHÔNG gọi, vì mỗi lần xem máy chủ ghi một dòng nhật ký quản
+ * trị. Đưa một object mới (dù cùng số ngày) là xem lại.
+ */
+export const useAdminPayments = (request: { readonly days: number } | null): PaymentsState => {
+  const [state, setState] = useState<PaymentsState>({ data: null, loading: false, error: null });
+
+  useEffect(() => {
+    if (!request) return;
+    let cancelled = false;
+    setState((s) => ({ ...s, loading: true, error: null }));
+    fetchPayments(request.days).then(
+      (data) => !cancelled && setState({ data, loading: false, error: null }),
+      // API cũ chưa có route → 404 → câu "máy chủ chưa có chức năng", không phải "HTTP 404".
+      (err: unknown) => !cancelled && setState({ data: null, loading: false, error: adminDeniedMessage(err) ?? adminErrorMessage(err) }),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [request]);
+
+  return state;
 };

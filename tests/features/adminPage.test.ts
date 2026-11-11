@@ -7,13 +7,15 @@
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AdminActivatePlanInput, AdminActivatePlanResult } from '@mambo/contracts';
+import type { AdminActivatePlanInput, AdminActivatePlanResult, AdminPaymentRow } from '@mambo/contracts';
 import { formatDate } from '@mambo/core/format';
-import type { FunnelState } from '@/data/hooks/useAdmin';
+import type { FunnelState, PaymentsState } from '@/data/hooks/useAdmin';
 import { AdminPage } from '@/features/admin/AdminPage';
+import { paymentStatus } from '@/features/admin/paymentStatus';
 import { L } from '@/i18n/labels';
 
 const funnel = vi.hoisted(() => ({ current: null as unknown }));
+const payments = vi.hoisted(() => ({ loaded: null as unknown, requests: [] as unknown[] }));
 const activatePlan = vi.fn<(input: AdminActivatePlanInput) => Promise<AdminActivatePlanResult>>();
 const resetPassword = vi.fn<(input: unknown) => Promise<void>>();
 
@@ -21,6 +23,11 @@ const resetPassword = vi.fn<(input: unknown) => Promise<void>>();
 vi.mock('@/data/hooks/useAdmin', async (original) => ({
   ...(await original<typeof import('@/data/hooks/useAdmin')>()),
   useAdminFunnel: () => funnel.current,
+  // Chưa bấm xem (`request` null) thì không có gì; bấm rồi thì trả danh sách của ca thử.
+  useAdminPayments: (request: unknown) => {
+    if (request) payments.requests.push(request);
+    return request ? payments.loaded : { data: null, loading: false, error: null };
+  },
   activatePlan: (input: AdminActivatePlanInput) => activatePlan(input),
   resetPassword: (input: unknown) => resetPassword(input),
 }));
@@ -73,6 +80,7 @@ const dialog = () => document.body.querySelector('[role="dialog"]');
 
 beforeEach(() => {
   activatePlan.mockReset();
+  payments.requests.length = 0;
   resetPassword.mockReset();
   // jsdom không có matchMedia; ô tiền hỏi nó để chọn bàn phím số.
   vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: () => undefined, removeEventListener: () => undefined }));
@@ -101,7 +109,7 @@ describe('trang Quản trị', () => {
     expect(host.querySelector('input')).toBeNull();
   });
 
-  it('được vào → mở gói, đặt lại mật khẩu, chỗ chừa cho giao dịch, bảng phễu', () => {
+  it('được vào → mở gói, đặt lại mật khẩu, giao dịch mua gói, bảng phễu', () => {
     render(READY);
     for (const title of [L.adminActivateTitle, L.adminResetTitle, L.adminPaymentsTitle, L.adminFunnelTitle]) {
       expect([...host.querySelectorAll('h2')].map((h) => h.textContent)).toContain(title);
@@ -159,5 +167,49 @@ describe('trang Quản trị', () => {
     await click(button(dialog() as Element, L.adminActivateSubmit));
     expect(host.querySelector('[role="alert"]')?.textContent).toBe('Không có tài khoản với số này');
     expect(input(L.adminBankTxId).value).toBe('FT1');
+  });
+});
+
+describe('giao dịch mua gói', () => {
+  const at = '2026-11-09T02:00:00.000Z';
+  const org = { id: '11111111-1111-4111-8111-111111111111', name: 'Vựa Tư Hùng', type: 'trader' as const };
+  const intent = { id: '22222222-2222-4222-8222-222222222222', amount: 449_000, code: 'AB12CD', status: 'pending' as const, createdAt: at };
+  const bank = { bankTxId: 'FT-1', amount: 449_000, source: 'webhook' as const, outcome: 'applied' as const, createdAt: at };
+  const row = (patch: Partial<AdminPaymentRow>): AdminPaymentRow => ({ at, organization: org, intent, bank, ...patch });
+
+  it('🔴 tiền đã vào mà gói chưa mở (thiếu, không khớp mã, mã đã đóng) → cần người xem; đã mở, chưa trả → không', () => {
+    expect(paymentStatus(row({}))).toEqual({ text: L.adminPayApplied, needsAction: false });
+    expect(paymentStatus(row({ intent: null, bank: { ...bank, source: 'admin' } }))).toEqual({ text: `${L.adminPayApplied} (${L.adminPaymentsByHand})`, needsAction: false });
+    for (const outcome of ['underpaid', 'no_intent', 'intent_closed'] as const) {
+      expect(paymentStatus(row({ bank: { ...bank, outcome } })).needsAction).toBe(true);
+    }
+    expect(paymentStatus(row({ bank: null }))).toEqual({ text: L.adminPayPending, needsAction: false });
+    expect(paymentStatus(row({ bank: null, intent: { ...intent, status: 'expired' } })).text).toBe(L.adminPayExpired);
+  });
+
+  it('🔴 mở trang KHÔNG tự gọi (mỗi lần xem máy chủ ghi nhật ký); bấm "Xem giao dịch" mới gọi, đúng số ngày đang chọn', async () => {
+    payments.loaded = {
+      data: { from: at, to: at, rows: [row({ bank: { ...bank, amount: 100_000, outcome: 'underpaid' } }), row({ organization: null, intent: null, bank: { ...bank, bankTxId: 'FT-2' } })] },
+      loading: false,
+      error: null,
+    } satisfies PaymentsState;
+    render(READY);
+    expect(payments.requests).toEqual([]);
+    expect(host.querySelectorAll('table')).toHaveLength(1);
+
+    await click(button(host, L.adminPaymentsShow));
+    expect(payments.requests).toEqual([{ days: 30 }]);
+    const table = [...host.querySelectorAll('table')].find((t) => t.textContent?.includes('FT-1'));
+    expect(table?.textContent).toContain('Vựa Tư Hùng');
+    expect(table?.textContent).toContain(L.adminPayUnderpaid);
+    expect(table?.textContent).toContain(L.adminPaymentsOrgDeleted);
+  });
+
+  it('máy chủ báo lỗi (API cũ chưa có route) → hiện câu báo, không có bảng giao dịch', async () => {
+    payments.loaded = { data: null, loading: false, error: L.adminUnavailable } satisfies PaymentsState;
+    render(READY);
+    await click(button(host, L.adminPaymentsShow));
+    expect(host.textContent).toContain(L.adminUnavailable);
+    expect(host.querySelectorAll('table')).toHaveLength(1);
   });
 });
