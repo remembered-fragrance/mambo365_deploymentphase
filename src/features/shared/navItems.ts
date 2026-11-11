@@ -72,6 +72,8 @@ export const ROUTES = {
   linkedTrader: (orgId: string) => `/vua/${orgId}`,
   more: '/them',
   feedback: '/gop-y',
+  // Không có mục điều hướng: `/v1/me` không nói ai là quản trị, người vận hành vào bằng URL.
+  admin: '/quan-tri',
   auth: '/dang-nhap',
   terms: LEGAL_LINKS.terms,
   privacy: LEGAL_LINKS.privacy,
@@ -115,6 +117,8 @@ export const ROUTE_GATES: Readonly<Record<string, Gate>> = {
   [ROUTES.myPlaces]: { org: true, permission: 'place:manage' },
   // Góp ý gửi lên máy chủ ⇒ sổ của máy này (không có tổ chức) không có màn này.
   [ROUTES.feedback]: { org: true },
+  // Cần máy chủ; ai là quản trị thì máy chủ quyết (`ADMIN_USER_IDS`), app không có danh sách nào.
+  [ROUTES.admin]: { org: true },
 };
 
 /**

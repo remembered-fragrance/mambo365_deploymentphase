@@ -46,6 +46,7 @@ const ConnectPage = lazy(() => import('@/features/farmer/ConnectPage').then((m) 
 const MapPage = lazy(() => import('@/features/map/MapPage').then((m) => ({ default: m.MapPage })));
 const MyPlacesPage = lazy(() => import('@/features/map/MyPlacesPage').then((m) => ({ default: m.MyPlacesPage })));
 const FeedbackPage = lazy(() => import('@/features/feedback/FeedbackPage').then((m) => ({ default: m.FeedbackPage })));
+const AdminPage = lazy(() => import('@/features/admin/AdminPage').then((m) => ({ default: m.AdminPage })));
 const ReceiptsPage = lazy(() =>
   import('@/features/receipts/ReceiptsPage').then((m) => ({ default: m.ReceiptsPage })),
 );
@@ -199,6 +200,7 @@ function AppRoutes() {
                         <Route path={ROUTES.map} element={<Gated route={ROUTES.map}><MapPage /></Gated>} />
                         <Route path={ROUTES.myPlaces} element={<Gated route={ROUTES.myPlaces}><MyPlacesPage /></Gated>} />
                         <Route path={ROUTES.feedback} element={<Gated route={ROUTES.feedback}><FeedbackPage /></Gated>} />
+                        <Route path={ROUTES.admin} element={<Gated route={ROUTES.admin}><AdminPage /></Gated>} />
                         <Route path={ROUTES.more} element={<MorePage />} />
                         {/* Màn đăng nhập hiện ở MỌI đường dẫn khi chưa đăng nhập (`RequireAccount`); vào bằng
                             link /dang-nhap thì đăng nhập xong URL vẫn là /dang-nhap — đưa về Trang chủ, không 404. */}

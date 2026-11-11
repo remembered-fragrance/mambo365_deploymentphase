@@ -849,6 +849,34 @@ worker `autoUpdate` đã dọn cache cũ).
 - Merge `1b64869` lúc 06:50Z; bundle production (`index-Cdao7wnK.js`) có code mới. Trang đang mở bản cũ hơn chưa có
   đoạn này nên vẫn có thể gặp lỗi một lần nữa; từ lần deploy kế tiếp mới tự tải lại.
 
+## Trang quản trị `/quan-tri` · PR #77 · `@mambo/*` 0.30.0 · 11/11/2026
+
+Giao diện cho ba route quản trị đã có ở BE: mở gói bằng tay (`POST /v1/admin/plans/activate`), đặt lại mật khẩu cho
+khách (`POST /v1/admin/users/reset-password`), phễu đo lường dạng bảng (`GET /v1/admin/funnel`, 7 / 30 / 90 ngày).
+Không có mục điều hướng — vào bằng URL. Ai là quản trị do API quyết (`ADMIN_USER_IDS` trên Render); app không giữ danh
+sách, lời gọi phễu (chỉ đọc) là phép thử quyền của cả trang. `src/data/admin.ts` tự gọi `fetch` theo đúng lõi của SDK vì
+`@mambo/sdk` chưa có `api.admin.*` (shortcut — đổi khi SDK có).
+
+- **Điều kiện vào được**: tài khoản phải có tổ chức trên máy chủ (cổng `{ org: true }` của app — nông dân cũng được)
+  **và** UUID nằm trong `ADMIN_USER_IDS` của API. 11/11/2026 Tài đặt `ADMIN_USER_IDS` của `thumua365-api-staging` =
+  tài khoản `9ec88d52-…` (số …2408, tên "Admin"). Production app đang trỏ API staging nên dùng chung giá trị này.
+- **Chạy thật đã kiểm** (11/11/2026, `localhost:5173` nối API staging 0.30.0 `699ce49`):
+  chưa có trong `ADMIN_USER_IDS` → chỉ một câu "không phải quản trị viên", không form; có rồi → đủ 4 phần; phễu 30
+  ngày 27 dòng, đổi 7 ngày gọi lại máy chủ (11 dòng); form trống → tô đỏ từng ô, không mở hộp xác nhận, không gọi máy
+  chủ; mọi lời gọi API 200.
+- **🔴 Chưa kiểm trên máy chủ thật** (cố ý — ghi dữ liệu thật): mở gói bằng tay, bấm lại cùng mã giao dịch
+  (`alreadyProcessed`), đặt lại mật khẩu, đặt lại cho người đã có email khôi phục xác nhận (máy chủ phải từ chối).
+- **Ca "một số làm chủ nhiều tổ chức" — chưa xảy ra được, nhớ kiểm khi có**: mở gói theo số điện thoại, nếu tài khoản
+  của số đó làm chủ ≥ 2 tổ chức (không tính nông dân) thì BE (`findOrganization` trong `admin.service.ts`) không đoán,
+  trả 422 "Số này chủ nhiều tổ chức — gửi organizationId" kèm `details.organizations` [{id, name}]; trang hiện mỗi tổ
+  chức một nút, bấm thì điền mã tổ chức vào ô và hộp xác nhận ghi kèm tên. Hiện **không đường nào tạo ra ca này**: chỗ
+  duy nhất tạo tổ chức là bước "Bạn là ai?" (`bootstrap.service.ts`), và bước đó dừng nếu tài khoản đã thuộc một tổ
+  chức ⇒ staging không có dữ liệu để thử. Chỉ test đơn vị (`tests/data/admin.test.ts`, `ownedOrganizations`) với phản
+  hồi giả. **Khi làm tính năng "mở thêm vựa" (một chủ nhiều tổ chức) hoặc chép dữ liệu thẳng vào database: kiểm lại ca
+  này trên staging** — chủ hai vựa, gõ số của chủ, phải hiện hai nút và mở đúng vựa được chọn.
+- Còn thiếu: `branchLimit` của doanh nghiệp; danh sách giao dịch chờ `GET /v1/admin/payments` (BE chưa có); hộp xác
+  nhận mở gói chưa có tên tổ chức (BE không có API tra tổ chức); không chỉnh được người cân thêm khi "giữ gói đang có".
+
 ---
 
 ## Ba số phải giữ trong tầm
@@ -910,3 +938,6 @@ dựng lại app.
   op cũ không đủ `orgId` / `opId` được chuyển sang `legacyQueue`, không xoá. (Lần 1→2 đầu tiên từng xoá và dựng lại
   `queue` — khi app chưa phát hành.) Tab cũ nhường kết nối khi tab khác mở bản mới (`blocking`, `rescue.ts`).
 - Script `db:push`, `db:types` trong `package.json` là của thời Supabase trực tiếp — không dùng nữa.
+- Node ≥ 25 trên máy dev: `localStorage` toàn cục của Node che `localStorage` của jsdom ⇒ 28 test ở `storeFlows`,
+  `reopenDb`, `reloadRequired` đỏ ("reading 'clear'"). Không phải lỗi code — chạy với
+  `NODE_OPTIONS=--no-experimental-webstorage` hoặc dùng Node 22 như CI (`.github/workflows`).
