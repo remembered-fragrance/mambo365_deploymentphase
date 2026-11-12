@@ -910,7 +910,20 @@ Phản hồi, Nhật ký.
   Nhật ký tự tải khi mở mục (máy chủ không ghi nhật ký khi xem các mục này).
 - Test: `tests/features/adminPage.test.ts` (đủ bảy mục, mục ghi nhật ký không tự gọi), `tests/data/admin.test.ts`
   (`promoInput`). `npm run verify` xanh 80 file / 500 test trên release `v0.32.0` (BE #58, merge `337667b`).
-- Chưa kiểm: chưa nhìn trên trình duyệt với API 0.32.0 thật (API production đã lên 0.32.0 lúc mở PR — xem trên preview bằng tài khoản Admin).
+- Xem thật 12/11 (localhost:5173 nối API production 0.32.0, tài khoản Admin, chỉ đọc): đủ số liệu, danh sách, chi tiết, mã
+  sáng lập, nhật ký. Người dùng phản hồi: đăng nhập Admin vào trang chủ nông dân, trang quản trị lẫn khung nông dân →
+  sửa ngay trong PR #79 (dưới).
+
+### Khung quản trị riêng + tự vào `/quan-tri` · `@mambo/*` 0.33.0
+
+- `/quan-tri` ra khỏi `AppLayout`: `AdminShell` (menu trái 7 mục ở máy tính, hàng mục cuộn ngang ở điện thoại, tên tài
+  khoản + Đăng xuất + sáng / tối), nội dung rộng `max-w-7xl`. Mục đang mở ở URL `?muc=…`. Cả lúc chờ API thức cũng hiện khung.
+- BE 0.33.0 (#59) thêm `me.isAdmin`: `HomePage` đưa quản trị viên sang `/quan-tri`; `RequireAccount` không bắt quản trị
+  viên tạo tổ chức. Quyền vẫn do máy chủ kiểm (phễu là phép thử như cũ).
+- Chi tiết tổ chức thay chỗ danh sách (nút "Về danh sách"); số điện thoại dạng `0969 158 911`; loại theo gói (Vựa /
+  Thương lái); nhật ký ghi tên việc tiếng Việt, id của mình thành "Admin (bạn)", mốc ISO thành ngày giờ; Mã sáng lập:
+  danh sách trước, form thêm bên phải.
+- Đăng xuất ở trang quản trị không hỏi lần hai về hàng đợi (tổ chức nông dân của tài khoản Admin không có sổ).
 ---
 
 ## Ba số phải giữ trong tầm

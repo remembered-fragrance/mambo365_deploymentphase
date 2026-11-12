@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Select';
 import { fetchFeedback, useAdminRequest } from '@/data/hooks/useAdmin';
 import { L } from '@/i18n/labels';
+import { phoneText } from './adminText';
 
 const RANGE_OPTIONS = [7, 30, 90, 365].map((days) => ({ value: String(days), label: `${days} ${L.adminFunnelDays}` }));
 
@@ -18,7 +19,7 @@ const COLUMNS: readonly Column<AdminFeedbackRow>[] = [
   { id: 'rating', header: L.adminColRating, cell: (r) => `${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}`, mobile: 'value' },
   { id: 'comment', header: L.adminColComment, cell: (r) => r.comment ?? L.adminNoComment, mobile: 'title' },
   { id: 'org', header: L.adminResultOrg, cell: (r) => r.organization?.name ?? L.adminPaymentsOrgDeleted, mobile: 'secondary' },
-  { id: 'from', header: L.adminColFrom, cell: (r) => (r.user ? `${r.user.name}${r.user.phone ? ` · ${r.user.phone}` : ''}` : '—'), mobile: 'hidden' },
+  { id: 'from', header: L.adminColFrom, cell: (r) => (r.user ? `${r.user.name}${r.user.phone ? ` · ${phoneText(r.user.phone)}` : ''}` : '—'), mobile: 'hidden' },
   { id: 'app', header: L.adminColApp, cell: (r) => [r.platform, r.appVersion].filter(Boolean).join(' '), mobile: 'hidden' },
 ];
 

@@ -111,6 +111,18 @@ export const ADMIN_LABELS = {
   adminFunnelLast: 'Lần cuối',
   adminFunnelEmpty: 'Chưa có sự kiện nào trong khoảng này.',
 
+  // ─── Khung trang quản trị ─────────────────────────────────────────────────
+  adminConsole: 'Quản trị',
+  adminSignedInAs: 'Đang đăng nhập',
+  adminOverviewDesc: 'Số liệu chung của cả hệ thống và phễu đo lường.',
+  adminOrgsDesc: 'Tìm vựa, nông dân, doanh nghiệp; xem gói, thành viên, cờ tính năng.',
+  adminPaymentsDesc: 'Mở gói bằng tay và đối soát mọi lần chuyển khoản mua gói.',
+  adminPromoDesc: 'Phát, xem và thu hồi mã Khách hàng sáng lập.',
+  adminUsersDesc: 'Tìm tài khoản và đặt lại mật khẩu cho khách.',
+  adminFeedbackDesc: 'Góp ý và số sao khách gửi từ app.',
+  adminLogDesc: 'Ai đã xem hoặc đổi gì trong trang quản trị.',
+  adminBackHome: 'Về trang chủ',
+
   // ─── Thanh chia mục (API 0.32.0) ──────────────────────────────────────────
   adminTabs: 'Mục quản trị',
   adminTabOverview: 'Tổng quan',
@@ -179,7 +191,6 @@ export const ADMIN_LABELS = {
 
   // ─── Chi tiết tổ chức ─────────────────────────────────────────────────────
   adminDetailTitle: 'Chi tiết tổ chức',
-  adminDetailClose: 'Đóng',
   adminDetailId: 'Mã tổ chức',
   adminDetailAddress: 'Địa chỉ',
   adminDetailPlan: 'Gói hiện tại',
@@ -272,4 +283,17 @@ export const ADMIN_LABELS = {
   adminColAction: 'Việc',
   adminColOperator: 'Người làm',
   adminColReason: 'Ghi chú',
+  /** Thay id tài khoản đang đăng nhập trong cột "Người làm": "Tài · qua Admin (bạn)". */
+  adminYou: 'bạn',
+  adminActActivate: 'Mở gói tay',
+  adminActReset: 'Đặt lại mật khẩu',
+  adminActPayments: 'Xem giao dịch',
+  adminActOrgs: 'Tìm tổ chức',
+  adminActOrg: 'Xem chi tiết tổ chức',
+  adminActFeature: 'Đổi cờ tính năng',
+  adminActPromoCreate: 'Thêm mã sáng lập',
+  adminActPromoDelete: 'Xoá mã sáng lập',
+  adminActUsers: 'Tìm người dùng',
+  adminActFeedback: 'Xem phản hồi',
+  adminBackToList: 'Về danh sách',
 } as const;

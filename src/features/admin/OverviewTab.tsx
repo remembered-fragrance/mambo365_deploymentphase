@@ -48,7 +48,7 @@ function Numbers({ o }: { readonly o: AdminOverview }) {
       <Stat label={L.adminStatPending} value={String(o.payments.pendingIntents)} />
       <Stat
         label={L.adminStatFeedback}
-        value={`${o.feedback.count} · ${o.feedback.averageRating === null ? '—' : o.feedback.averageRating.toFixed(1)}`}
+        value={`${o.feedback.count} · ${o.feedback.averageRating === null ? '—' : o.feedback.averageRating.toFixed(1).replace('.', ',')}`}
       />
     </div>
   );

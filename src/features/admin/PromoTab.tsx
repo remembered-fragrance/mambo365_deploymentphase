@@ -143,7 +143,39 @@ export function PromoTab() {
   const columns = promoColumns(busy, askDelete);
 
   return (
-    <div className="flex flex-col gap-4">
+    // Danh sách là việc chính; form thêm mã nằm bên phải ở màn rộng, xuống dưới ở điện thoại.
+    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+      <div className="min-w-0 lg:col-span-2">
+      <Card
+        title={L.adminPromoTitle}
+        subtitle={L.adminPromoHint}
+        action={
+          <Button
+            onClick={() => {
+              setRows(null);
+              setRequest({});
+            }}
+            disabled={list.loading}
+          >
+            {L.adminRefresh}
+          </Button>
+        }
+      >
+        {list.error && (
+          <p role="alert" className="rounded-xl border border-alert bg-card p-3 text-sm font-medium text-alert">
+            {list.error}
+          </p>
+        )}
+        <DataView
+          rows={shown}
+          columns={columns}
+          getKey={(r) => r.code}
+          caption={L.adminPromoTitle}
+          empty={<p className="text-sm text-ink-3">{list.loading ? L.loading : L.adminPromoEmpty}</p>}
+        />
+      </Card>
+      </div>
+      <div className="min-w-0">
       <Card title={L.adminPromoCreateTitle} subtitle={L.adminPromoCreateHint}>
         <form
           className="flex flex-col gap-3"
@@ -193,34 +225,7 @@ export function PromoTab() {
           </p>
         )}
       </Card>
-      <Card
-        title={L.adminPromoTitle}
-        subtitle={L.adminPromoHint}
-        action={
-          <Button
-            onClick={() => {
-              setRows(null);
-              setRequest({});
-            }}
-            disabled={list.loading}
-          >
-            {L.adminRefresh}
-          </Button>
-        }
-      >
-        {list.error && (
-          <p role="alert" className="rounded-xl border border-alert bg-card p-3 text-sm font-medium text-alert">
-            {list.error}
-          </p>
-        )}
-        <DataView
-          rows={shown}
-          columns={columns}
-          getKey={(r) => r.code}
-          caption={L.adminPromoTitle}
-          empty={<p className="text-sm text-ink-3">{list.loading ? L.loading : L.adminPromoEmpty}</p>}
-        />
-      </Card>
+      </div>
       <ConfirmDialog
         open={pendingCreate !== null}
         title={L.adminPromoCreateTitle}

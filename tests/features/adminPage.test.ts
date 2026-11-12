@@ -6,6 +6,7 @@
 
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminActivatePlanInput, AdminActivatePlanResult, AdminPaymentRow } from '@mambo/contracts';
 import { formatDate } from '@mambo/core/format';
@@ -38,6 +39,18 @@ vi.mock('@/data/hooks/useAdmin', async (original) => ({
   resetPassword: (input: unknown) => resetPassword(input),
 }));
 
+// Trang có khung riêng: đọc tên tài khoản, đăng xuất, chế độ sáng / tối từ store.
+const signOut = vi.fn(() => Promise.resolve());
+vi.mock('@/data/useStore', () => ({
+  useStore: () => ({
+    me: { user: { id: 'u', name: 'Admin', phone: null, email: null, phoneVerified: false }, memberships: [], pendingLinks: 0, isAdmin: true },
+    user: null,
+    signOut,
+    data: { settings: { displayMode: 'indoor' } },
+    updateSettings: () => undefined,
+  }),
+}));
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const READY: FunnelState = {
@@ -57,7 +70,7 @@ let host: HTMLDivElement;
 
 const render = (state: FunnelState) => {
   funnel.current = state;
-  act(() => root.render(createElement(AdminPage)));
+  act(() => root.render(createElement(MemoryRouter, { initialEntries: ['/quan-tri'] }, createElement(AdminPage))));
 };
 
 const input = (label: string): HTMLInputElement => {

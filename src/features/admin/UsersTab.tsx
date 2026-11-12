@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { fetchUsers, useAdminRequest } from '@/data/hooks/useAdmin';
 import { ORG_TYPE_TEXT, roleText } from '@/features/shared/roleText';
 import { L } from '@/i18n/labels';
+import { phoneText } from './adminText';
 import { ResetPasswordCard } from './ResetPasswordCard';
 
 const load = (request: { readonly q: string }) => fetchUsers(request.q);
@@ -20,7 +21,7 @@ const orgsText = (u: AdminUserRow): string =>
 
 const userColumns = (onReset: (phone: string) => void): readonly Column<AdminUserRow>[] => [
   { id: 'name', header: L.adminColName, cell: (u) => u.name, mobile: 'title' },
-  { id: 'phone', header: L.adminColPhone, cell: (u) => u.phone ?? '—', numeric: true, mobile: 'secondary' },
+  { id: 'phone', header: L.adminColPhone, cell: (u) => phoneText(u.phone), numeric: true, mobile: 'secondary' },
   { id: 'username', header: L.adminColUsername, cell: (u) => u.username ?? '—', mobile: 'hidden' },
   { id: 'orgs', header: L.adminColOrgs, cell: orgsText, mobile: 'secondary' },
   { id: 'recovery', header: L.adminColRecovery, cell: (u) => (u.hasVerifiedRecoveryEmail ? L.adminYes : L.adminNo), mobile: 'hidden' },
@@ -61,7 +62,7 @@ export function UsersTab() {
     <div className="flex flex-col gap-4">
       <Card title={L.adminUsersTitle} subtitle={L.adminLogged}>
         <form
-          className="flex flex-col gap-3"
+          className="grid grid-cols-1 items-start gap-3 md:grid-cols-[1fr_auto]"
           onSubmit={(e) => {
             e.preventDefault();
             search();
@@ -74,7 +75,7 @@ export function UsersTab() {
             error={short ? L.adminUsersShort : undefined}
             onChange={(e) => setQ(e.target.value)}
           />
-          <Button type="submit" tone="primary" disabled={users.loading}>
+          <Button type="submit" tone="primary" disabled={users.loading} className="md:mt-7">
             {users.loading ? L.loading : L.adminUsersSearch}
           </Button>
         </form>

@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { adminErrorMessage, fetchOrganization, setOrganizationFeature, useAdminRequest } from '@/data/hooks/useAdmin';
 import { ORG_TYPE_TEXT, roleText } from '@/features/shared/roleText';
 import { L } from '@/i18n/labels';
-import { FEATURE_TEXT, MEMBER_STATUS_TEXT, planCodeText, planText } from './adminText';
+import { FEATURE_TEXT, MEMBER_STATUS_TEXT, phoneText, planCodeText, planText } from './adminText';
 import { PAYMENT_COLUMNS } from './PaymentsCard';
 
 interface Props {
@@ -81,7 +81,7 @@ export function OrganizationDetail({ id, onClose, onActivate }: Props) {
   const memberColumns: readonly Column<AdminOrganizationMember>[] = d
     ? [
         { id: 'name', header: L.adminColName, cell: (m) => m.name ?? '—', mobile: 'title' },
-        { id: 'phone', header: L.adminColPhone, cell: (m) => m.phone ?? '—', numeric: true, mobile: 'secondary' },
+        { id: 'phone', header: L.adminColPhone, cell: (m) => phoneText(m.phone), numeric: true, mobile: 'secondary' },
         { id: 'username', header: L.adminColUsername, cell: (m) => m.username ?? '—', mobile: 'hidden' },
         { id: 'role', header: L.adminColRole, cell: (m) => roleText(d.type, m.role), mobile: 'value' },
         { id: 'status', header: L.adminColStatus, cell: (m) => MEMBER_STATUS_TEXT[m.status], mobile: 'secondary' },
@@ -91,7 +91,7 @@ export function OrganizationDetail({ id, onClose, onActivate }: Props) {
     : [];
 
   return (
-    <Card title={d?.name ?? L.adminDetailTitle} subtitle={d ? ORG_TYPE_TEXT[d.type].label : undefined} action={<Button onClick={onClose}>{L.adminDetailClose}</Button>}>
+    <Card title={d?.name ?? L.adminDetailTitle} subtitle={d ? ORG_TYPE_TEXT[d.type].label : undefined} action={<Button onClick={onClose}>{L.adminBackToList}</Button>}>
       {detail.error && (
         <p role="alert" className="rounded-xl border border-alert bg-card p-3 text-sm font-medium text-alert">
           {detail.error}
@@ -103,7 +103,7 @@ export function OrganizationDetail({ id, onClose, onActivate }: Props) {
           <dl className="m-0 grid grid-cols-1 gap-3 md:grid-cols-2">
             <Fact label={L.adminDetailId} value={d.id} />
             <Fact label={L.adminColCreated} value={formatDate(d.createdAt)} />
-            <Fact label={L.adminColPhone} value={d.phone ?? '—'} />
+            <Fact label={L.adminColPhone} value={phoneText(d.phone)} />
             <Fact label={L.adminDetailAddress} value={d.address ?? '—'} />
             <Fact label={L.adminDetailPlan} value={planText(d.plan)} />
             {d.subscription && d.type === 'trader' && <Fact label={L.adminDetailExtraStaff} value={String(d.subscription.extraStaff)} />}
@@ -183,7 +183,7 @@ export function OrganizationDetail({ id, onClose, onActivate }: Props) {
             <h3 className="text-base font-bold text-ink">{L.adminDetailPayments}</h3>
             <DataView
               rows={d.payments}
-              columns={PAYMENT_COLUMNS}
+              columns={PAYMENT_COLUMNS.filter((c) => c.id !== 'org')}
               getKey={(r) => `${r.intent?.id ?? ''}/${r.bank?.bankTxId ?? ''}`}
               caption={L.adminDetailPayments}
               empty={<p className="text-sm text-ink-3">{L.adminPaymentsEmpty}</p>}
