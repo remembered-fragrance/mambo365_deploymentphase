@@ -55,4 +55,31 @@ const ISO = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z/g;
 /** Mốc thời gian ISO trong ghi chú nhật ký ("2026-10-12T12:30:06.745Z → …") đổi sang ngày giờ dễ đọc. */
 export const reasonText = (reason: string | null): string => (reason ? reason.replace(ISO, (iso) => formatDateTime(iso)) : '—');
 
+const EVENT_TEXT: Readonly<Record<string, string>> = {
+  app_opened: L.adminEvAppOpened,
+  sign_up_completed: L.adminEvSignUp,
+  login_succeeded: L.adminEvLoginOk,
+  login_failed: L.adminEvLoginFailed,
+  receipt_created: L.adminEvReceiptCreated,
+  receipt_shared: L.adminEvReceiptShared,
+  debt_payment_recorded: L.adminEvDebtPaid,
+  import_completed: L.adminEvImport,
+  plans_viewed: L.adminEvPlansViewed,
+  checkout_started: L.adminEvCheckout,
+  plan_activated: L.adminEvPlanActivated,
+  quota_wall_shown: L.adminEvQuotaWall,
+  locked_feature_viewed: L.adminEvLockedFeature,
+  contact_clicked: L.adminEvContact,
+  member_invited: L.adminEvMemberInvited,
+  link_accepted: L.adminEvLinkAccepted,
+  order_created: L.adminEvOrderCreated,
+  order_accepted: L.adminEvOrderAccepted,
+  order_scheduled: L.adminEvOrderScheduled,
+  order_fulfilled: L.adminEvOrderFulfilled,
+  account_deleted: L.adminEvAccountDeleted,
+};
+
+/** Tên sự kiện đo lường bằng lời thường; sự kiện lạ (bản API mới hơn) hiện nguyên mã. */
+export const eventText = (name: string): string => EVENT_TEXT[name] ?? name;
+
 export const FEATURE_TEXT: Readonly<Record<Feature, string>> = { orders: L.adminFeatureOrders, links: L.adminFeatureLinks };
