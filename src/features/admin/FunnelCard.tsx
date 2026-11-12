@@ -8,6 +8,7 @@ import { Select } from '@/components/ui/Select';
 import type { FunnelState } from '@/data/hooks/useAdmin';
 import { ORG_TYPE_TEXT } from '@/features/shared/roleText';
 import { L } from '@/i18n/labels';
+import { eventText } from './adminText';
 
 type Row = AdminFunnel['rows'][number];
 
@@ -15,7 +16,8 @@ const RANGE_OPTIONS = [7, 30, 90].map((days) => ({ value: String(days), label: `
 
 // shortcut: thẻ ở điện thoại không có số tổ chức / số máy (DataView chỉ có một ô số), xem đủ cột trên máy tính.
 const COLUMNS: readonly Column<Row>[] = [
-  { id: 'name', header: L.adminFunnelEvent, cell: (r) => r.name, mobile: 'title' },
+  // Mã sự kiện để trong `title` cho người cần đối chiếu với log / database.
+  { id: 'name', header: L.adminFunnelEvent, cell: (r) => <span title={r.name}>{eventText(r.name)}</span>, mobile: 'title' },
   {
     id: 'orgType',
     header: L.adminFunnelOrgType,

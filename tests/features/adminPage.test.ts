@@ -12,6 +12,7 @@ import type { AdminActivatePlanInput, AdminActivatePlanResult, AdminPaymentRow }
 import { formatDate } from '@mambo/core/format';
 import type { FunnelState, PaymentsState } from '@/data/hooks/useAdmin';
 import { AdminPage } from '@/features/admin/AdminPage';
+import { eventText } from '@/features/admin/adminText';
 import { paymentStatus } from '@/features/admin/paymentStatus';
 import { L } from '@/i18n/labels';
 
@@ -137,7 +138,9 @@ describe('trang Quản trị', () => {
       expect(button(host, tab), tab).toBeDefined();
     }
     expect(titles()).toEqual(expect.arrayContaining([L.adminOverviewTitle, L.adminFunnelTitle]));
-    expect(host.querySelector('table')?.textContent).toContain('plans_viewed');
+    // Phễu ghi tên sự kiện bằng lời thường; mã gốc vẫn ở `title` để đối chiếu log.
+    expect(host.querySelector('table')?.textContent).toContain(L.adminEvPlansViewed);
+    expect(host.querySelector('table [title="plans_viewed"]')).not.toBeNull();
 
     await openTab(L.adminTabPayments);
     expect(titles()).toEqual(expect.arrayContaining([L.adminActivateTitle, L.adminPaymentsTitle]));
@@ -214,6 +217,13 @@ describe('trang Quản trị', () => {
     await click(button(dialog() as Element, L.adminActivateSubmit));
     expect(host.querySelector('[role="alert"]')?.textContent).toBe('Không có tài khoản với số này');
     expect(input(L.adminBankTxId).value).toBe('FT1');
+  });
+});
+
+describe('tên sự kiện phễu', () => {
+  it('sự kiện biết thì dịch; sự kiện lạ của API mới hơn hiện nguyên mã', () => {
+    expect(eventText('checkout_started')).toBe(L.adminEvCheckout);
+    expect(eventText('su_kien_moi')).toBe('su_kien_moi');
   });
 });
 
