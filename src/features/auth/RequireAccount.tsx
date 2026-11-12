@@ -17,7 +17,7 @@ import { AuthPage } from './AuthPage';
  * "Bạn là ai?" trước khi vào app — vỏ và quyền đều suy từ tổ chức đó.
  */
 export function RequireAccount({ children }: { readonly children: ReactNode }) {
-  const { user, status, needsBootstrap } = useStore();
+  const { user, status, needsBootstrap, me } = useStore();
 
   if (status.loading) {
     return (
@@ -28,6 +28,7 @@ export function RequireAccount({ children }: { readonly children: ReactNode }) {
   }
 
   if (!user) return <AuthPage />;
-  if (needsBootstrap) return <SetupOrgPage />;
+  // Quản trị viên không cần tổ chức để vào trang quản trị (trang chủ chuyển họ sang đó).
+  if (needsBootstrap && !me?.isAdmin) return <SetupOrgPage />;
   return <>{children}</>;
 }

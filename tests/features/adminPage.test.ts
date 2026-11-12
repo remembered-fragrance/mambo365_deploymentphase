@@ -6,6 +6,7 @@
 
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminActivatePlanInput, AdminActivatePlanResult, AdminPaymentRow } from '@mambo/contracts';
 import { formatDate } from '@mambo/core/format';
@@ -15,6 +16,8 @@ import { paymentStatus } from '@/features/admin/paymentStatus';
 import { L } from '@/i18n/labels';
 
 const funnel = vi.hoisted(() => ({ current: null as unknown }));
+// Các mục mới (API 0.32.0) gọi qua `useAdminRequest` — ca thử ghi lại lời gọi, trả "chưa có gì".
+const requests = vi.hoisted(() => ({ calls: [] as unknown[] }));
 const payments = vi.hoisted(() => ({ loaded: null as unknown, requests: [] as unknown[] }));
 const activatePlan = vi.fn<(input: AdminActivatePlanInput) => Promise<AdminActivatePlanResult>>();
 const resetPassword = vi.fn<(input: unknown) => Promise<void>>();
@@ -28,8 +31,24 @@ vi.mock('@/data/hooks/useAdmin', async (original) => ({
     if (request) payments.requests.push(request);
     return request ? payments.loaded : { data: null, loading: false, error: null };
   },
+  useAdminRequest: (request: unknown) => {
+    if (request !== null) requests.calls.push(request);
+    return { data: null, loading: false, error: null };
+  },
   activatePlan: (input: AdminActivatePlanInput) => activatePlan(input),
   resetPassword: (input: unknown) => resetPassword(input),
+}));
+
+// Trang có khung riêng: đọc tên tài khoản, đăng xuất, chế độ sáng / tối từ store.
+const signOut = vi.fn(() => Promise.resolve());
+vi.mock('@/data/useStore', () => ({
+  useStore: () => ({
+    me: { user: { id: 'u', name: 'Admin', phone: null, email: null, phoneVerified: false }, memberships: [], pendingLinks: 0, isAdmin: true },
+    user: null,
+    signOut,
+    data: { settings: { displayMode: 'indoor' } },
+    updateSettings: () => undefined,
+  }),
 }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -51,7 +70,7 @@ let host: HTMLDivElement;
 
 const render = (state: FunnelState) => {
   funnel.current = state;
-  act(() => root.render(createElement(AdminPage)));
+  act(() => root.render(createElement(MemoryRouter, { initialEntries: ['/quan-tri'] }, createElement(AdminPage))));
 };
 
 const input = (label: string): HTMLInputElement => {
@@ -76,11 +95,13 @@ const click = async (el: Element | null | undefined) => {
 };
 
 const button = (within: ParentNode, text: string) => [...within.querySelectorAll('button')].find((b) => b.textContent === text);
+const openTab = (label: string) => click(button(host, label));
 const dialog = () => document.body.querySelector('[role="dialog"]');
 
 beforeEach(() => {
   activatePlan.mockReset();
   payments.requests.length = 0;
+  requests.calls.length = 0;
   resetPassword.mockReset();
   // jsdom không có matchMedia; ô tiền hỏi nó để chọn bàn phím số.
   vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: () => undefined, removeEventListener: () => undefined }));
@@ -109,16 +130,40 @@ describe('trang Quản trị', () => {
     expect(host.querySelector('input')).toBeNull();
   });
 
-  it('được vào → mở gói, đặt lại mật khẩu, giao dịch mua gói, bảng phễu', () => {
+  it('được vào → bảy mục; Tổng quan có số liệu chung + bảng phễu; Thanh toán có mở gói + giao dịch; Người dùng có đặt lại mật khẩu', async () => {
     render(READY);
-    for (const title of [L.adminActivateTitle, L.adminResetTitle, L.adminPaymentsTitle, L.adminFunnelTitle]) {
-      expect([...host.querySelectorAll('h2')].map((h) => h.textContent)).toContain(title);
+    const titles = () => [...host.querySelectorAll('h2')].map((h) => h.textContent);
+    for (const tab of [L.adminTabOverview, L.adminTabOrgs, L.adminTabPayments, L.adminTabPromo, L.adminTabUsers, L.adminTabFeedback, L.adminTabLog]) {
+      expect(button(host, tab), tab).toBeDefined();
     }
+    expect(titles()).toEqual(expect.arrayContaining([L.adminOverviewTitle, L.adminFunnelTitle]));
     expect(host.querySelector('table')?.textContent).toContain('plans_viewed');
+
+    await openTab(L.adminTabPayments);
+    expect(titles()).toEqual(expect.arrayContaining([L.adminActivateTitle, L.adminPaymentsTitle]));
+    await openTab(L.adminTabUsers);
+    expect(titles()).toEqual(expect.arrayContaining([L.adminUsersTitle, L.adminResetTitle]));
+  });
+
+  it('🔴 mục ghi nhật ký (tổ chức, người dùng, phản hồi) KHÔNG tự gọi khi mở; tổng quan, mã, nhật ký thì tự tải', async () => {
+    render(READY);
+    expect(requests.calls).toHaveLength(1); // số liệu chung
+    for (const tab of [L.adminTabOrgs, L.adminTabUsers, L.adminTabFeedback]) {
+      await openTab(tab);
+      expect(requests.calls, tab).toHaveLength(1);
+    }
+    await openTab(L.adminTabPromo);
+    await openTab(L.adminTabLog);
+    expect(requests.calls).toHaveLength(3);
+
+    await openTab(L.adminTabOrgs);
+    await click(button(host, L.adminOrgsSearch));
+    expect(requests.calls.at(-1)).toEqual({});
   });
 
   it('form thiếu → tô ô sai, không mở hộp xác nhận, không gọi', async () => {
     render(READY);
+    await openTab(L.adminTabPayments);
     await click(button(host, L.adminActivateSubmit));
     expect(host.textContent).toContain(L.adminErrTarget);
     expect(host.textContent).toContain(L.adminErrMonths);
@@ -135,6 +180,7 @@ describe('trang Quản trị', () => {
       alreadyProcessed: false,
     });
     render(READY);
+    await openTab(L.adminTabPayments);
     type(L.adminTarget, '0905112233');
     type(L.adminMonths, '12');
     type(L.adminAmount, '4490000');
@@ -158,6 +204,7 @@ describe('trang Quản trị', () => {
   it('máy chủ từ chối lúc mở gói → câu của máy chủ hiện nguyên văn, giữ nguyên form', async () => {
     activatePlan.mockRejectedValue(new Error('Không có tài khoản với số này'));
     render(READY);
+    await openTab(L.adminTabPayments);
     type(L.adminTarget, '0905112233');
     type(L.adminMonths, '1');
     type(L.adminAmount, '199000');
@@ -194,8 +241,9 @@ describe('giao dịch mua gói', () => {
       error: null,
     } satisfies PaymentsState;
     render(READY);
+    await openTab(L.adminTabPayments);
     expect(payments.requests).toEqual([]);
-    expect(host.querySelectorAll('table')).toHaveLength(1);
+    expect(host.querySelectorAll('table')).toHaveLength(0);
 
     await click(button(host, L.adminPaymentsShow));
     expect(payments.requests).toEqual([{ days: 30 }]);
@@ -208,8 +256,9 @@ describe('giao dịch mua gói', () => {
   it('máy chủ báo lỗi (API cũ chưa có route) → hiện câu báo, không có bảng giao dịch', async () => {
     payments.loaded = { data: null, loading: false, error: L.adminUnavailable } satisfies PaymentsState;
     render(READY);
+    await openTab(L.adminTabPayments);
     await click(button(host, L.adminPaymentsShow));
     expect(host.textContent).toContain(L.adminUnavailable);
-    expect(host.querySelectorAll('table')).toHaveLength(1);
+    expect(host.querySelectorAll('table')).toHaveLength(0);
   });
 });

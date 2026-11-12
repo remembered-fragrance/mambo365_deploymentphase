@@ -114,9 +114,13 @@ const DeveloperRolePreviewPage = import.meta.env.DEV
   ? lazy(() => import('@/features/dev/DeveloperRolePreviewPage').then((m) => ({ default: m.DeveloperRolePreviewPage })))
   : NotFoundPage;
 
-/** Trang chủ theo vỏ: nông dân không có sổ ⇒ trang riêng; vựa, doanh nghiệp ⇒ Tổng quan của sổ. */
+/**
+ * Trang chủ theo vỏ: nông dân không có sổ ⇒ trang riêng; vựa, doanh nghiệp ⇒ Tổng quan của sổ. Quản trị viên
+ * (`me.isAdmin`, API 0.33.0) ⇒ thẳng vào trang quản trị.
+ */
 function HomePage() {
-  const { orgType } = useStore();
+  const { orgType, me } = useStore();
+  if (me?.isAdmin) return <Navigate to={ROUTES.admin} replace />;
   return orgType === 'farmer' ? <FarmerHomePage /> : <DashboardPage />;
 }
 
@@ -156,6 +160,17 @@ function AppRoutes() {
               {/* Link trong thư: người quên mật khẩu chưa đăng nhập được ⇒ ngoài cổng đăng nhập. */}
               <Route path={ROUTES.resetPassword} element={<Suspense fallback={null}><ResetPasswordPage /></Suspense>} />
               <Route path={ROUTES.confirmEmail} element={<Suspense fallback={null}><ConfirmEmailPage /></Suspense>} />
+              {/* Trang quản trị có khung riêng — không nằm trong khung app (menu sổ của vựa / nông dân). */}
+              <Route
+                path={ROUTES.admin}
+                element={
+                  <RequireAccount>
+                    <Suspense fallback={<PageContainer><Skeleton rows={4} label={L.loading} /></PageContainer>}>
+                      <AdminPage />
+                    </Suspense>
+                  </RequireAccount>
+                }
+              />
               <Route
                 path="*"
                 element={
@@ -200,7 +215,6 @@ function AppRoutes() {
                         <Route path={ROUTES.map} element={<Gated route={ROUTES.map}><MapPage /></Gated>} />
                         <Route path={ROUTES.myPlaces} element={<Gated route={ROUTES.myPlaces}><MyPlacesPage /></Gated>} />
                         <Route path={ROUTES.feedback} element={<Gated route={ROUTES.feedback}><FeedbackPage /></Gated>} />
-                        <Route path={ROUTES.admin} element={<Gated route={ROUTES.admin}><AdminPage /></Gated>} />
                         <Route path={ROUTES.more} element={<MorePage />} />
                         {/* Màn đăng nhập hiện ở MỌI đường dẫn khi chưa đăng nhập (`RequireAccount`); vào bằng
                             link /dang-nhap thì đăng nhập xong URL vẫn là /dang-nhap — đưa về Trang chủ, không 404. */}

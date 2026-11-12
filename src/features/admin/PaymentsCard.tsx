@@ -19,7 +19,7 @@ function Status({ row }: { readonly row: AdminPaymentRow }) {
 }
 
 // shortcut: thẻ ở điện thoại không có mã chuyển khoản / số phải trả / mã giao dịch, xem đủ cột trên máy tính.
-const COLUMNS: readonly Column<AdminPaymentRow>[] = [
+export const PAYMENT_COLUMNS: readonly Column<AdminPaymentRow>[] = [
   { id: 'at', header: L.adminPaymentsAt, cell: (r) => formatDateTime(r.at), numeric: true, mobile: 'secondary' },
   { id: 'org', header: L.adminResultOrg, cell: (r) => r.organization?.name ?? L.adminPaymentsOrgDeleted, mobile: 'title' },
   { id: 'code', header: L.adminPaymentsCode, cell: (r) => r.intent?.code ?? '—', numeric: true, mobile: 'hidden' },
@@ -61,7 +61,7 @@ export function PaymentsCard() {
             {payments.data.rows.length >= ADMIN_PAYMENTS_MAX && <p className="text-sm text-ink-3">{L.adminPaymentsCapped}</p>}
             <DataView
               rows={payments.data.rows}
-              columns={COLUMNS}
+              columns={PAYMENT_COLUMNS}
               getKey={(r) => `${r.intent?.id ?? ''}/${r.bank?.bankTxId ?? ''}`}
               caption={L.adminPaymentsTitle}
               empty={<p className="text-sm text-ink-3">{L.adminPaymentsEmpty}</p>}

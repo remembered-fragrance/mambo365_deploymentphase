@@ -23,8 +23,9 @@ const FIELD_ERROR: Record<keyof ResetDraft, string> = {
  * Đặt lại mật khẩu cho khách (`POST /v1/admin/users/reset-password`) — cho người không tự đặt lại qua email được.
  * Máy chủ từ chối người đã có email khôi phục đã xác nhận; câu từ chối hiện nguyên văn.
  */
-export function ResetPasswordCard() {
-  const [form, setForm] = useState(EMPTY);
+export function ResetPasswordCard({ initialPhone = '' }: { readonly initialPhone?: string }) {
+  // Bấm "Đặt lại mật khẩu" ở kết quả tìm người: điền sẵn số (nơi dùng đổi `key` để dựng lại form).
+  const [form, setForm] = useState({ ...EMPTY, phone: initialPhone });
   const [errors, setErrors] = useState<Errors>({});
   const [pending, setPending] = useState<AdminResetPasswordInput | null>(null);
   const [busy, setBusy] = useState(false);

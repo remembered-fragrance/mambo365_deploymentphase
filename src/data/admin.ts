@@ -11,19 +11,31 @@
 
 import {
   AdminActivatePlanInput,
+  AdminPromoCreateInput,
   AdminResetPasswordInput,
   ErrorBody,
   routes,
+  type AdminAccessLog,
   type AdminActivatePlanResult,
+  type AdminFeatureInput,
+  type AdminFeatures,
+  type AdminFeedback,
   type AdminFunnel,
+  type AdminOrganizationDetail,
+  type AdminOrganizations,
+  type AdminOrganizationsQuery,
+  type AdminOverview,
   type AdminPayments,
+  type AdminPromoCodes,
+  type AdminPromoRow,
+  type AdminUsers,
   type PlanCode,
   type RouteResponse,
 } from '@mambo/contracts';
 import { ApiError } from '@mambo/sdk';
 import { z } from 'zod';
 import { L } from '@/i18n/labels';
-import { accessToken, apiBaseUrl } from './client';
+import { accessToken, api, apiBaseUrl } from './client';
 
 type AdminRoute = 'adminActivatePlan' | 'adminResetPassword' | 'adminFunnel' | 'adminPayments';
 
@@ -118,6 +130,27 @@ export const resetInput = (draft: ResetDraft): Checked<AdminResetPasswordInput, 
   return parsed.success ? { input: parsed.data } : { invalid: invalidFields(parsed.error) };
 };
 
+export interface PromoDraft {
+  readonly code: string;
+  readonly plan: PlanCode;
+  readonly monthlyAmount: number;
+  readonly periods: number;
+  readonly note: string;
+  readonly approvedBy: string;
+}
+
+export const promoInput = (draft: PromoDraft): Checked<AdminPromoCreateInput, PromoDraft> => {
+  const parsed = AdminPromoCreateInput.safeParse({
+    code: draft.code,
+    plan: draft.plan,
+    monthlyAmount: draft.monthlyAmount,
+    periods: draft.periods,
+    approvedBy: draft.approvedBy,
+    ...(draft.note.trim() ? { note: draft.note } : {}),
+  });
+  return parsed.success ? { input: parsed.data } : { invalid: invalidFields(parsed.error) };
+};
+
 // ─── Lời gọi ─────────────────────────────────────────────────────────────────
 
 /** Gọi lại cùng mã giao dịch thì an toàn: máy chủ trả `alreadyProcessed`, không cộng thêm kỳ nào. */
@@ -146,6 +179,36 @@ export const fetchFunnel = (days: number, now: Date = new Date()): Promise<Admin
  */
 export const fetchPayments = (days: number, now: Date = new Date()): Promise<AdminPayments> =>
   call('adminPayments', undefined, lastDays(days, now));
+
+// ─── Trang quản trị đầy đủ (API 0.32.0) — qua `api.admin.*` của SDK ──────────
+
+/** Số liệu chung — máy chủ không ghi nhật ký, mở tab là gọi. */
+export const fetchOverview = (): Promise<AdminOverview> => api.admin.overview();
+
+/** 🔴 Ghi nhật ký quản trị (`list-organizations`) — chỉ gọi khi người quản trị bấm tìm. */
+export const fetchOrganizations = (query: AdminOrganizationsQuery): Promise<AdminOrganizations> => api.admin.organizations(query);
+
+/** 🔴 Ghi nhật ký quản trị (`view-organization`) — chỉ gọi khi người quản trị chọn một tổ chức. */
+export const fetchOrganization = (id: string): Promise<AdminOrganizationDetail> => api.admin.organization(id);
+
+export const setOrganizationFeature = (id: string, input: AdminFeatureInput): Promise<AdminFeatures> => api.admin.setFeature(id, input);
+
+export const fetchPromoCodes = (): Promise<AdminPromoCodes> => api.admin.promoCodes();
+
+export const createPromoCode = (input: AdminPromoCreateInput): Promise<AdminPromoRow> => api.admin.createPromo(input);
+
+/** Chỉ xoá được mã chưa ai dùng — máy chủ từ chối mã đã gắn tổ chức. */
+export const deletePromoCode = (code: string, approvedBy: string): Promise<AdminPromoCodes> =>
+  api.admin.deletePromo(code, { approvedBy });
+
+/** 🔴 Ghi nhật ký quản trị (`search-users`) — chỉ gọi khi người quản trị bấm tìm. */
+export const fetchUsers = (q: string): Promise<AdminUsers> => api.admin.users({ q });
+
+/** 🔴 Ghi nhật ký quản trị (`list-feedback`) — chỉ gọi khi người quản trị bấm xem. */
+export const fetchFeedback = (days: number, now: Date = new Date()): Promise<AdminFeedback> => api.admin.feedback(lastDays(days, now));
+
+/** Đọc nhật ký không ghi thêm dòng nào. */
+export const fetchAccessLog = (): Promise<AdminAccessLog> => api.admin.accessLog();
 
 // ─── Lỗi ─────────────────────────────────────────────────────────────────────
 
