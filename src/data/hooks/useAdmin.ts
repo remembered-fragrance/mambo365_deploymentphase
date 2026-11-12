@@ -6,8 +6,26 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AdminFunnel, AdminPayments } from '@mambo/contracts';
 import { adminDeniedMessage, adminErrorMessage, fetchFunnel, fetchPayments } from '../admin';
 
-export { activateInput, activatePlan, adminErrorMessage, ownedOrganizations, resetInput, resetPassword } from '../admin';
-export type { ActivateDraft, ResetDraft } from '../admin';
+export {
+  activateInput,
+  activatePlan,
+  adminErrorMessage,
+  createPromoCode,
+  deletePromoCode,
+  fetchAccessLog,
+  fetchFeedback,
+  fetchOrganization,
+  fetchOrganizations,
+  fetchOverview,
+  fetchPromoCodes,
+  fetchUsers,
+  ownedOrganizations,
+  promoInput,
+  resetInput,
+  resetPassword,
+  setOrganizationFeature,
+} from '../admin';
+export type { ActivateDraft, PromoDraft, ResetDraft } from '../admin';
 
 export interface FunnelState {
   readonly data: AdminFunnel | null;
@@ -73,6 +91,37 @@ export const useAdminPayments = (request: { readonly days: number } | null): Pay
       cancelled = true;
     };
   }, [request]);
+
+  return state;
+};
+
+export interface RequestState<T> {
+  readonly data: T | null;
+  readonly loading: boolean;
+  readonly error: string | null;
+}
+
+/**
+ * Một lời gọi quản trị chỉ đọc. `request = null`: chưa gọi. Đưa object mới (dù cùng giá trị) là gọi lại — các lời gọi
+ * ghi nhật ký (tìm tổ chức, xem chi tiết, tìm người, xem phản hồi) chỉ đổi `request` khi người quản trị bấm.
+ * `load` phải cố định (hàm cấp module), không thì mỗi lần vẽ lại là một lần gọi.
+ */
+export const useAdminRequest = <R, T>(request: R | null, load: (request: R) => Promise<T>): RequestState<T> => {
+  const [state, setState] = useState<RequestState<T>>({ data: null, loading: false, error: null });
+
+  useEffect(() => {
+    if (request === null) return;
+    let cancelled = false;
+    setState((s) => ({ ...s, loading: true, error: null }));
+    load(request).then(
+      (data) => !cancelled && setState({ data, loading: false, error: null }),
+      // API cũ chưa có route → 404 → câu "máy chủ chưa có chức năng", không phải "HTTP 404".
+      (err: unknown) => !cancelled && setState({ data: null, loading: false, error: adminDeniedMessage(err) ?? adminErrorMessage(err) }),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [request, load]);
 
   return state;
 };

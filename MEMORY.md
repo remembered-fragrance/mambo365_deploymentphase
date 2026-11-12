@@ -895,6 +895,22 @@ Nhánh `feat/admin-giao-dich`; phía máy chủ là BE #57 (merge `8f45162`, tag
 - Chưa kiểm: chưa nhìn bảng trên trình duyệt với dữ liệu thật (cần tài khoản quản trị + API 0.31.0 đã deploy). Chưa có:
   mã tổ chức để chép sang ô "Mở gói"; gói / số tháng của từng lần mua (hợp đồng 0.31.0 không trả).
 
+
+## Trang quản trị đầy đủ · `@mambo/*` 0.32.0 · 12/11/2026
+
+Nhánh `feat/quan-tri-day-du`; phía máy chủ là BE `feat/quan-tri-day-du` (0.32.0). `/quan-tri` chia bảy mục (`Segmented`
+cuộn ngang ở điện thoại): Tổng quan (số liệu chung + phễu), Tổ chức (tìm → bảng → chi tiết: thành viên, gói, mã sáng lập,
+mức dùng sổ, giao dịch, bật tắt cờ, nút "Mở gói tay" chuyển sang mục Thanh toán với mã tổ chức điền sẵn), Thanh toán (mở
+gói tay + giao dịch như cũ), Mã sáng lập (thêm, xoá mã chưa dùng), Người dùng (tìm + đặt lại mật khẩu, nút điền sẵn số),
+Phản hồi, Nhật ký.
+
+- Phép thử quyền vẫn là lời gọi phễu (giữ thiết kế cũ). Mục mới gọi qua `api.admin.*` của SDK 0.32.0 bằng hook chung
+  `useAdminRequest(request, load)`; ba route cũ vẫn qua `call` tự viết trong `src/data/admin.ts`.
+- 🔴 Mục ghi nhật ký máy chủ (tìm tổ chức, xem chi tiết, tìm người, phản hồi) chỉ gọi khi bấm; Tổng quan, Mã sáng lập,
+  Nhật ký tự tải khi mở mục (máy chủ không ghi nhật ký khi xem các mục này).
+- Test: `tests/features/adminPage.test.ts` (đủ bảy mục, mục ghi nhật ký không tự gọi), `tests/data/admin.test.ts`
+  (`promoInput`). `npm run verify` xanh 80 file / 500 test trên release `v0.32.0` (BE #58, merge `337667b`).
+- Chưa kiểm: chưa nhìn trên trình duyệt với API 0.32.0 thật (API production đã lên 0.32.0 lúc mở PR — xem trên preview bằng tài khoản Admin).
 ---
 
 ## Ba số phải giữ trong tầm

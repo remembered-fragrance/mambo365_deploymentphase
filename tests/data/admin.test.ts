@@ -205,3 +205,19 @@ describe('ownedOrganizations', () => {
     expect(ownedOrganizations(new Error('x'))).toEqual([]);
   });
 });
+
+describe('form thêm mã sáng lập → đầu vào của hợp đồng', () => {
+  const promo = { code: 'sl-001', plan: 'thuong_lai' as const, monthlyAmount: 149_000, periods: 12, note: '', approvedBy: 'Tài' };
+
+  it('đủ → mã viết hoa, ghi chú trống không gửi', async () => {
+    const { promoInput } = await load();
+    expect(promoInput(promo)).toEqual({ input: { code: 'SL-001', plan: 'thuong_lai', monthlyAmount: 149_000, periods: 12, approvedBy: 'Tài' } });
+  });
+
+  it('sai → đúng tên các ô cần tô đỏ', async () => {
+    const { promoInput } = await load();
+    expect(promoInput({ ...promo, code: 'a b', monthlyAmount: Number.NaN, periods: 40, approvedBy: '' })).toEqual({
+      invalid: ['code', 'monthlyAmount', 'periods', 'approvedBy'],
+    });
+  });
+});

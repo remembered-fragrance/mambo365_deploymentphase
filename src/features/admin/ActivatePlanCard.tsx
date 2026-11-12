@@ -79,8 +79,9 @@ const summary = (input: AdminActivatePlanInput, picked: PickedOrg | null): strin
  * tiền nên gói không tự mở. Máy chủ không có API tra tổ chức, nên trước khi bấm chỉ biết số điện thoại / mã đã gõ;
  * tên tổ chức, gói và ngày hết hạn hiện ra SAU khi máy chủ trả lời. Cùng mã giao dịch bấm lại không cộng thêm kỳ.
  */
-export function ActivatePlanCard() {
-  const [form, setForm] = useState(EMPTY);
+export function ActivatePlanCard({ initialTarget = '' }: { readonly initialTarget?: string }) {
+  // Mở từ trang chi tiết tổ chức: điền sẵn mã tổ chức (nơi dùng đổi `key` để dựng lại form).
+  const [form, setForm] = useState({ ...EMPTY, target: initialTarget });
   const [errors, setErrors] = useState<Errors>({});
   const [picked, setPicked] = useState<PickedOrg | null>(null);
   const [pending, setPending] = useState<AdminActivatePlanInput | null>(null);
