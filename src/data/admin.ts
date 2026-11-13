@@ -206,8 +206,10 @@ export const createPromoCode = (input: AdminPromoCreateInput): Promise<AdminProm
 export const deletePromoCode = (code: string, approvedBy: string): Promise<AdminPromoCodes> =>
   api.admin.deletePromo(code, { approvedBy });
 
-/** 🔴 Ghi nhật ký quản trị (`search-users`) — chỉ gọi khi người quản trị bấm tìm. */
-/** Không có `q` = mọi tài khoản, mới tạo trước; `cursor` = trang sau (API 0.34.0). */
+/**
+ * 🔴 Ghi nhật ký quản trị (`list-users` / `search-users`) — tab Người dùng gọi khi mở (trang đầu) và khi bấm Tìm / Xem thêm.
+ * Không có `q` = mọi tài khoản, mới tạo trước; `cursor` = trang sau (API 0.34.0).
+ */
 export const fetchUsers = (query: AdminUsersQuery): Promise<AdminUsers> => api.admin.users(query);
 
 /** Chi tiết + nhật ký gộp của một tài khoản (API 0.34.0 — ghi nhật ký `view-user`). */
