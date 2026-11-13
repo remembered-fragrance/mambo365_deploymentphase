@@ -1,5 +1,7 @@
 # 🏗️ KẾ HOẠCH XÂY DỰNG SẢN PHẨM THẬT — THUMUA365 v1.0
 
+> 🗄️ **23/10/2026 — tài liệu lịch sử.** Lộ trình A → H dưới đây đã làm tới G (08/2026); từ 09/2026 dự án chuyển sang nền tảng ba vai trò với backend NestJS — kế hoạch hiện hành ở `docs/THONG_TIN_DU_AN.md` và `docs/BE-backend-nestjs.md` của repo `Thumua365_BE`. Hiện trạng: [README.md](README.md), [MEMORY.md](MEMORY.md).
+
 > **Mục tiêu:** dựng lại từ base thành một sản phẩm **phát hành thật và thu được tiền**, chỉ tái sử dụng code khi việc tái sử dụng thực sự có lợi.
 > **Ngày lập:** 09/08/2026
 > **Thay thế cho:** vai trò "tài liệu thi công" của [KE_HOACH_TRIEN_KHAI_DEPLOY.md](KE_HOACH_TRIEN_KHAI_DEPLOY.md) (vẫn giữ làm tài liệu hạ tầng tham chiếu) và [KE_HOACH_THIET_KE_LAI_FRONTEND.md](KE_HOACH_THIET_KE_LAI_FRONTEND.md) (vẫn giữ nguyên hiệu lực cho toàn bộ phần giao diện — tài liệu này **không lặp lại**, chỉ dẫn chiếu).

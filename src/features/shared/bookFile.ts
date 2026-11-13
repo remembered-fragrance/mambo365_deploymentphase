@@ -9,7 +9,7 @@
  */
 
 import { useEffect } from 'react';
-import type { AppData } from '@/core/types';
+import type { AppData } from '@mambo/core/types';
 
 const FILE_NAME = 'thumua365-so.json';
 

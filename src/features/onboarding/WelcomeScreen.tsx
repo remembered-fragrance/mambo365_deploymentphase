@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { useToast } from '@/components/ui/Toast';
-import { PlusIcon, ReceiptIcon, ToolIcon } from '@/components/ui/icons';
+import { EyeIcon, PlusIcon, UploadIcon } from '@/components/ui/icons';
 import { useDemoMode } from '@/data/hooks/useDemoMode';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
@@ -45,14 +45,21 @@ function Choice({ index, title, hint, Icon, onPick }: ChoiceProps) {
 export function WelcomeScreen() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { importData } = useStore();
+  // Chỉ sổ nằm riêng trên máy mới nạp từ file (B1) — sổ tổ chức tự về khi đăng nhập.
+  const { importData, importsFromFile } = useStore();
   const { startDemo } = useDemoMode();
   const fileInput = useRef<HTMLInputElement>(null);
 
   const loadFile = async (file: File | undefined) => {
     if (!file) return;
-    importData(JSON.parse(await file.text()) as unknown);
-    toast({ message: L.importedToast });
+    try {
+      importData(JSON.parse(await file.text()) as unknown);
+      toast({ message: L.importedToast });
+    } catch (err) {
+      // File không phải JSON: lỗi của trình duyệt là tiếng Anh, không nói được gì với người dùng.
+      const message = err instanceof SyntaxError ? L.importNotBook : err instanceof Error ? err.message : String(err);
+      toast({ message, tone: 'alert' });
+    }
   };
 
   return (
@@ -66,7 +73,7 @@ export function WelcomeScreen() {
         <DeviceBookNotice />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className={`grid gap-3 ${importsFromFile ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
         <Choice
           index="1"
           title={L.welcomeCreate}
@@ -78,19 +85,19 @@ export function WelcomeScreen() {
           index="2"
           title={L.welcomeDemo}
           hint={L.welcomeDemoHint}
-          Icon={ReceiptIcon}
+          Icon={EyeIcon}
           onPick={() => {
             startDemo();
             toast({ message: L.demoStarted });
           }}
         />
-        <Choice
+        {importsFromFile && <Choice
           index="3"
           title={L.welcomeImport}
           hint={L.welcomeImportHint}
-          Icon={ToolIcon}
+          Icon={UploadIcon}
           onPick={() => fileInput.current?.click()}
-        />
+        />}
       </div>
 
       <input

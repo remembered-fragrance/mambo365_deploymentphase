@@ -3,10 +3,10 @@
  * Số liệu do `core/taxReport.ts` tính; file này chỉ lo việc ghi file.
  */
 
-import { transactionTotals } from '@/core/calc';
-import { formatDate } from '@/core/format';
-import { buildTaxReport, isInRange, type TaxReportRange } from '@/core/taxReport';
-import type { AppData, Transaction } from '@/core/types';
+import { transactionTotals } from '@mambo/core/calc';
+import { formatDate } from '@mambo/core/format';
+import { buildTaxReport, isInRange, type TaxReportRange } from '@mambo/core/taxReport';
+import type { AppData, Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 
 const detailRows = (
@@ -46,7 +46,7 @@ export const exportTaxReportXlsx = async (
     [L.taxPeriod, range.label],
     [L.taxTotalPurchase, report.totalPurchase],
     [L.taxTotalSale, report.totalSale],
-    [L.taxGrossProfit, report.grossProfit],
+    [L.taxGrossProfit, report.saleCount > 0 ? report.grossProfit : L.taxNoSaleYet],
     [L.taxPurchaseCount, report.purchaseCount],
     [L.taxSaleCount, report.saleCount],
     [L.note, report.disclaimer],

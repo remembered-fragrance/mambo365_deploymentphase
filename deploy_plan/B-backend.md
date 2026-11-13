@@ -1,5 +1,7 @@
 # GIAI ĐOẠN B — BACKEND
 
+> 📌 **23/10/2026 — đã thay thế.** Kế hoạch 08/2026, thời app gọi Supabase trực tiếp — giữ làm lịch sử. Trạng thái và kiến trúc hiện tại: đầu trang [README.md](README.md) của thư mục này. Backend nay là NestJS ở repo `Thumua365_BE` (Prisma Migrate giữ schema, RLS theo phiên); `supabase/migrations` ở repo này không còn chạy.
+
 **Buổi:** 3 · **Phụ thuộc:** A xong (cổng chặn 1) · **Người làm:** Tài · **Cần từ người khác:** không
 
 ---

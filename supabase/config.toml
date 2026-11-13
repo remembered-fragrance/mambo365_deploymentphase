@@ -18,17 +18,16 @@ enable_signup = true
 # Người chỉ có số điện thoại dùng email nội bộ +84…@id.thumua365.vn —
 # tên miền ta sở hữu và KHÔNG gửi thư tới, nên không thể xác nhận được.
 enable_anonymous_sign_ins = false
+# Tối thiểu 8 ký tự (PASSWORD_MIN_LENGTH của @mambo/contracts, từ 0.16.0), CHO PHÉP TOÀN SỐ.
+# Không bắt chữ hoa / ký tự đặc biệt: với tệp người dùng này, quy tắc phức tạp dẫn tới viết
+# mật khẩu ra giấy dán lên tường — an toàn thực tế giảm chứ không tăng. Bù bằng rate limit + phiên dài.
+minimum_password_length = 8
 
 [auth.email]
 enable_signup = true
 # Bắt buộc tắt: xem lý do ở trên.
 enable_confirmations = false
 double_confirm_changes = true
-# Tối thiểu 6 ký tự, CHO PHÉP TOÀN SỐ. Không bắt chữ hoa / ký tự đặc biệt:
-# với tệp người dùng này, quy tắc phức tạp dẫn tới viết mật khẩu ra giấy dán
-# lên tường — an toàn thực tế giảm chứ không tăng. Bù bằng rate limit + phiên dài.
-[auth.password]
-min_length = 6
 
 [auth.rate_limit]
 # Chặn dò mật khẩu hàng loạt qua resolve_identifier + signInWithPassword.

@@ -3,6 +3,7 @@ import { WarningIcon } from '@/components/ui/icons';
 import { useSubscription } from '@/data/hooks/useSubscription';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
+import { useAccess } from '../shared/useAccess';
 
 /** Nhắc trước bấy nhiêu ngày thì banner dùng thử mới xuất hiện. */
 const REMIND_WITHIN_DAYS = 7;
@@ -17,16 +18,22 @@ const REMIND_WITHIN_DAYS = 7;
  *
  * Chỉ hiện khi có việc phải nói: sắp hết dùng thử, đang ân hạn, hoặc đã hết
  * hạn. Banner thường trực là banner không ai đọc.
+ *
+ * Người cân, quản lý không trả tiền được: không có link, chỉ nói báo chủ gia hạn.
  */
 export function PlanBanner() {
   const { plan, subscription } = useSubscription();
+  const { can } = useAccess();
+  const owner = can('billing:manage');
 
   const expired = plan.tier === 'free' && subscription !== null;
   const trialEnding = plan.tier === 'trial' && plan.daysLeft <= REMIND_WITHIN_DAYS;
   if (!expired && !trialEnding && plan.tier !== 'grace') return null;
 
   const message = expired
-    ? L.bannerExpired
+    ? owner
+      ? L.bannerExpired
+      : L.bannerExpiredStaff
     : plan.tier === 'grace'
       ? `${L.bannerGrace} ${plan.daysLeft} ${L.planDaysLeft}`
       : `${L.bannerTrialLeft} ${plan.daysLeft} ${L.planDaysLeft}`;
@@ -38,9 +45,11 @@ export function PlanBanner() {
     >
       <WarningIcon className="h-4 w-4 shrink-0 text-alert" />
       <span className="font-semibold">{message}</span>
-      <Link to={ROUTES.plans} className="font-semibold text-brand underline">
-        {expired ? L.bannerExpiredCta : L.planUpgrade}
-      </Link>
+      {owner && (
+        <Link to={ROUTES.plans} className="font-semibold text-brand underline">
+          {expired ? L.bannerExpiredCta : L.planUpgrade}
+        </Link>
+      )}
     </div>
   );
 }

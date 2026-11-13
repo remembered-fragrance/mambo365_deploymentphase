@@ -53,11 +53,13 @@ const readTransactions = (body: unknown): BankTx[] => {
     .filter((tx) => tx.bankTxId !== '' && Number.isFinite(tx.amount) && tx.amount > 0);
 };
 
-/** So sánh không đo được thời gian — tránh dò bí mật bằng cách đo độ trễ. */
+/** So sánh không đo được thời gian — không lộ độ dài hay vị trí lệch. */
 const secretMatches = (given: string, expected: string): boolean => {
-  if (given.length !== expected.length) return false;
-  let diff = 0;
-  for (let i = 0; i < given.length; i++) diff |= given.charCodeAt(i) ^ expected.charCodeAt(i);
+  const a = new TextEncoder().encode(given);
+  const b = new TextEncoder().encode(expected);
+  const len = Math.max(a.length, b.length);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < len; i++) diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
   return diff === 0;
 };
 

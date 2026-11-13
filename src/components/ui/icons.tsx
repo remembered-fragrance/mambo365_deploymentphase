@@ -39,6 +39,14 @@ export const KeyboardIcon = (p: IconProps) => (
 );
 
 export const HomeIcon = (p: IconProps) => <Icon {...p} d="M4 11l8-7 8 7|M6 10v10h12V10" />;
+/** Tấm bản đồ gấp ba. */
+export const MapIcon = (p: IconProps) => (
+  <Icon {...p} d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z|M9 4v14|M15 6v14" />
+);
+/** Ghim địa điểm. */
+export const PinIcon = (p: IconProps) => (
+  <Icon {...p} d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z|M12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
+);
 export const ReceiptIcon = (p: IconProps) => (
   <Icon {...p} d="M6 3h12v18l-3-2-3 2-3-2-3 2z|M9 8h6M9 12h6" />
 );
@@ -72,6 +80,12 @@ export const CameraIcon = (p: IconProps) => (
   <Icon {...p} d="M4 8h3l2-2h6l2 2h3v12H4z|M12 11a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" />
 );
 export const CheckIcon = (p: IconProps) => <Icon {...p} d="M5 13l4 4L19 7" />;
+/** Tô kín bằng `fill-current` trong className (CSS thắng thuộc tính `fill="none"` của SVG). */
+export const StarIcon = (p: IconProps) => <Icon {...p} d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />;
+export const LockIcon = (p: IconProps) => <Icon {...p} d="M6 11h12v9H6z|M8 11V8a4 4 0 0 1 8 0v3" />;
+export const ClockIcon = (p: IconProps) => (
+  <Icon {...p} d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z|M12 7v5l3 2" />
+);
 export const CloudIcon = (p: IconProps) => (
   <Icon {...p} d="M7 18a4 4 0 0 1 .6-8 5 5 0 0 1 9.6 1.4A3.5 3.5 0 0 1 17 18z" />
 );
@@ -81,6 +95,9 @@ export const CloudOffIcon = (p: IconProps) => (
 export const PhoneIcon = (p: IconProps) => (
   <Icon {...p} d="M5 4h4l2 5-2.5 1.5a12 12 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z" />
 );
+const EYE = 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z|M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z';
+export const EyeIcon = (p: IconProps) => <Icon {...p} d={EYE} />;
+export const EyeOffIcon = (p: IconProps) => <Icon {...p} d={`${EYE}|M4 4l16 16`} />;
 export const PencilIcon = (p: IconProps) => (
   <Icon {...p} d="M4 20h4L20 8l-4-4L4 16z|M14 6l4 4" />
 );
@@ -97,6 +114,9 @@ export const PercentIcon = (p: IconProps) => (
 export const ChartIcon = (p: IconProps) => (
   <Icon {...p} d="M4 20h16|M7 20V10|M12 20V4|M17 20v-7" />
 );
+export const ContractIcon = (p: IconProps) => (
+  <Icon {...p} d="M6 3h8l4 4v14H6z|M14 3v4h4|M9 12h6|M9 16l2 1.5 4-3" />
+);
 export const ToolIcon = (p: IconProps) => (
   <Icon {...p} d="M6 3h12v18H6z|M9 7h6|M9 11h.01M12 11h.01M15 11h.01M9 15h.01M12 15h.01M15 15h3" />
 );
@@ -112,11 +132,32 @@ export const CardIcon = (p: IconProps) => (
 export const UploadIcon = (p: IconProps) => (
   <Icon {...p} d="M12 16V4|M8 8l4-4 4 4|M4 18v2h16v-2" />
 );
+export const DownloadIcon = (p: IconProps) => (
+  <Icon {...p} d="M12 4v12|M8 12l4 4 4-4|M4 18v2h16v-2" />
+);
 export const GiftIcon = (p: IconProps) => (
   <Icon {...p} d="M4 10h16v10H4z|M4 7h16v3H4z|M12 7v13|M12 7c-3 0-4-3-2-3s2 3 2 3zm0 0c3 0 4-3 2-3s-2 3-2 3z" />
 );
+export const BellIcon = (p: IconProps) => (
+  <Icon {...p} d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z|M10 20.5a2 2 0 0 0 4 0" />
+);
+export const PackageIcon = (p: IconProps) => (
+  <Icon {...p} d="M3 7l9-4 9 4v10l-9 4-9-4z|M3 7l9 4 9-4|M12 11v10" />
+);
 export const HelpIcon = (p: IconProps) => (
   <Icon {...p} d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z|M9.5 9.5a2.5 2.5 0 1 1 3 2.4V14|M12 17.5v.01" />
+);
+/** Vựa / điểm thu mua — dùng màn chọn vai trò. */
+export const StoreIcon = (p: IconProps) => (
+  <Icon {...p} d="M4 9l2-5h12l2 5|M4 9h16v11H4z|M9 20v-6h6v6" />
+);
+/** Doanh nghiệp / HTX. */
+export const BuildingIcon = (p: IconProps) => (
+  <Icon {...p} d="M4 20V6l8-3 8 3v14|M9 20v-5h6v5|M9 10h.01M12 10h.01M15 10h.01M9 14h.01M12 14h.01M15 14h.01" />
+);
+/** Nhà vườn / nông dân. */
+export const LeafIcon = (p: IconProps) => (
+  <Icon {...p} d="M5 19c6-1 10-5 12-12 0 0-7 1-10 6|M9 13c2 2 4 3 7 4|M12 8v3" />
 );
 
 /** Hình tạm cho bốn nông sản. Thay bằng bộ ký hiệu chính thức khi có. */

@@ -7,8 +7,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { filterTransactions, type HistoryFilters } from '@/core/filters';
-import type { Transaction } from '@/core/types';
+import { filterTransactions, type HistoryFilters } from '@mambo/core/filters';
+import type { Transaction } from '@mambo/core/types';
 import { useStore } from '../useStore';
 
 const PAGE_SIZE = 50;

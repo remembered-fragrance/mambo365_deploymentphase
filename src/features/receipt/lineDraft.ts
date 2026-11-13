@@ -6,9 +6,12 @@
  * số ở đúng một chỗ — `toLine()`.
  */
 
-import { newId } from '@/core/id';
-import { parseNumber } from '@/core/parseNumber';
-import type { CropType, Product, ProductFormulaType, TransactionLine } from '@/core/types';
+import { RECEIPT_LIMITS } from '@mambo/contracts';
+import { lossFromGreenRatio } from '@mambo/core/calc';
+import { newId } from '@mambo/core/id';
+import { parseNumber } from '@mambo/core/parseNumber';
+import type { CropType, Product, ProductFormulaType, RubberKind, TransactionLine } from '@mambo/core/types';
+import { usableLine } from '@/data/hooks/useReceiptRules';
 
 export interface LineDraft {
   readonly id: string;
@@ -23,6 +26,14 @@ export interface LineDraft {
   readonly loss: string;
   readonly price: string;
   readonly qualityGrade?: string;
+  readonly rubberKind?: RubberKind;
+  /** Chỉ tiêu chất lượng (V19) — rỗng là không đo, khác với đo được 0. */
+  readonly density: string;
+  readonly moisture: string;
+  readonly impurity: string;
+  readonly kor: string;
+  /** (V24) Cà phê tươi: bao nhiêu kg tươi ra 1 kg nhân. Có thì hao hụt suy từ tỷ lệ, không gõ tay. */
+  readonly greenRatio: string;
 }
 
 export const emptyLine = (): LineDraft => ({
@@ -35,6 +46,11 @@ export const emptyLine = (): LineDraft => ({
   quality: '',
   loss: '',
   price: '',
+  density: '',
+  moisture: '',
+  impurity: '',
+  kor: '',
+  greenRatio: '',
 });
 
 /** Chọn mặt hàng thì cách tính và đơn giá lần trước tự điền theo. */
@@ -45,26 +61,58 @@ export const applyProduct = (line: LineDraft, product: Product): LineDraft => ({
   unit: product.unit,
   formulaType: product.formulaType,
   crop: product.crop,
+  rubberKind: product.rubberKind,
+  greenRatio: product.formulaType === 'lossPercent' && product.greenRatio ? numberText(product.greenRatio) : '',
   price: line.price || (product.lastPricePerUnit ? String(product.lastPricePerUnit) : ''),
 });
 
-export const toLine = (draft: LineDraft): TransactionLine => ({
+/**
+ * Kẹp vào khoảng máy chủ nhận. Ô nhập đã chặn gõ vượt; đây là cho nháp lưu từ bản cũ (trước khi chặn)
+ * — để nguyên thì op nháp / phiếu bị từ chối và chặn cả hàng đợi.
+ */
+const within = (raw: string, max: number): number => Math.min(Math.max(parseNumber(raw), 0), max);
+const measured = (raw: string, max: number): number | undefined => (raw.trim() === '' ? undefined : within(raw, max));
+
+/** Tỷ lệ tươi / nhân dùng được: lớn hơn 1, không quá giới hạn máy chủ. Khác thì như không có. */
+export const greenRatioOf = (draft: Pick<LineDraft, 'formulaType' | 'greenRatio'>): number | undefined => {
+  if (draft.formulaType !== 'lossPercent' || draft.greenRatio.trim() === '') return undefined;
+  const ratio = parseNumber(draft.greenRatio);
+  return ratio > 1 && ratio <= RECEIPT_LIMITS.greenRatio ? ratio : undefined;
+};
+
+export const toLine = (draft: LineDraft): TransactionLine => {
+  const ratio = greenRatioOf(draft);
+  return {
   id: draft.id,
   productId: draft.productId,
   productName: draft.productName.trim() || 'Mặt hàng',
   unit: draft.unit,
   formulaType: draft.formulaType,
   crop: draft.crop,
-  grossWeight: parseNumber(draft.gross),
-  tareWeight: parseNumber(draft.tare),
-  qualityPercent: draft.formulaType === 'rubberLatex' ? parseNumber(draft.quality) : undefined,
-  lossPercent: draft.formulaType === 'lossPercent' ? parseNumber(draft.loss) : undefined,
-  pricePerUnit: parseNumber(draft.price),
+  grossWeight: within(draft.gross, RECEIPT_LIMITS.quantity),
+  tareWeight: within(draft.tare, RECEIPT_LIMITS.quantity),
+  qualityPercent: draft.formulaType === 'rubberLatex' ? within(draft.quality, RECEIPT_LIMITS.percent) : undefined,
+  lossPercent:
+    draft.formulaType !== 'lossPercent'
+      ? undefined
+      : ratio !== undefined
+        ? lossFromGreenRatio(ratio)
+        : within(draft.loss, RECEIPT_LIMITS.percent),
+  greenRatio: ratio,
+  pricePerUnit: within(draft.price, RECEIPT_LIMITS.quantity),
   qualityGrade: draft.qualityGrade,
-});
+  rubberKind: draft.formulaType === 'rubberLatex' ? draft.rubberKind : undefined,
+  bulkDensity: measured(draft.density, RECEIPT_LIMITS.quantity),
+  moisturePercent: measured(draft.moisture, RECEIPT_LIMITS.percent),
+  impurityPercent: measured(draft.impurity, RECEIPT_LIMITS.percent),
+  kor: measured(draft.kor, RECEIPT_LIMITS.quantity),
+  };
+};
 
 const numberText = (value?: number): string =>
   value === undefined || value === 0 ? '' : String(value).replace('.', ',');
+/** Chỉ tiêu (V19): đo được 0 vẫn là số đo — bậc giá "từ 0" phải áp như lúc gõ. */
+const measuredText = (value?: number): string => (value === undefined ? '' : String(value).replace('.', ','));
 
 export const fromLine = (line: TransactionLine): LineDraft => ({
   id: line.id,
@@ -79,12 +127,13 @@ export const fromLine = (line: TransactionLine): LineDraft => ({
   loss: numberText(line.lossPercent),
   price: numberText(line.pricePerUnit),
   qualityGrade: line.qualityGrade,
+  rubberKind: line.rubberKind,
+  density: measuredText(line.bulkDensity),
+  moisture: measuredText(line.moisturePercent),
+  impurity: measuredText(line.impurityPercent),
+  kor: measuredText(line.kor),
+  greenRatio: numberText(line.greenRatio),
 });
 
 /** Dòng đã đủ thông tin để tính ra tiền. */
-export const isUsable = (draft: LineDraft): boolean => {
-  const line = toLine(draft);
-  if (line.grossWeight <= 0 || line.pricePerUnit <= 0) return false;
-  if (line.formulaType === 'rubberLatex') return (line.qualityPercent ?? 0) > 0;
-  return true;
-};
+export const isUsable = (draft: LineDraft): boolean => usableLine(toLine(draft));

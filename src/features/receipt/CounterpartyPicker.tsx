@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
+import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { Input } from '@/components/ui/Input';
-import { formatDate, formatVnd } from '@/core/format';
-import { supplierSummaries } from '@/core/supplierSelectors';
-import { buyerSummaries } from '@/core/buyerSelectors';
-import { transactionTotals } from '@/core/calc';
-import type { AppData, TransactionKind } from '@/core/types';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import { supplierSummaries } from '@mambo/core/supplierSelectors';
+import { buyerSummaries } from '@mambo/core/buyerSelectors';
+import { transactionTotals } from '@mambo/core/calc';
+import type { AppData, TransactionKind } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { chipHint } from './namesakes';
 
 interface CounterpartyPickerProps {
   readonly data: AppData;
@@ -28,13 +30,14 @@ export function CounterpartyPicker({
 }: CounterpartyPickerProps) {
   const [open, setOpen] = useState(false);
 
-  const parties = useMemo(
-    () =>
-      kind === 'sale'
-        ? buyerSummaries(data).map((b) => ({ id: b.id, name: b.name, lastDate: b.lastDate }))
-        : supplierSummaries(data).map((s) => ({ id: s.id, name: s.name, lastDate: s.lastDate })),
-    [data, kind],
-  );
+  const parties = useMemo(() => {
+    const all = kind === 'sale' ? data.buyers : data.suppliers;
+    const summaries = kind === 'sale' ? buyerSummaries(data) : supplierSummaries(data);
+    return summaries.map((s) => {
+      const party = all.find((p) => p.id === s.id);
+      return { id: s.id, name: s.name, hint: party ? chipHint(party, all, s.lastDate) : undefined };
+    });
+  }, [data, kind]);
 
   const matches = useMemo(() => {
     const q = name.trim().toLowerCase();
@@ -56,6 +59,7 @@ export function CounterpartyPicker({
         value={name}
         placeholder={L.walkIn}
         autoComplete="off"
+        maxLength={RECEIPT_LIMITS.partyName}
         onFocus={() => setOpen(true)}
         onChange={(e) => onPick(undefined, e.target.value)}
       />
@@ -73,6 +77,7 @@ export function CounterpartyPicker({
                 className="min-h-11 rounded-full border border-rule bg-card px-3 text-sm font-medium text-ink-2"
               >
                 {party.name}
+                {party.hint && <span className="num ml-1 font-normal text-ink-3">· {party.hint}</span>}
               </button>
             </li>
           ))}

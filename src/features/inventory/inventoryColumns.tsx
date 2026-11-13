@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/Badge';
 import type { Column } from '@/components/data/dataViewModel';
-import { formatVnd, formatWeight } from '@/core/format';
-import type { InventoryValueRow } from '@/core/inventory';
+import { formatVnd, formatWeight } from '@mambo/core/format';
+import type { InventoryValueRow } from '@mambo/core/inventory';
 import { L } from '@/i18n/labels';
 
 /**

@@ -10,10 +10,11 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PlusIcon } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toast';
-import type { PricingRule } from '@/core/types';
+import type { PricingRule } from '@mambo/core/types';
 import { useStore } from '@/data/useStore';
 import { L } from '@/i18n/labels';
 import { HelpButton } from '../help/HelpButton';
+import { useAttempt } from '../shared/useAttempt';
 import { PricingRuleEditor } from './PricingRuleEditor';
 import { pricingColumns } from './pricingColumns';
 import { draftFromRule, emptyRuleDraft, type RuleDraft } from './ruleDraft';
@@ -29,6 +30,7 @@ export function PricingPage() {
   const { data, addPricingRule, updatePricingRule, deletePricingRule } = useStore();
   const [params, setParams] = useSearchParams();
   const toast = useToast();
+  const attempt = useAttempt();
 
   const [draft, setDraft] = useState<RuleDraft | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<PricingRule | null>(null);
@@ -45,11 +47,11 @@ export function PricingPage() {
     setParams(merged, { replace: true });
   };
 
-  const toggle = (rule: PricingRule) => updatePricingRule(rule.id, { active: !rule.active });
+  const toggle = (rule: PricingRule) => attempt(() => updatePricingRule(rule.id, { active: !rule.active }));
 
   const save = (rule: Omit<PricingRule, 'id'>, id?: string) => {
-    if (id) updatePricingRule(id, rule);
-    else addPricingRule(rule);
+    // Không nhận (B4): form còn mở để sửa.
+    if (!attempt(() => (id ? updatePricingRule(id, rule) : addPricingRule(rule)))) return;
     setDraft(null);
     toast({ message: `${L.save}: ${rule.name}` });
   };
@@ -57,7 +59,7 @@ export function PricingPage() {
   const remove = () => {
     const rule = confirmDelete;
     if (!rule) return;
-    deletePricingRule(rule.id);
+    if (!attempt(() => deletePricingRule(rule.id))) return;
     setConfirmDelete(null);
     setDraft(null);
     toast({ message: `${L.del}: ${rule.name}`, tone: 'alert' });

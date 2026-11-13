@@ -1,0 +1,44 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="THUMUA365">
+ <title>THUMUA365</title>
+ <defs>
+  <!-- Khe hở 4px (gân lá) cắt thẳng vào shape bằng clipPath, nền trong suốt vẫn đúng -->
+  <clipPath id="vein-top" clipPathUnits="userSpaceOnUse">
+   <path d="m0,0l510,0l0,1024l-510,0l0,-1024zm514,0l510,0l0,1024l-510,0l0,-1024z" id="svg_1"/>
+  </clipPath>
+  <clipPath id="vein-mid" clipPathUnits="userSpaceOnUse">
+   <path d="m-1.55874,59.05495l690.4,695.5l425.8,-422.7l-690.4,-695.5l-425.8,422.7zm-2.8,2.8l690.4,695.5l-425.8,422.7l-690.4,-695.5l425.8,-422.7z" id="svg_2"/>
+  </clipPath>
+  <!-- Cắt khe gân lá khỏi thân Y (chỉ đoạn gần đầu lá) để thân không lộ qua khe -->
+  <clipPath id="stem-clip" clipPathUnits="userSpaceOnUse">
+   <path clip-rule="evenodd" d="m0,0l1024,0l0,1024l-1024,0l0,-1024zm191.4,253.6l-2.8,2.8l291,293l2.8,-2.8l-291,-293zm641.2,0l-291,293l2.8,2.8l291,-293l-2.8,-2.8z" id="svg_3"/>
+  </clipPath>
+ </defs>
+ <!-- PART 6: thân chữ Y (vẽ trước, đầu hai nhánh chui xuống dưới lá giữa để không có khe hở) -->
+ <!-- PART 1: lá đỉnh (xanh lá) -->
+ <!-- PART 2: lá giữa trái -->
+ <!-- PART 3: lá giữa phải (đối xứng) -->
+ <!-- PART 4: lá dưới trái (kèm chân) -->
+ <!-- PART 5: lá dưới phải (đối xứng) -->
+ <g>
+  <g id="part-stem">
+   <path fill="#02645d" clip-path="url(#stem-clip)" d="m428,526l43,0l0,46l41,46l41,-46l0,-46l43,0l0,69l-59,65l0,281a25,25 0 0 1 -50,0l0,-281l-59,-65l0,-69z" id="svg_4"/>
+  </g>
+  <g id="part-leaf-top">
+   <path fill="#62b51a" clip-path="url(#vein-top)" d="m512,45c-72,85 -102,155 -102,220c0,85 50,165 102,213c52,-48 102,-128 102,-213c0,-65 -30,-135 -102,-220z" id="svg_5"/>
+  </g>
+  <g id="part-leaf-mid-left">
+   <path fill="#03a395" clip-path="url(#vein-mid)" d="m205.62466,270.72137c147,0 262,112 268,270c-136,2 -256,-103 -268,-270z" id="svg_6"/>
+  </g>
+  <g id="part-leaf-mid-right" transform="translate(1024 0) scale(-1 1)">
+   <path fill="#03a395" clip-path="url(#vein-mid)" d="m205.8166,270.63358c147,0 262,112 268,270c-136,2 -256,-103 -268,-270z" id="svg_7"/>
+  </g>
+  <g id="part-leaf-low-left">
+   <path fill="#02645d" d="m105,497c165,-27 320,48 332,211l0,198l-52,-66l0,-118c-130,3 -240,-97 -280,-225z" id="svg_8"/>
+   <path fill="#03a395" d="m105,497c165,-27 320,48 332,211l-332,-211z" id="svg_9"/>
+  </g>
+  <g id="part-leaf-low-right" transform="translate(1024 0) scale(-1 1)">
+   <path fill="#02645d" d="m105,497c165,-27 320,48 332,211l0,198l-52,-66l0,-118c-130,3 -240,-97 -280,-225z" id="svg_10"/>
+   <path fill="#03a395" d="m105,497c165,-27 320,48 332,211l-332,-211z" id="svg_11"/>
+  </g>
+ </g>
+</svg>

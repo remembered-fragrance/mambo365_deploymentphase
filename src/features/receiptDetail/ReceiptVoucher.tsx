@@ -1,8 +1,9 @@
-import { lineTotals, transactionTotals } from '@/core/calc';
-import { formatDateTime, formatQuantity, formatVnd } from '@/core/format';
-import { numberToVietnameseWords } from '@/core/numberToWords';
-import type { Transaction } from '@/core/types';
+import { lineTotals, transactionTotals } from '@mambo/core/calc';
+import { formatDateTime, formatQuantity, formatVnd } from '@mambo/core/format';
+import { numberToVietnameseWords } from '@mambo/core/numberToWords';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { qualityText } from '../pricing/quality';
 
 interface ReceiptVoucherProps {
   readonly tx: Transaction;
@@ -41,6 +42,7 @@ export function ReceiptVoucher({ tx, businessName }: ReceiptVoucherProps) {
         <tbody>
           {tx.lines.map((line) => {
             const lt = lineTotals(line);
+            const quality = qualityText(line);
             return (
               <tr key={line.id} className="align-top break-inside-avoid">
                 <td className="py-1">
@@ -48,6 +50,7 @@ export function ReceiptVoucher({ tx, businessName }: ReceiptVoucherProps) {
                   <span className="num block text-xs">
                     {formatQuantity(lt.netWeight, line.unit)} × {formatVnd(line.pricePerUnit)}
                   </span>
+                  {quality && <span className="num block text-xs">{quality}</span>}
                 </td>
                 <td className="num py-1 text-right font-semibold">{formatVnd(lt.total)}</td>
               </tr>

@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { formatDate, formatVnd } from '@/core/format';
-import type { PaymentIntentStatus } from '@/core/subscription';
+import { formatDate, formatVnd } from '@mambo/core/format';
+import type { PaymentIntentStatus } from '@mambo/core/subscription';
 import { useSubscription } from '@/data/hooks/useSubscription';
 import { L } from '@/i18n/labels';
 import { ROUTES } from '../shared/navItems';
@@ -24,19 +24,17 @@ const INTENT_LABEL: Record<PaymentIntentStatus, string> = {
  * họ sẽ phát hiện ra vào đúng lúc cần nó nhất.
  */
 export function PlanCard() {
-  const { plan, quota, intents } = useSubscription();
+  const { plan, planCode, intents } = useSubscription();
 
   return (
     <Card
       title={L.planTitle}
       subtitle={plan.endsAt ? `${L.planEndsOn} ${formatDate(plan.endsAt)}` : undefined}
-      action={<Badge label={planLabel(plan)} tone={planTone(plan)} />}
+      action={<Badge label={planLabel(plan, planCode)} tone={planTone(plan)} />}
     >
       <div className="flex flex-col gap-3">
         {plan.tier === 'free' ? (
-          <p className="text-sm text-ink-2">
-            {L.quotaUsed}: <b className="text-ink">{quota.used}</b> {L.quotaOfLimit} {quota.limit}
-          </p>
+          <p className="text-sm text-ink-2">{L.quotaReadOnlyHint}</p>
         ) : (
           <p className="text-sm text-ink-2">{daysLeftText(plan)}</p>
         )}

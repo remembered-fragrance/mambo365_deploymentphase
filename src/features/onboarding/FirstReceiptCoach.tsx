@@ -1,9 +1,9 @@
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
 import { useOnceFlag } from '@/data/hooks/useOnceFlag';
+import type { TransactionKind } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
-
-const STEPS = [L.coachStep1, L.coachStep2, L.coachStep3, L.coachStep4];
+import { coachSteps } from './coachSteps';
 
 /**
  * Hướng dẫn bốn bước, hiện đúng MỘT lần trước phiếu đầu tiên.
@@ -13,13 +13,13 @@ const STEPS = [L.coachStep1, L.coachStep2, L.coachStep3, L.coachStep4];
  * mà bố cục còn đổi theo bề rộng và theo chế độ Ngoài nắng — chỉ sai một lần
  * là hướng dẫn thành thứ gây rối.
  */
-export function FirstReceiptCoach() {
+export function FirstReceiptCoach({ kind }: { readonly kind: TransactionKind }) {
   const { done, markDone } = useOnceFlag('coach-first-receipt');
 
   return (
     <BottomSheet open={!done} title={L.coachTitle} onClose={markDone}>
       <ol className="flex flex-col gap-3">
-        {STEPS.map((step, i) => (
+        {coachSteps(kind).map((step, i) => (
           <li key={step} className="flex items-start gap-3">
             <span className="num flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand font-bold text-paper">
               {i + 1}

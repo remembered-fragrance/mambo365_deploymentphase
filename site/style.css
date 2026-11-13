@@ -1,0 +1,309 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   THUMUA365 — site giới thiệu & pháp lý
+   Bốn trang tĩnh. Không framework, không build, không công cụ theo dõi.
+
+   Màu CHÉP NGUYÊN từ `src/index.css` (chế độ "Trong nhà"). Site và app phải
+   trông như cùng một sản phẩm; đổi màu ở đây mà không đổi bên kia là hỏng nhận
+   diện. Đổi thì đổi cả hai, và hệ màu là phần việc của Tuyến.
+
+   Chữ dùng bộ có sẵn của máy, KHÔNG tải Be Vietnam Pro từ máy chủ ngoài: tải
+   font ngoài là gửi địa chỉ IP của người đọc sang một bên thứ ba, mà trang này
+   vừa hứa không có bên thứ ba nào theo dõi họ.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --paper: #edeae3;
+  --card: #fbf9f5;
+  --ink: #1a1714;
+  --ink-2: #554e44;
+  --ink-3: #8b8175;
+  --rule: #d6d0c4;
+  --brand: #14663c;
+  --receivable: #0e6e7a;
+  --payable: #9a3412;
+  --alert: #a81e2e;
+
+  --measure: 34rem;
+  --gap: 1rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Be Vietnam Pro', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+/* Không cuộn ngang, kể cả ở 320px — cùng luật với app. */
+img,
+table {
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+  display: block;
+}
+
+a {
+  color: var(--brand);
+  text-underline-offset: 0.15em;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin: 2rem 0 0.75rem;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(1.75rem, 5vw, 2.75rem);
+  margin-top: 0;
+}
+
+h2 {
+  font-size: clamp(1.25rem, 3.5vw, 1.6rem);
+}
+
+h3 {
+  font-size: 1.1rem;
+}
+
+p,
+ul,
+ol {
+  margin: 0 0 1rem;
+}
+
+ul,
+ol {
+  padding-left: 1.25rem;
+}
+
+li {
+  margin-bottom: 0.35rem;
+}
+
+/* ─── Khung ────────────────────────────────────────────────────────────────── */
+
+.wrap {
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.prose {
+  max-width: var(--measure);
+}
+
+.site-header {
+  border-bottom: 1px solid var(--rule);
+  background: var(--card);
+}
+
+.site-header .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.brand {
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+  color: var(--brand);
+  text-decoration: none;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+main {
+  padding: 2.5rem 0 3.5rem;
+}
+
+/* ─── Thành phần ───────────────────────────────────────────────────────────── */
+
+.lede {
+  font-size: clamp(1.05rem, 2.5vw, 1.3rem);
+  color: var(--ink-2);
+  max-width: var(--measure);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.25rem;
+  padding: 0 1.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--brand);
+  background: var(--brand);
+  color: var(--paper);
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-decoration: none;
+}
+
+.btn-quiet {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 0.9rem;
+  padding: 1.25rem;
+}
+
+.grid {
+  display: grid;
+  gap: var(--gap);
+}
+
+@media (min-width: 40rem) {
+  .grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.price {
+  font-size: 2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin: 0.25rem 0;
+}
+
+.price small {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.muted {
+  color: var(--ink-3);
+  font-size: 0.95rem;
+}
+
+.note {
+  border-left: 3px solid var(--receivable);
+  padding: 0.25rem 0 0.25rem 0.9rem;
+  color: var(--ink-2);
+}
+
+/* Bảng dài trong trang pháp lý: cuộn TRONG khung của nó, không đẩy cả trang. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+th,
+td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+th {
+  font-weight: 700;
+}
+
+.steps {
+  counter-reset: step;
+  list-style: none;
+  padding: 0;
+}
+
+.steps li {
+  counter-increment: step;
+  padding-left: 2.5rem;
+  position: relative;
+  margin-bottom: 0.75rem;
+}
+
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0.1rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: var(--brand);
+  color: var(--paper);
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: grid;
+  place-items: center;
+}
+
+.site-footer {
+  border-top: 1px solid var(--rule);
+  background: var(--card);
+  padding: 1.5rem 0 2.5rem;
+  font-size: 0.95rem;
+}
+
+.site-footer ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.updated {
+  color: var(--ink-3);
+  font-size: 0.9rem;
+}
+
+/* Chỗ chưa điền nội dung thật. Cố ý CHỌC MẮT: một trang pháp lý phát hành kèm
+   chỗ trống là lỗi nghiêm trọng hơn nhiều so với một trang xấu.
+   `npm run site:check` chặn không cho deploy khi còn class này. */
+.fill {
+  background: #ffe8b0;
+  border-bottom: 2px dashed var(--payable);
+  color: var(--payable);
+  font-weight: 700;
+  padding: 0 0.2rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}

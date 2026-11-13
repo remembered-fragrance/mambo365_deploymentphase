@@ -23,8 +23,11 @@ const ROWS: readonly (readonly NumpadKey[])[] = [
   ['000', '0', ','],
 ];
 
-const KEY_CLASS =
-  'flex min-h-[3.5rem] items-center justify-center bg-card text-2xl font-semibold text-ink active:bg-paper';
+// Nền và cỡ chữ KHÔNG nằm ở lớp chung: hai class nền cùng lúc thì bản build chọn một cách tuỳ ý (nút Tiếp từng
+// ra nền giấy, chữ giấy — không thấy chữ).
+const KEY_CLASS = 'flex min-h-[3.5rem] items-center justify-center';
+const PLAIN_KEY = 'bg-card text-ink active:bg-paper';
+const DIGIT_KEY = `${PLAIN_KEY} text-2xl font-semibold`;
 
 export function Numpad({
   label,
@@ -54,25 +57,26 @@ export function Numpad({
           {spoken && <p className="mt-1 text-right text-sm text-ink-3">{spoken}</p>}
         </div>
 
-        <div className="grid grid-cols-4 gap-px bg-rule p-px">
+        {/* Ba cột như bàn phím điện thoại; hàng cuối: xoá lùi · xoá hết · tiếp. */}
+        <div className="grid grid-cols-3 gap-px bg-rule p-px">
           {ROWS.flatMap((row) =>
             row.map((key) => (
-              <NumKey key={key} ariaLabel={key} onPress={() => onKeyPress(key)}>
+              <NumKey key={key} ariaLabel={key} onPress={() => onKeyPress(key)} className={DIGIT_KEY}>
                 {key}
               </NumKey>
             )),
           )}
 
-          <NumKey ariaLabel={L.del} onPress={() => onKeyPress('del')}>
+          <NumKey ariaLabel={L.del} onPress={() => onKeyPress('del')} className={DIGIT_KEY}>
             <BackspaceIcon />
           </NumKey>
-          <NumKey ariaLabel={L.clearAll} onPress={() => onKeyPress('clear')} className="text-base">
+          <NumKey ariaLabel={L.clearAll} onPress={() => onKeyPress('clear')} className={`${PLAIN_KEY} text-base font-semibold`}>
             {L.clearAll}
           </NumKey>
           <NumKey
             ariaLabel={onNext ? L.next : L.close}
             onPress={onNext ?? onClose}
-            className="col-span-2 bg-brand text-base font-bold text-paper active:brightness-90"
+            className="bg-brand text-base font-bold text-paper active:brightness-90"
           >
             {onNext ? L.next : L.close}
           </NumKey>
@@ -96,11 +100,12 @@ export function Numpad({
 interface NumKeyProps {
   readonly ariaLabel: string;
   readonly onPress: () => void;
-  readonly className?: string;
+  /** Nền + cỡ chữ của phím — bắt buộc, xem `KEY_CLASS`. */
+  readonly className: string;
   readonly children: ReactNode;
 }
 
-function NumKey({ ariaLabel, onPress, className = '', children }: NumKeyProps) {
+function NumKey({ ariaLabel, onPress, className, children }: NumKeyProps) {
   return (
     <button
       type="button"

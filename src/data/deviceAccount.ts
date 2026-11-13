@@ -6,8 +6,8 @@
  * bộ đi đâu. Khi có tài khoản Supabase, sổ này nhập lại được bằng "Lấy lại từ file".
  */
 
-import { newId } from '@/core/id';
-import type { UserProfile } from '@/core/types';
+import { newId } from '@mambo/core/id';
+import type { UserProfile } from '@mambo/core/types';
 
 const DEVICE_KEY = 'thumua365:device-account';
 

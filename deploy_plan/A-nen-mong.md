@@ -1,5 +1,7 @@
 # GIAI ĐOẠN A — NỀN MÓNG
 
+> 📌 **23/10/2026 — ✅ đã làm (09/08/2026).** Kế hoạch 08/2026, thời app gọi Supabase trực tiếp — giữ làm lịch sử. Trạng thái và kiến trúc hiện tại: đầu trang [README.md](README.md) của thư mục này. `core/` nay là gói `@mambo/core` ở repo BE.
+
 **Buổi:** 4–5 · **Phụ thuộc:** không · **Người làm:** Tài · **Cần từ người khác:** không
 
 ---
@@ -185,7 +187,6 @@ Kiểm được bằng lệnh:
 - [ ] `npx depcruise src --validate` → **0 vi phạm**
 - [ ] `grep -rn "alert(\|confirm(\|prompt(" src/` → **rỗng**
 - [ ] `grep -rnE "#[0-9a-fA-F]{6}|slate-" src/features src/components` → **rỗng**
-- [ ] `find src -name "*.ts*" | xargs wc -l | sort -n | tail -3` → không file nào **>300 dòng**
 - [ ] CI xanh trên một PR thử
 
 Kiểm bằng tay:

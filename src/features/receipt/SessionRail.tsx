@@ -1,8 +1,8 @@
-import { computeReceiptTotal } from '@/core/calc';
-import { formatVndShort } from '@/core/format';
-import type { DraftReceipt } from '@/core/types';
+import { formatVnd } from '@mambo/core/format';
+import type { DraftReceipt } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { PlusIcon } from '@/components/ui/icons';
+import { draftTotal, useReceiptRules } from '@/data/hooks/useReceiptRules';
 
 interface SessionRailProps {
   readonly drafts: readonly DraftReceipt[];
@@ -19,10 +19,11 @@ interface SessionRailProps {
  * KHÔNG dựng bảng mới cho việc này — thêm schema là thêm chuyện đồng bộ.
  */
 export function SessionRail({ drafts, activeId, onSelect, onNewCustomer }: SessionRailProps) {
+  const rules = useReceiptRules();
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
       {drafts.map((draft) => {
-        const { total } = computeReceiptTotal(draft.lines);
+        const total = draftTotal(draft, rules);
         const active = draft.id === activeId;
         return (
           <button
@@ -37,7 +38,7 @@ export function SessionRail({ drafts, activeId, onSelect, onNewCustomer }: Sessi
             <span className="max-w-40 truncate text-sm font-semibold lg:max-w-none">
               {draft.supplierName || L.walkIn}
             </span>
-            <span className="num text-xs opacity-90">{formatVndShort(total)}</span>
+            <span className="num text-xs opacity-90">{formatVnd(total)}</span>
           </button>
         );
       })}

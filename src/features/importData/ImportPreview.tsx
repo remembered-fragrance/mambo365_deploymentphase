@@ -1,7 +1,7 @@
 import { DataView } from '@/components/data/DataView';
 import type { Column } from '@/components/data/dataViewModel';
-import { formatDate, formatQuantity, formatVnd } from '@/core/format';
-import type { ReceiptImport, SupplierImport } from '@/core/sheetImport';
+import { formatDate, formatQuantity, formatVnd } from '@mambo/core/format';
+import type { ReceiptImport, SupplierImport } from '@mambo/core/sheetImport';
 import { L } from '@/i18n/labels';
 
 /** Xem trước bấy nhiêu dòng đầu — đủ để nhận ra file lệch cột, không phải để đọc hết. */

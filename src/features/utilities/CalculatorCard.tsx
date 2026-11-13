@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
-import { roundToThousand } from '@/core/calc';
-import { formatVnd } from '@/core/format';
-import { moneyToVietnameseWords } from '@/core/numberToWords';
-import { parseNumber } from '@/core/parseNumber';
+import { roundToThousand } from '@mambo/core/calc';
+import { formatVnd } from '@mambo/core/format';
+import { moneyToVietnameseWords } from '@mambo/core/numberToWords';
+import { parseNumber } from '@mambo/core/parseNumber';
 import { L } from '@/i18n/labels';
 import { NumberField } from '../shared/NumberField';
 

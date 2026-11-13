@@ -1,12 +1,14 @@
 import { useState } from 'react';
+import { RECEIPT_LIMITS } from '@mambo/contracts';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { Select } from '@/components/ui/Select';
 import { TrashIcon } from '@/components/ui/icons';
-import { lineTotals } from '@/core/calc';
-import { formatVnd } from '@/core/format';
-import type { Product, ProductFormulaType } from '@/core/types';
+import { lineTotals } from '@mambo/core/calc';
+import { formatQuantity, formatVnd } from '@mambo/core/format';
+import type { Product, ProductFormulaType, QualityMetric } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
+import { METRIC_LABEL, METRIC_UNIT, qualityPercentLabel } from '../pricing/quality';
 import { NumberField } from '../shared/NumberField';
 import { applyProduct, toLine, type LineDraft } from './lineDraft';
 
@@ -17,10 +19,27 @@ const FORMULA_OPTIONS: readonly { value: ProductFormulaType; label: string }[] =
   { value: 'lossPercent', label: L.formulaLossPercent },
 ];
 
+/** Chỉ tiêu (V19) → ô chuỗi tương ứng trong `LineDraft`. */
+const METRIC_FIELD = {
+  bulkDensity: 'density',
+  moisturePercent: 'moisture',
+  impurityPercent: 'impurity',
+  kor: 'kor',
+} as const satisfies Partial<Record<QualityMetric, keyof LineDraft>>;
+
+const METRIC_MAX: Record<keyof typeof METRIC_FIELD, number> = {
+  bulkDensity: RECEIPT_LIMITS.quantity,
+  moisturePercent: RECEIPT_LIMITS.percent,
+  impurityPercent: RECEIPT_LIMITS.percent,
+  kor: RECEIPT_LIMITS.quantity,
+};
+
 interface LineEditorProps {
   readonly line: LineDraft;
   readonly products: readonly Product[];
   readonly canRemove: boolean;
+  /** Chỉ tiêu cần đo ở dòng này — có quy tắc giá theo chất lượng đọc tới (`metricsForProduct`). */
+  readonly metrics?: readonly QualityMetric[];
   readonly onChange: (patch: Partial<LineDraft>) => void;
   readonly onRemove: () => void;
 }
@@ -31,9 +50,12 @@ interface LineEditorProps {
  * Ô "Cách tính" GẬP LẠI: chọn mặt hàng là cách tính đã tự đúng rồi, hiện nó
  * thường trực chỉ là nhiễu trong 90% trường hợp.
  */
-export function LineEditor({ line, products, canRemove, onChange, onRemove }: LineEditorProps) {
+export function LineEditor({ line, products, canRemove, metrics = [], onChange, onRemove }: LineEditorProps) {
   const [showFormula, setShowFormula] = useState(false);
   const totals = lineTotals(toLine(line));
+  // V24: mặt hàng có tỷ lệ tươi / nhân thì gõ tỷ lệ, hao hụt tự suy. Giữ ô tỷ lệ cả khi đang xoá trắng để gõ lại.
+  const picked = products.find((p) => p.id === line.productId);
+  const ratioMode = line.formulaType === 'lossPercent' && (line.greenRatio !== '' || Boolean(picked?.greenRatio));
 
   return (
     <div className="card flex flex-col gap-3 p-3">
@@ -54,6 +76,7 @@ export function LineEditor({ line, products, canRemove, onChange, onRemove }: Li
         label={L.grossWeight}
         value={line.gross}
         unit={line.unit}
+        max={RECEIPT_LIMITS.quantity}
         onValueChange={(gross) => onChange({ gross })}
       />
 
@@ -62,33 +85,66 @@ export function LineEditor({ line, products, canRemove, onChange, onRemove }: Li
           label={L.tareWeight}
           value={line.tare}
           unit={line.unit}
+          max={RECEIPT_LIMITS.quantity}
           onValueChange={(tare) => onChange({ tare })}
         />
       )}
 
       {line.formulaType === 'rubberLatex' && (
         <NumberField
-          label={L.qualityPercent}
+          label={qualityPercentLabel(line)}
           value={line.quality}
           unit="%"
+          max={RECEIPT_LIMITS.percent}
           onValueChange={(quality) => onChange({ quality })}
         />
       )}
 
-      {line.formulaType === 'lossPercent' && (
+      {ratioMode && (
+        <div>
+          <NumberField
+            label={L.greenRatio}
+            value={line.greenRatio}
+            max={RECEIPT_LIMITS.greenRatio}
+            onValueChange={(greenRatio) => onChange({ greenRatio })}
+          />
+          <p className="num mt-1 text-sm text-ink-3">
+            {L.greenRatioYields} {formatQuantity(totals.netWeight, line.unit)}
+          </p>
+        </div>
+      )}
+
+      {line.formulaType === 'lossPercent' && !ratioMode && (
         <NumberField
           label={L.lossPercent}
           value={line.loss}
           unit="%"
+          max={RECEIPT_LIMITS.percent}
           onValueChange={(loss) => onChange({ loss })}
         />
       )}
+
+      {metrics.map((metric) => {
+        if (metric === 'qualityPercent') return null;
+        const field = METRIC_FIELD[metric];
+        return (
+          <NumberField
+            key={metric}
+            label={METRIC_LABEL[metric]}
+            value={line[field]}
+            unit={METRIC_UNIT[metric]}
+            max={METRIC_MAX[metric]}
+            onValueChange={(value) => onChange({ [field]: value })}
+          />
+        );
+      })}
 
       <NumberField
         label={L.pricePerUnit}
         value={line.price}
         unit={`₫/${line.unit}`}
         spoken
+        max={RECEIPT_LIMITS.quantity}
         onValueChange={(price) => onChange({ price })}
       />
 

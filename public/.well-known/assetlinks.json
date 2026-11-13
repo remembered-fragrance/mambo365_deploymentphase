@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "vn.id.thumua365.twa",
+      "sha256_cert_fingerprints": ["9E:01:A5:BF:0E:2D:B9:97:D2:76:99:71:B3:14:7D:9D:D4:97:8E:29:44:85:66:81:F5:82:DA:EE:B2:34:06:41"]
+    }
+  }
+]

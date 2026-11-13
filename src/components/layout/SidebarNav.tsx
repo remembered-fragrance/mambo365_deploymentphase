@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { Logo } from '../ui/Logo';
 import type { NavGroup } from './navModel';
 
 interface SidebarNavProps {
@@ -13,7 +14,8 @@ interface SidebarNavProps {
 export function SidebarNav({ groups, appName, primaryActions, footer }: SidebarNavProps) {
   return (
     <aside className="no-print hidden w-64 shrink-0 flex-col border-r border-rule bg-card lg:flex">
-      <div className="px-4 py-5">
+      <div className="flex items-center gap-2 px-4 py-5">
+        <Logo />
         <p className="text-lg font-extrabold tracking-tight text-brand">{appName}</p>
       </div>
 

@@ -9,7 +9,11 @@
  * tiền và nội dung bằng chữ — quét QR chỉ là đường tắt, không phải đường duy nhất.
  */
 
-import { BANK_ACCOUNT_NAME, BANK_ACCOUNT_NUMBER, BANK_BIN } from '@/config';
+import { transferContent } from '@mambo/core/transferCode';
+import { BANK_ACCOUNT_NAME, BANK_ACCOUNT_NUMBER, BANK_BIN, BANK_MEMO_PREFIX } from '@/config';
+
+/** Nội dung chuyển khoản trên màn QR. Máy chủ dò `TM365` ở bất kỳ đâu nên từ khoá đứng trước không sao. */
+export const paymentMemo = (code: string): string => `${BANK_MEMO_PREFIX} ${transferContent(code)}`;
 
 export const vietQrImageUrl = (amount: number, content: string): string => {
   const query = new URLSearchParams({

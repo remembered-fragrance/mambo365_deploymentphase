@@ -1,8 +1,8 @@
 import { EmptyState } from '@/components/ui/EmptyState';
-import type { DebtGroup, DebtSide } from '@/core/debtSelectors';
-import { totalOf } from '@/core/debtSelectors';
-import { formatVnd } from '@/core/format';
-import type { Transaction } from '@/core/types';
+import type { DebtGroup, DebtSide } from '@mambo/core/debtSelectors';
+import { totalOf } from '@mambo/core/debtSelectors';
+import { formatVnd } from '@mambo/core/format';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
 import { DebtGroupCard } from './DebtGroupCard';
 

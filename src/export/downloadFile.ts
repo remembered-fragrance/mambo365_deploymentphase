@@ -17,7 +17,21 @@ export const downloadBlob = (blob: Blob, filename: string): void => {
   }, 200);
 };
 
-export type ShareResult = 'shared' | 'downloaded';
+/** `copied`: máy không có bảng chia sẻ, nội dung nằm trong clipboard — màn hình phải nói cho người dùng biết. */
+export type ShareResult = 'shared' | 'downloaded' | 'copied' | 'cancelled';
+
+/** Người dùng tự đóng bảng chia sẻ — không phải lỗi. */
+const isAbort = (err: unknown): boolean => err instanceof DOMException && err.name === 'AbortError';
+
+const share = async (data: ShareData): Promise<ShareResult> => {
+  try {
+    await navigator.share(data);
+    return 'shared';
+  } catch (err) {
+    if (isAbort(err)) return 'cancelled';
+    throw err;
+  }
+};
 
 export const shareOrDownload = async (
   blob: Blob,
@@ -25,20 +39,14 @@ export const shareOrDownload = async (
   title: string,
 ): Promise<ShareResult> => {
   const file = new File([blob], filename, { type: blob.type });
-  if (navigator.share && navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ title, files: [file] });
-    return 'shared';
-  }
+  if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [file] })) return share({ title, files: [file] });
   downloadBlob(blob, filename);
   return 'downloaded';
 };
 
 /** Chia sẻ nội dung chữ (nội dung phiếu) — dùng cho nút "Gửi Zalo". */
 export const shareText = async (text: string, title: string): Promise<ShareResult> => {
-  if (navigator.share) {
-    await navigator.share({ title, text });
-    return 'shared';
-  }
+  if (typeof navigator.share === 'function') return share({ title, text });
   await navigator.clipboard.writeText(text);
-  return 'downloaded';
+  return 'copied';
 };

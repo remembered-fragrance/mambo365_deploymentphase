@@ -1,7 +1,7 @@
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Chip } from '@/components/ui/Chip';
 import { Button } from '@/components/ui/Button';
-import type { HistoryFilters, PaymentFilter, TimePeriod } from '@/core/filters';
+import type { HistoryFilters, PaymentFilter, TimePeriod } from '@mambo/core/filters';
 import { L } from '@/i18n/labels';
 
 interface ReceiptFilterSheetProps {

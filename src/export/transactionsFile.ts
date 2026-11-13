@@ -3,11 +3,11 @@
  * `xlsx` và `jspdf` chỉ nạp động.
  */
 
-import { lineTotals, transactionTotals } from '@/core/calc';
-import { formatDate, formatQuantity, formatVnd } from '@/core/format';
-import type { Transaction } from '@/core/types';
+import { lineTotals, transactionTotals } from '@mambo/core/calc';
+import { formatDate, formatQuantity, formatVnd } from '@mambo/core/format';
+import type { Transaction } from '@mambo/core/types';
 import { L } from '@/i18n/labels';
-import { captureInIsolatedFrame } from './receiptCapture';
+import { captureInIsolatedFrame, PDF_JPEG_QUALITY } from './receiptCapture';
 import { downloadBlob } from './downloadFile';
 
 export const exportTransactionsXlsx = async (
@@ -50,7 +50,11 @@ export const exportTransactionsXlsx = async (
 
 const CELL = 'padding:6px;border:1px solid #D6D0C4';
 
-const listHtml = (transactions: readonly Transaction[]): string => {
+/** Tên đối tác / mặt hàng là chữ người dùng gõ (cả máy khác đồng bộ về) — phải thoát trước khi vào innerHTML. */
+const esc = (s: string): string =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+export const listHtml = (transactions: readonly Transaction[]): string => {
   const totalSpent = transactions.reduce((s, t) => s + transactionTotals(t).total, 0);
   const totalWeight = transactions.reduce((s, t) => s + transactionTotals(t).netWeight, 0);
   const head = [L.colDate, L.colParty, L.colProduct, L.netWeight, L.total, L.colPayment]
@@ -61,8 +65,8 @@ const listHtml = (transactions: readonly Transaction[]): string => {
       const { total, netWeight, debt } = transactionTotals(t);
       return `<tr>
         <td style="${CELL}">${formatDate(t.date)}</td>
-        <td style="${CELL}">${t.supplierName}</td>
-        <td style="${CELL}">${t.lines.map((l) => l.productName).join(', ')}</td>
+        <td style="${CELL}">${esc(t.supplierName)}</td>
+        <td style="${CELL}">${esc(t.lines.map((l) => l.productName).join(', '))}</td>
         <td style="${CELL};text-align:right">${formatQuantity(netWeight)}</td>
         <td style="${CELL};text-align:right">${formatVnd(total)}</td>
         <td style="${CELL};text-align:right">${debt > 0 ? formatVnd(debt) : L.paidInFull}</td>
@@ -95,11 +99,11 @@ export const exportTransactionsPdf = async (
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
   const imgH = (canvas.height * pageW) / canvas.width;
-  const img = canvas.toDataURL('image/png');
+  const img = canvas.toDataURL('image/jpeg', PDF_JPEG_QUALITY);
 
   for (let y = 0; y < imgH; y += pageH) {
     if (y > 0) pdf.addPage();
-    pdf.addImage(img, 'PNG', 0, -y, pageW, imgH);
+    pdf.addImage(img, 'JPEG', 0, -y, pageW, imgH);
   }
   downloadBlob(pdf.output('blob'), filename);
 };

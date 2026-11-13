@@ -15,33 +15,44 @@ import { downloadBook } from '../shared/bookFile';
  * Ghi và đọc đều đi qua `useStore`, giao diện không tự chạm nơi lưu trữ.
  */
 export function DataCard() {
-  const { data, importData } = useStore();
+  // Sổ của tổ chức là sổ của máy chủ — kể cả khi hết gói, đổi máy chỉ cần đăng nhập (B1). Chỉ sổ nằm riêng trên
+  // máy mới có nút lấy lại từ file.
+  const { data, importData, importsFromFile } = useStore();
   const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<unknown>(null);
 
   const pickFile = async (file: File | undefined) => {
     if (!file) return;
-    const text = await file.text();
-    setPending(JSON.parse(text) as unknown);
+    try {
+      setPending(JSON.parse(await file.text()) as unknown);
+    } catch {
+      toast({ message: L.importNotBook, tone: 'alert' });
+    }
   };
 
   const applyFile = () => {
-    importData(pending);
     setPending(null);
-    toast({ message: L.importedToast });
+    try {
+      importData(pending);
+      toast({ message: L.importedToast });
+    } catch (err) {
+      toast({ message: err instanceof Error ? err.message : String(err), tone: 'alert' });
+    }
   };
 
   return (
-    <Card title={L.dataTitle} subtitle={L.dataHint}>
+    <Card title={L.dataTitle} subtitle={importsFromFile ? L.dataHint : L.dataHintServer}>
       <div className="flex flex-col gap-2">
         <Button tone="primary" block onClick={() => void downloadBook(data)}>
           {L.exportToFile}
         </Button>
 
-        <Button block onClick={() => fileInput.current?.click()}>
-          {L.importFromFile}
-        </Button>
+        {importsFromFile && (
+          <Button block onClick={() => fileInput.current?.click()}>
+            {L.importFromFile}
+          </Button>
+        )}
         <input
           ref={fileInput}
           type="file"
@@ -54,7 +65,7 @@ export function DataCard() {
           }}
         />
 
-        <p className="text-sm text-ink-3">{L.importReplaceWarning}</p>
+        {importsFromFile && <p className="text-sm text-ink-3">{L.importReplaceWarning}</p>}
       </div>
 
       <ConfirmDialog
