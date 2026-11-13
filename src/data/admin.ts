@@ -28,7 +28,9 @@ import {
   type AdminPayments,
   type AdminPromoCodes,
   type AdminPromoRow,
+  type AdminUserDetail,
   type AdminUsers,
+  type AdminUsersQuery,
   type PlanCode,
   type RouteResponse,
 } from '@mambo/contracts';
@@ -202,7 +204,11 @@ export const deletePromoCode = (code: string, approvedBy: string): Promise<Admin
   api.admin.deletePromo(code, { approvedBy });
 
 /** 🔴 Ghi nhật ký quản trị (`search-users`) — chỉ gọi khi người quản trị bấm tìm. */
-export const fetchUsers = (q: string): Promise<AdminUsers> => api.admin.users({ q });
+/** Không có `q` = mọi tài khoản, mới tạo trước; `cursor` = trang sau (API 0.34.0). */
+export const fetchUsers = (query: AdminUsersQuery): Promise<AdminUsers> => api.admin.users(query);
+
+/** Chi tiết + nhật ký gộp của một tài khoản (API 0.34.0 — ghi nhật ký `view-user`). */
+export const fetchUser = (id: string): Promise<AdminUserDetail> => api.admin.user(id);
 
 /** 🔴 Ghi nhật ký quản trị (`list-feedback`) — chỉ gọi khi người quản trị bấm xem. */
 export const fetchFeedback = (days: number, now: Date = new Date()): Promise<AdminFeedback> => api.admin.feedback(lastDays(days, now));

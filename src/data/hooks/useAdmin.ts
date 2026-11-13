@@ -18,6 +18,7 @@ export {
   fetchOrganizations,
   fetchOverview,
   fetchPromoCodes,
+  fetchUser,
   fetchUsers,
   ownedOrganizations,
   promoInput,

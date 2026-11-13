@@ -93,7 +93,7 @@ export function AdminPage() {
         </div>
       )}
       {section === 'ma-sang-lap' && <PromoTab />}
-      {section === 'nguoi-dung' && <UsersTab />}
+      {section === 'nguoi-dung' && <UsersTab you={{ id: me?.user.id ?? '', name: account }} />}
       {section === 'phan-hoi' && <FeedbackTab />}
       {section === 'nhat-ky' && <AccessLogTab you={{ id: me?.user.id ?? '', name: account }} />}
     </AdminShell>
