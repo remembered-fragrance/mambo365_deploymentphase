@@ -7,12 +7,14 @@
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AdminUserDetail, AdminUserEvent, AdminUserRow, AdminUsers, AdminUsersQuery } from '@mambo/contracts';
+import type { AdminRenameResult, AdminUserDetail, AdminUserEvent, AdminUserRow, AdminUsers, AdminUsersQuery } from '@mambo/contracts';
+import { renameErrors } from '@/features/admin/RenameForm';
 import { UsersTab } from '@/features/admin/UsersTab';
 import { countByKind, dayHeading, eventLines, eventTitle, filterEvents, groupByDay, vnDayKey, vnTime } from '@/features/admin/userTimeline';
 import { L } from '@/i18n/labels';
 
 const fetchUsers = vi.fn<(query: AdminUsersQuery) => Promise<AdminUsers>>();
+const renameUser = vi.fn<(id: string, input: unknown) => Promise<AdminRenameResult>>();
 const firstPage = vi.hoisted(() => ({ current: null as unknown, detail: null as unknown, requests: [] as unknown[] }));
 
 vi.mock('@/data/hooks/useAdmin', async (original) => ({
@@ -24,6 +26,7 @@ vi.mock('@/data/hooks/useAdmin', async (original) => ({
     return { data, loading: false, error: null };
   },
   fetchUsers: (query: AdminUsersQuery) => fetchUsers(query),
+  renameUser: (id: string, input: unknown) => renameUser(id, input),
 }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -89,6 +92,7 @@ const button = (text: string) => [...host.querySelectorAll('button')].find((b) =
 
 beforeEach(() => {
   fetchUsers.mockReset();
+  renameUser.mockReset();
   firstPage.requests.length = 0;
   firstPage.current = { rows: [person(1), person(2)], cursor: 'c1' };
   firstPage.detail = DETAIL;
@@ -136,6 +140,48 @@ describe('tab Người dùng', () => {
 
     await click(button(L.adminBackToList));
     expect(host.textContent).toContain('Người 1');
+  });
+
+  it('sửa tên: thiếu người duyệt → báo ô, không gọi; đủ → hộp xác nhận "cũ" → "mới" → gọi, tiêu đề đổi theo', async () => {
+    const row = [...host.querySelectorAll('tr, [role="button"], li, button')].find((el) => el.textContent?.includes('Người 2'));
+    await click(row);
+    await click(button(L.adminRename));
+    const field = (label: string): HTMLInputElement => {
+      const id = [...host.querySelectorAll('label')].find((l) => l.textContent === label)?.htmlFor;
+      const el = id ? document.getElementById(id) : null;
+      if (!(el instanceof HTMLInputElement)) throw new Error(`Không thấy ô "${label}"`);
+      return el;
+    };
+    const type = (label: string, value: string) => {
+      const el = field(label);
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(el, value);
+      act(() => {
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    };
+    type(L.adminRenameUserLabel, 'Người 1 Mới');
+    await click(button(L.save));
+    expect(host.textContent).toContain(L.adminErrApprovedBy);
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull();
+
+    type(L.adminApprovedBy, 'Linh');
+    await click(button(L.save));
+    const dialog = document.body.querySelector('[role="dialog"]');
+    expect(dialog?.textContent).toContain('"Người 1" → "Người 1 Mới"');
+    renameUser.mockResolvedValueOnce({ id: DETAIL.id, name: 'Người 1 Mới', previousName: 'Người 1' });
+    await click([...(dialog?.querySelectorAll('button') ?? [])].find((b) => b.textContent === L.adminRename));
+    expect(renameUser).toHaveBeenCalledWith(DETAIL.id, { name: 'Người 1 Mới', approvedBy: 'Linh' });
+    expect(host.querySelector('h2')?.textContent).toBe('Người 1 Mới');
+    expect(host.textContent).toContain(`${L.adminRenamed}: "Người 1" → "Người 1 Mới"`);
+  });
+});
+
+describe('kiểm ô sửa tên', () => {
+  it('theo giới hạn của máy chủ', () => {
+    expect(renameErrors({ name: ' A ', approvedBy: 'Linh', reason: '' }, 80)).toEqual({});
+    expect(Object.keys(renameErrors({ name: '  ', approvedBy: 'L', reason: 'x'.repeat(301) }, 80))).toEqual(['name', 'approvedBy', 'reason']);
+    expect(renameErrors({ name: 'x'.repeat(81), approvedBy: 'Linh', reason: '' }, 80).name).toBeDefined();
+    expect(renameErrors({ name: 'x'.repeat(120), approvedBy: 'Linh', reason: '' }, 120)).toEqual({});
   });
 });
 

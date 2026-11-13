@@ -8,10 +8,11 @@ import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
 import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { fetchUser, useAdminRequest } from '@/data/hooks/useAdmin';
+import { fetchUser, renameUser, useAdminRequest } from '@/data/hooks/useAdmin';
 import { ORG_TYPE_TEXT, roleText } from '@/features/shared/roleText';
 import { L } from '@/i18n/labels';
 import { MEMBER_STATUS_TEXT, phoneText } from './adminText';
+import { RenameForm } from './RenameForm';
 import { ResetPasswordCard } from './ResetPasswordCard';
 import {
   KIND_TEXT,
@@ -100,6 +101,8 @@ export function UserDetail({ id, you, onClose }: Props) {
   const [kind, setKind] = useState<TimelineFilter>('all');
   const [orgId, setOrgId] = useState('');
   const [resetOpen, setResetOpen] = useState(false);
+  // Tên vừa sửa ở đây — lời gọi chi tiết không chạy lại (mỗi lần xem là một dòng nhật ký).
+  const [renamed, setRenamed] = useState<string | null>(null);
   const d = detail.data;
 
   const counts = useMemo(() => countByKind(d?.timeline ?? []), [d]);
@@ -121,7 +124,7 @@ export function UserDetail({ id, you, onClose }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <Card
-        title={d?.name ?? L.adminUserTitle}
+        title={renamed ?? d?.name ?? L.adminUserTitle}
         subtitle={d ? phoneText(d.phone) : undefined}
         action={<Button onClick={onClose}>{L.adminBackToList}</Button>}
       >
@@ -144,6 +147,13 @@ export function UserDetail({ id, you, onClose }: Props) {
               <Fact label={L.adminColRecovery} value={d.hasVerifiedRecoveryEmail ? L.adminYes : L.adminNo} />
               <Fact label={L.adminUserId} value={d.id} />
             </dl>
+            <RenameForm
+              current={renamed ?? d.name}
+              maxLength={80}
+              label={L.adminRenameUserLabel}
+              save={(input) => renameUser(d.id, input)}
+              onRenamed={setRenamed}
+            />
             <div>
               {d.hasVerifiedRecoveryEmail ? (
                 <p className="text-sm text-ink-3">{L.adminUsersSelfReset}</p>

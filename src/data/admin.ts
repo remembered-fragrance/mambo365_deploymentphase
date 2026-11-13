@@ -28,7 +28,10 @@ import {
   type AdminPayments,
   type AdminPromoCodes,
   type AdminPromoRow,
+  type AdminOrganizationRenameInput,
+  type AdminRenameResult,
   type AdminUserDetail,
+  type AdminUserRenameInput,
   type AdminUsers,
   type AdminUsersQuery,
   type PlanCode,
@@ -209,6 +212,11 @@ export const fetchUsers = (query: AdminUsersQuery): Promise<AdminUsers> => api.a
 
 /** Chi tiết + nhật ký gộp của một tài khoản (API 0.34.0 — ghi nhật ký `view-user`). */
 export const fetchUser = (id: string): Promise<AdminUserDetail> => api.admin.user(id);
+
+/** Sửa tên hiển thị / tên tổ chức (API 0.34.0 — cần người duyệt, ghi nhật ký quản trị). */
+export const renameUser = (id: string, input: AdminUserRenameInput): Promise<AdminRenameResult> => api.admin.renameUser(id, input);
+export const renameOrganization = (id: string, input: AdminOrganizationRenameInput): Promise<AdminRenameResult> =>
+  api.admin.renameOrganization(id, input);
 
 /** 🔴 Ghi nhật ký quản trị (`list-feedback`) — chỉ gọi khi người quản trị bấm xem. */
 export const fetchFeedback = (days: number, now: Date = new Date()): Promise<AdminFeedback> => api.admin.feedback(lastDays(days, now));

@@ -9,11 +9,12 @@ import { Card } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { adminErrorMessage, fetchOrganization, setOrganizationFeature, useAdminRequest } from '@/data/hooks/useAdmin';
+import { adminErrorMessage, fetchOrganization, renameOrganization, setOrganizationFeature, useAdminRequest } from '@/data/hooks/useAdmin';
 import { ORG_TYPE_TEXT, roleText } from '@/features/shared/roleText';
 import { L } from '@/i18n/labels';
 import { FEATURE_TEXT, MEMBER_STATUS_TEXT, phoneText, planCodeText, planText } from './adminText';
 import { PAYMENT_COLUMNS } from './PaymentsCard';
+import { RenameForm } from './RenameForm';
 
 interface Props {
   readonly id: string;
@@ -50,6 +51,8 @@ export function OrganizationDetail({ id, onClose, onActivate }: Props) {
   const [failure, setFailure] = useState<string | null>(null);
 
   const d = detail.data;
+  // Tên vừa sửa ở đây — không gọi lại chi tiết (mỗi lần xem là một dòng nhật ký).
+  const [renamed, setRenamed] = useState<string | null>(null);
   const on = features ?? d?.features ?? [];
 
   const ask = (toggle: Toggle) => {
@@ -91,7 +94,7 @@ export function OrganizationDetail({ id, onClose, onActivate }: Props) {
     : [];
 
   return (
-    <Card title={d?.name ?? L.adminDetailTitle} subtitle={d ? ORG_TYPE_TEXT[d.type].label : undefined} action={<Button onClick={onClose}>{L.adminBackToList}</Button>}>
+    <Card title={renamed ?? d?.name ?? L.adminDetailTitle} subtitle={d ? ORG_TYPE_TEXT[d.type].label : undefined} action={<Button onClick={onClose}>{L.adminBackToList}</Button>}>
       {detail.error && (
         <p role="alert" className="rounded-xl border border-alert bg-card p-3 text-sm font-medium text-alert">
           {detail.error}
@@ -119,6 +122,14 @@ export function OrganizationDetail({ id, onClose, onActivate }: Props) {
               }
             />
           </dl>
+
+          <RenameForm
+            current={renamed ?? d.name}
+            maxLength={120}
+            label={L.adminRenameOrgLabel}
+            save={(input) => renameOrganization(d.id, input)}
+            onRenamed={setRenamed}
+          />
 
           {d.type !== 'farmer' && (
             <div>

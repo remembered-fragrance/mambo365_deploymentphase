@@ -329,6 +329,15 @@ export const ADMIN_LABELS = {
   adminEvApprovedBy: 'Người duyệt',
   adminEvNote: 'Ghi chú',
   adminEvRename: 'Tên',
+  adminRename: 'Sửa tên',
+  adminRenamed: 'Đã sửa tên',
+  adminRenameConfirmTitle: 'Sửa tên này?',
+  adminRenameUserLabel: 'Tên hiển thị mới',
+  adminRenameOrgLabel: 'Tên tổ chức mới',
+  adminErrRenameName: 'Tên từ 1 đến',
+  adminErrRenameChars: 'ký tự.',
+  adminActRenameUser: 'Sửa tên tài khoản',
+  adminActRenameOrg: 'Sửa tên tổ chức',
 
   // ─── Phản hồi ─────────────────────────────────────────────────────────────
   adminFeedbackTitle: 'Phản hồi của khách',

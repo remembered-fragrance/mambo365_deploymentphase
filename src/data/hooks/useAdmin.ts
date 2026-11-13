@@ -19,6 +19,8 @@ export {
   fetchOverview,
   fetchPromoCodes,
   fetchUser,
+  renameOrganization,
+  renameUser,
   fetchUsers,
   ownedOrganizations,
   promoInput,
