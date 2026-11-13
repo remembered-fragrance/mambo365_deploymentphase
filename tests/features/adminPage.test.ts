@@ -148,16 +148,20 @@ describe('trang Quản trị', () => {
     expect(titles()).toEqual(expect.arrayContaining([L.adminUsersTitle, L.adminResetTitle]));
   });
 
-  it('🔴 mục ghi nhật ký (tổ chức, người dùng, phản hồi) KHÔNG tự gọi khi mở; tổng quan, mã, nhật ký thì tự tải', async () => {
+  it('🔴 tổ chức, phản hồi KHÔNG tự gọi khi mở; tổng quan, người dùng (mọi tài khoản), mã, nhật ký thì tự tải', async () => {
     render(READY);
     expect(requests.calls).toHaveLength(1); // số liệu chung
-    for (const tab of [L.adminTabOrgs, L.adminTabUsers, L.adminTabFeedback]) {
+    for (const tab of [L.adminTabOrgs, L.adminTabFeedback]) {
       await openTab(tab);
       expect(requests.calls, tab).toHaveLength(1);
     }
+    // 0.34.0: mở tab Người dùng là tải trang đầu của mọi tài khoản (không `q`).
+    await openTab(L.adminTabUsers);
+    expect(requests.calls.at(-1)).toEqual({});
+    const afterUsers = requests.calls.length;
     await openTab(L.adminTabPromo);
     await openTab(L.adminTabLog);
-    expect(requests.calls).toHaveLength(3);
+    expect(requests.calls).toHaveLength(afterUsers + 2);
 
     await openTab(L.adminTabOrgs);
     await click(button(host, L.adminOrgsSearch));

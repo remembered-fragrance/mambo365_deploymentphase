@@ -44,6 +44,10 @@ const ACTION_TEXT: Readonly<Record<string, string>> = {
   'create-promo': L.adminActPromoCreate,
   'delete-promo': L.adminActPromoDelete,
   'search-users': L.adminActUsers,
+  'list-users': L.adminActUsersList,
+  'view-user': L.adminActUser,
+  'rename-user': L.adminActRenameUser,
+  'rename-organization': L.adminActRenameOrg,
   'list-feedback': L.adminActFeedback,
 };
 
